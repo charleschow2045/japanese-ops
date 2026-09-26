@@ -19,6 +19,7 @@ window.App.Content = window.App.Content || {};
   const K = (hira, kata, romaji, yue, extra = {}) => ({ hira, kata, romaji, yue, ...extra });
 
   const RA_NOTE = "ら行嘅 r 介乎廣東話 l 同英文 r 之間，舌尖輕輕彈一下";
+  const N_NOTE = "要用鼻音 n，唔好讀成 l";
 
   const KANA = {
     // ── 清音 ──
@@ -53,11 +54,11 @@ window.App.Content = window.App.Content || {};
     te: K("て", "テ", "te", null),
     to: K("と", "ト", "to", "拖"),
 
-    na: K("な", "ナ", "na", "拿"),
-    ni: K("に", "ニ", "ni", "呢", { yueHint: "呢個嘅呢" }),
+    na: K("な", "ナ", "na", "拿", { note: N_NOTE }),
+    ni: K("に", "ニ", "ni", "呢", { yueHint: "呢個嘅呢", note: N_NOTE }),
     nu: K("ぬ", "ヌ", "nu", null, { hiraNote: "小心同「め」：ぬ 尾有個小圈，め 冇" }),
     ne: K("ね", "ネ", "ne", null, { hiraNote: "小心同「れ」「わ」：ね 尾有個小圈" }),
-    no: K("の", "ノ", "no", "挪"),
+    no: K("の", "ノ", "no", "挪", { note: N_NOTE }),
 
     ha: K("は", "ハ", "ha", "哈", { note: "做助詞時讀 wa，例如 こんにちは（konnichiwa）", hiraNote: "小心同「ほ」：ほ 上面多一劃" }),
     hi: K("ひ", "ヒ", "hi", null),
@@ -66,7 +67,7 @@ window.App.Content = window.App.Content || {};
     ho: K("ほ", "ホ", "ho", "呵", { hiraNote: "小心同「は」：ほ 上面多一劃" }),
 
     ma: K("ま", "マ", "ma", "媽"),
-    mi: K("み", "ミ", "mi", "咪", { yueHint: "咪高峰嘅咪" }),
+    mi: K("み", "ミ", "mi", "咪", { yueHint: "咪咪（貓仔）嘅咪" }),
     mu: K("む", "ム", "mu", null),
     me: K("め", "メ", "me", "咩", { hiraNote: "小心同「ぬ」：め 尾冇小圈" }),
     mo: K("も", "モ", "mo", "摸"),
