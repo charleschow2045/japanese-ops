@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-HK">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Japanese Ops" />
+  <meta name="theme-color" content="#EFE6D3" />
+  <title>Japanese Ops</title>
+  <!-- Plain HTML/CSS/JS: no CDN, no framework. Everything is local. -->
+  <link rel="stylesheet" href="./css/app.css" />
+</head>
+<body>
+  <div class="bg" aria-hidden="true">
+    <div class="blob b1"></div>
+    <div class="blob b2"></div>
+    <div class="blob b3"></div>
+    <div class="blob b4"></div>
+    <span class="deco" style="top: 64px; right: 32px; font-size: 2.25rem">🗾</span>
+    <span class="deco" style="top: 192px; left: 24px">🍣</span>
+    <span class="deco" style="bottom: 160px; right: 48px; font-size: 2.25rem">🚄</span>
+    <span class="deco" style="bottom: 288px; left: 40px">🏯</span>
+  </div>
+
+  <div class="page">
+    <header class="app-header">
+      <h1 class="app-title">🗾 Japanese Ops</h1>
+      <p class="app-sub">日文旅行會話</p>
+    </header>
+    <main id="main"></main>
+  </div>
+
+  <div id="overlay"></div>
+  <nav id="tabbar" class="tabbar"></nav>
+
+  <noscript><p style="padding: 16px">請開啟 JavaScript 先可以用呢個 App。</p></noscript>
+
+  <script src="./js/storage.js"></script>
+  <script src="./js/ui.js"></script>
+  <script src="./js/speech.js"></script>
+  <script src="./js/content/kana.js"></script>
+  <script src="./js/kana.js"></script>
+  <script src="./js/home.js"></script>
+  <script src="./js/settings.js"></script>
+  <script src="./js/app.js"></script>
+</body>
+</html>
