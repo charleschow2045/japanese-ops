@@ -379,3 +379,27 @@ p, h1, h2 { margin: 0; }
 /* ── confirm box ── */
 .confirm { border-radius: 16px; padding: 12px; background: var(--stamp-tint); border: 1.5px solid var(--stamp-tint-border); }
 .confirm p { font-weight: 700; color: var(--stamp-dark); }
+
+/* ── 清濁對比 (js/contrast.js) ── */
+.pair-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 64px;
+  padding: 8px 16px;
+  border-radius: 16px;
+  background: var(--paper);
+  border: 1.5px solid var(--a-border);
+}
+.pair-btn:active { transform: translateY(2px); background: var(--a-tint); }
+.pair-items { display: flex; align-items: center; gap: 10px; }
+.pair-item { display: flex; flex-direction: column; align-items: center; min-width: 40px; }
+.pair-item .jp { font-size: 1.875rem; line-height: 1.1; }
+.pair-item .rom { font-size: 0.75rem; font-weight: 700; color: var(--muted); }
+.pair-sep { font-size: 1.25rem; color: var(--a-border); }
+.pair-play { font-size: 1.25rem; }
+.opt-grid.three { grid-template-columns: repeat(3, 1fr); }
+.opt-cat { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: 88px; }
+.opt-cat .opt-label { font-size: 0.875rem; font-weight: 700; }

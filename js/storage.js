@@ -29,7 +29,8 @@ window.App = window.App || {};
     return {
       stats: {},
       mistakes: [],
-      prefs: { script: "hira", rows: ["a", "ka", "sa", "ta", "na"] },
+      // contrastRows: rows picked for 清濁對比 分辨練習 (keys of the 清音 row)
+      prefs: { script: "hira", rows: ["a", "ka", "sa", "ta", "na"], contrastRows: ["ka", "sa", "ta", "ha"] },
     };
   }
 
@@ -51,6 +52,7 @@ window.App = window.App || {};
       if (!kana.stats || typeof kana.stats !== "object") kana.stats = {};
       if (!Array.isArray(kana.mistakes)) kana.mistakes = [];
       if (!Array.isArray(kana.prefs.rows)) kana.prefs.rows = base.kana.prefs.rows;
+      if (!Array.isArray(kana.prefs.contrastRows)) kana.prefs.contrastRows = base.kana.prefs.contrastRows;
       return {
         ...base,
         ...parsed,

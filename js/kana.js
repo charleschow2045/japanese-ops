@@ -527,6 +527,7 @@ window.App = window.App || {};
     const go = (view) => {
       ui.view = view;
       if (view === "chart") ui.chartScript = prefs.script === "kata" ? "kata" : "hira";
+      if (view === "contrast") window.App.Contrast.reset();
       ctx.rerender({ scrollTop: true });
     };
 
@@ -542,7 +543,8 @@ window.App = window.App || {};
         "div",
         { class: "stack mb-4" },
         menuCard("📋", "字表", "清音・濁音・半濁音，撳字聽發音", () => go("chart")),
-        menuCard("🪧", "片假名實例", "餐牌、商店、酒店見到嘅字", () => go("examples"))
+        menuCard("🪧", "片假名實例", "餐牌、商店、酒店見到嘅字", () => go("examples")),
+        menuCard("👂", "清濁對比", "か／が 並排聽，練分辨清音濁音", () => go("contrast"))
       ),
       h(
         "div",
@@ -581,6 +583,11 @@ window.App = window.App || {};
     if (ui.view === "chart") main = kanaChart(ctx);
     else if ((ui.view === "see" || ui.view === "hear") && ui.quiz) main = kanaQuiz(ctx);
     else if (ui.view === "examples") main = katakanaExamples(ctx);
+    else if (ui.view === "contrast")
+      main = window.App.Contrast.render(ctx, () => {
+        ui.view = "menu";
+        ctx.rerender({ scrollTop: true });
+      });
     else {
       ui.view = "menu";
       main = kanaMenu(ctx);
@@ -589,5 +596,7 @@ window.App = window.App || {};
     return { main, overlay };
   }
 
-  window.App.KanaModule = { render, reset };
+  // `helpers` are shared with js/contrast.js (清濁對比) so both screens
+  // display romaji / 廣東話近似讀音 / speak buttons identically.
+  window.App.KanaModule = { render, reset, helpers: { shuffle, romajiText, yueLine, speakButton, otherScript, QUIZ_LENGTH } };
 })();

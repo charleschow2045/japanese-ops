@@ -32,6 +32,25 @@ window.App = window.App || {};
     return true;
   }
 
+  // Reads several texts one after another (e.g. か…が for 清濁對比). All
+  // utterances are queued inside the same tap, which iOS allows; the
+  // browser plays its queue in order. Same voice/rate rules as speak().
+  function speakSequence(texts, settings = {}) {
+    if (!isTTSSupported() || !texts.length) return false;
+    const synth = window.speechSynthesis;
+    synth.cancel();
+    const voices = getJaVoices();
+    const chosen = (settings.voiceURI && voices.find((v) => v.voiceURI === settings.voiceURI)) || voices[0];
+    texts.forEach((text) => {
+      const utter = new SpeechSynthesisUtterance(text);
+      utter.lang = "ja-JP";
+      utter.rate = settings.rate || 0.8;
+      if (chosen) utter.voice = chosen;
+      synth.speak(utter);
+    });
+    return true;
+  }
+
   // Calls `cb` when the voice list changes (it often arrives after page
   // load). Some browsers never fire voiceschanged, so also check once
   // after a second.
@@ -64,5 +83,5 @@ window.App = window.App || {};
     );
   }
 
-  window.App.Speech = { isTTSSupported, getJaVoices, speak, onVoicesChanged, speechNotice };
+  window.App.Speech = { isTTSSupported, getJaVoices, speak, speakSequence, onVoicesChanged, speechNotice };
 })();
