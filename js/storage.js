@@ -8,7 +8,7 @@ window.App = window.App || {};
   // `accent` keys into MODULE_ACCENTS in theme.jsx.
   const MODULES = [
     { key: "kana", label: "五十音", sub: "平假名・片假名", emoji: "あ", implemented: true },
-    { key: "phrases", label: "情境句子庫", sub: "餐廳、購物、交通…", emoji: "💬", implemented: false },
+    { key: "phrases", label: "情境句子庫", sub: "基本禮貌、餐廳、購物", emoji: "💬", implemented: true },
     { key: "listening", label: "聽力練習", sub: "聽句子揀意思", emoji: "🎧", implemented: false },
     { key: "speaking", label: "口語練習", sub: "讀出嚟，語音辨識", emoji: "🎤", implemented: false },
     { key: "reading", label: "看得明", sub: "餐牌、商品、車站", emoji: "🪧", implemented: false },

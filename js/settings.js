@@ -109,7 +109,7 @@ window.App = window.App || {};
             )
       ),
 
-      h("p", { class: "xs muted center", style: { paddingBottom: "8px" } }, "Japanese Ops · 階段 1b")
+      h("p", { class: "xs muted center", style: { paddingBottom: "8px" } }, "Japanese Ops · 階段 2")
     );
   }
 

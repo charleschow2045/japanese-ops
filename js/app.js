@@ -4,7 +4,7 @@
 window.App = window.App || {};
 
 (function () {
-  const { Storage, Home, Settings, KanaModule, Speech } = window.App;
+  const { Storage, Home, Settings, KanaModule, Phrases, Speech } = window.App;
   const { h, accentVars } = window.App.UI;
 
   const TABS = [
@@ -28,6 +28,7 @@ window.App = window.App || {};
   function openModule(key) {
     nav.view = key;
     if (key === "kana") KanaModule.reset();
+    if (key === "phrases") Phrases.reset();
     render({ scrollTop: true });
   }
 
@@ -84,6 +85,19 @@ window.App = window.App || {};
       });
       content = h("div", { style: accentVars("kana") }, out.main);
       overlay = out.overlay;
+    } else if (nav.view === "phrases") {
+      content = h(
+        "div",
+        { style: accentVars("phrases") },
+        Phrases.render({
+          settings: state.settings,
+          onBack: () => {
+            nav.view = "home";
+            render({ scrollTop: true });
+          },
+          rerender: render,
+        })
+      );
     } else {
       nav.view = "home";
       content = Home.render(state, openModule);
