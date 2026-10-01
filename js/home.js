@@ -17,7 +17,7 @@ window.App = window.App || {};
 
   function render(state, onOpenModule) {
     const learnt = Object.values(state.kana.stats).filter((s) => s.c > 0).length;
-    const total = Object.keys(window.App.Content.KANA).length * 2;
+    const total = window.App.Content.KANA_TOTAL;
     return h(
       "div",
       { class: "stack-lg" },

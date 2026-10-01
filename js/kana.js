@@ -46,11 +46,15 @@ window.App = window.App || {};
   }
 
   // All practice items for the chosen rows/script: { id, char, script }.
+  // Skips characters that don't exist in a script (外來語組合 have no
+  // hiragana).
   function buildPool(rows, script) {
     const scripts = script === "both" ? ["hira", "kata"] : [script];
     const items = [];
     KANA_ROWS.filter((r) => rows.includes(r.key)).forEach((r) =>
-      r.cells.filter(Boolean).forEach((id) => scripts.forEach((s) => items.push({ id, script: s, char: KANA[id][s] })))
+      r.cells
+        .filter(Boolean)
+        .forEach((id) => scripts.forEach((s) => KANA[id][s] && items.push({ id, script: s, char: KANA[id][s] })))
     );
     return items;
   }
@@ -59,15 +63,25 @@ window.App = window.App || {};
     return new Set(items.map((it) => KANA[it.id].romaji)).size;
   }
 
+  // kana id → group key (seion / dakuon / handakuon / yoon / gairaigo)
+  const GROUP_OF = {};
+  KANA_ROWS.forEach((r) => r.cells.forEach((id) => id && (GROUP_OF[id] = r.group)));
+
   // Three distractors with romaji different from the answer and from each
-  // other (so お/を or じ/ぢ can never both be "right"). Prefers the chosen
-  // range, tops up from the whole table of the same script if needed.
+  // other (so お/を or じ/ぢ can never both be "right"). Order of preference:
+  // same group within the chosen range, rest of the range, same group in
+  // the whole table, then anything of the same script — so a 拗音 question
+  // gets 拗音 options (きゃ vs しゃ, not きゃ vs あ) whenever possible.
   function pickDistractors(target, pool) {
     const used = new Set([KANA[target.id].romaji]);
     const out = [];
     const sameScript = (list) => list.filter((it) => it.script === target.script);
-    const allOfScript = Object.keys(KANA).map((id) => ({ id, script: target.script, char: KANA[id][target.script] }));
-    [shuffle(sameScript(pool)), shuffle(allOfScript)].forEach((cands) => {
+    const sameGroup = (list) => list.filter((it) => GROUP_OF[it.id] === GROUP_OF[target.id]);
+    const allOfScript = Object.keys(KANA)
+      .filter((id) => KANA[id][target.script])
+      .map((id) => ({ id, script: target.script, char: KANA[id][target.script] }));
+    const inRange = sameScript(pool);
+    [shuffle(sameGroup(inRange)), shuffle(inRange), shuffle(sameGroup(allOfScript)), shuffle(allOfScript)].forEach((cands) => {
       cands.forEach((c) => {
         const r = KANA[c.id].romaji;
         if (out.length < 3 && !used.has(r)) {
@@ -86,6 +100,19 @@ window.App = window.App || {};
       target,
       options: shuffle([target, ...pickDistractors(target, pool)]),
     }));
+  }
+
+  // Does `word` contain the sound `char`? A match followed by a small
+  // ャュョァィゥェォ is a different sound (シ in シャワー is シャ), so it
+  // doesn't count.
+  const SMALL = "ャュョァィゥェォゃゅょ";
+  function containsSound(word, char) {
+    let i = word.indexOf(char);
+    while (i !== -1) {
+      if (!SMALL.includes(word[i + char.length] || "")) return true;
+      i = word.indexOf(char, i + 1);
+    }
+    return false;
   }
 
   function otherScript(script) {
@@ -139,7 +166,7 @@ window.App = window.App || {};
     const k = KANA[id];
     const char = k[script];
     const scriptNote = script === "hira" ? k.hiraNote : k.kataNote;
-    const examples = script === "kata" ? KATAKANA_EXAMPLES.filter((ex) => ex.word.includes(char)) : [];
+    const examples = script === "kata" ? KATAKANA_EXAMPLES.filter((ex) => containsSound(ex.word, char)) : [];
     const close = () => {
       ui.openId = null;
       ctx.rerender();
@@ -159,7 +186,9 @@ window.App = window.App || {};
             "div",
             null,
             jp(char, "sheet-kana"),
-            h("p", { class: "small muted mt-2" }, `${script === "hira" ? "片假名" : "平假名"}：`, jp(k[otherScript(script)]))
+            k[otherScript(script)]
+              ? h("p", { class: "small muted mt-2" }, `${script === "hira" ? "片假名" : "平假名"}：`, jp(k[otherScript(script)]))
+              : h("p", { class: "small muted mt-2" }, "只用喺片假名外來語")
           ),
           h("button", { class: "sheet-close", onclick: close, "aria-label": "關閉" }, "✕")
         ),
@@ -223,7 +252,7 @@ window.App = window.App || {};
         )
       ),
       h("p", { class: "xs muted mb-3" }, "撳一個字：聽發音、睇讀音同提示。紅點 = 之前答錯過"),
-      KANA_GROUPS.map((g) =>
+      KANA_GROUPS.filter((g) => !(g.kataOnly && script === "hira")).map((g) =>
         h(
           "div",
           { class: "card accent mb-4" },
@@ -232,7 +261,7 @@ window.App = window.App || {};
           KANA_ROWS.filter((r) => r.group === g.key).map((r) =>
             h(
               "div",
-              { class: "kana-grid" },
+              { class: "kana-grid", style: g.cols ? { gridTemplateColumns: `repeat(${g.cols}, 1fr)` } : null },
               r.cells.map((id) => {
                 if (!id) return h("div");
                 const char = KANA[id][script];
@@ -253,7 +282,9 @@ window.App = window.App || {};
                 );
               })
             )
-          )
+          ),
+          // 聽對比 pairs for the group (e.g. びょういん／びよういん under 拗音)
+          g.contrast && h("div", { class: "mt-4" }, window.App.Sounds.pairList(g.contrast, settings))
         )
       )
     );
@@ -356,7 +387,8 @@ window.App = window.App || {};
             "div",
             null,
             (settings.showRomaji || !hear) && h("p", { class: "big-rom", style: { fontSize: "1.25rem" } }, romajiText(t.id)),
-            h("p", { class: "small muted" }, `${t.script === "hira" ? "片假名" : "平假名"}：`, jp(KANA[t.id][otherScript(t.script)]))
+            KANA[t.id][otherScript(t.script)] &&
+              h("p", { class: "small muted" }, `${t.script === "hira" ? "片假名" : "平假名"}：`, jp(KANA[t.id][otherScript(t.script)]))
           )
         ),
         yueLine(t.id, settings, "mt-2"),
@@ -442,7 +474,7 @@ window.App = window.App || {};
       h(
         "p",
         { class: "small muted mb-4" },
-        "外來語多數用片假名寫。以下都係喺日本餐牌、商店、酒店成日見到嘅字（只用咗已經學過嘅假名；有長音「ー」嘅字，例如 メニュー、コーヒー，下一階段先加）。撳一下聽發音。"
+        "外來語多數用片假名寫。以下都係喺日本餐牌、商店、酒店、車站成日見到嘅字。撳一下聽發音。"
       ),
       scenes.map((scene) =>
         h(
@@ -498,6 +530,22 @@ window.App = window.App || {};
       KANA_GROUPS.map((g) => {
         const rows = KANA_ROWS.filter((r) => r.group === g.key);
         const allOn = rows.every((r) => prefs.rows.includes(r.key));
+        // One chip for the whole group (外來語組合)
+        if (g.single)
+          return h(
+            "div",
+            null,
+            h("span", { class: "small mb-1", style: { display: "block" } }, g.label),
+            h(
+              "div",
+              { class: "wrap" },
+              chip(g.kataOnly ? `${g.label}（只限片假名）` : g.label, allOn, () => setGroup(g.key, !allOn))
+            ),
+            g.kataOnly &&
+              allOn &&
+              prefs.script === "hira" &&
+              h("p", { class: "xs muted mt-1" }, "揀咗「平假名」，所以呢組唔會出題")
+          );
         return h(
           "div",
           null,
@@ -544,13 +592,14 @@ window.App = window.App || {};
         { class: "stack mb-4" },
         menuCard("📋", "字表", "清音・濁音・半濁音，撳字聽發音", () => go("chart")),
         menuCard("🪧", "片假名實例", "餐牌、商店、酒店見到嘅字", () => go("examples")),
-        menuCard("👂", "清濁對比", "か／が 並排聽，練分辨清音濁音", () => go("contrast"))
+        menuCard("👂", "清濁對比", "か／が 並排聽，練分辨清音濁音", () => go("contrast")),
+        menuCard("⏸️", "促音・長音", "きて／きって、おばさん／おばあさん", () => go("sounds"))
       ),
       h(
         "div",
         { class: "card accent mb-4" },
         h("p", { class: "h-heading accent-text" }, "練習"),
-        h("p", { class: "xs muted mb-3" }, `每輪 ${QUIZ_LENGTH} 題。已經答啱過嘅字：${learnt} / ${Object.keys(KANA).length * 2}`),
+        h("p", { class: "xs muted mb-3" }, `每輪 ${QUIZ_LENGTH} 題。已經答啱過嘅字：${learnt} / ${window.App.Content.KANA_TOTAL}`),
         h("p", { class: "small mb-1" }, "練邊種？"),
         h(
           "div",
@@ -583,6 +632,11 @@ window.App = window.App || {};
     if (ui.view === "chart") main = kanaChart(ctx);
     else if ((ui.view === "see" || ui.view === "hear") && ui.quiz) main = kanaQuiz(ctx);
     else if (ui.view === "examples") main = katakanaExamples(ctx);
+    else if (ui.view === "sounds")
+      main = window.App.Sounds.render(ctx, () => {
+        ui.view = "menu";
+        ctx.rerender({ scrollTop: true });
+      });
     else if (ui.view === "contrast")
       main = window.App.Contrast.render(ctx, () => {
         ui.view = "menu";

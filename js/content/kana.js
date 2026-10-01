@@ -20,6 +20,8 @@ window.App.Content = window.App.Content || {};
 
   const RA_NOTE = "ら行嘅 r 介乎廣東話 l 同英文 r 之間，舌尖輕輕彈一下";
   const N_NOTE = "要用鼻音 n，唔好讀成 l";
+  // Same wording as ふ's note — used for ファ／フィ／フェ／フォ (stage 1b).
+  const FU_NOTE = "介乎 f 同 h 之間：上下唇唔掂埋，輕輕吹氣";
 
   const KANA = {
     // ── 清音 ──
@@ -123,7 +125,61 @@ window.App.Content = window.App.Content || {};
     pu: K("ぷ", "プ", "pu", null),
     pe: K("ぺ", "ペ", "pe", null),
     po: K("ぽ", "ポ", "po", "婆"),
+
+    // ── 拗音 (stage 1b) ── い段 + 細 ゃゅょ, one syllable.
+    // ぢゃ／ぢゅ／ぢょ omitted (almost never used).
+    kya: K("きゃ", "キャ", "kya", null),
+    kyu: K("きゅ", "キュ", "kyu", null),
+    kyo: K("きょ", "キョ", "kyo", null),
+    sha: K("しゃ", "シャ", "sha", null),
+    shu: K("しゅ", "シュ", "shu", null),
+    sho: K("しょ", "ショ", "sho", null),
+    cha: K("ちゃ", "チャ", "cha", "茶"),
+    chu: K("ちゅ", "チュ", "chu", null),
+    cho: K("ちょ", "チョ", "cho", "錯", { yueHint: "錯誤嘅錯" }),
+    nya: K("にゃ", "ニャ", "nya", null),
+    nyu: K("にゅ", "ニュ", "nyu", null),
+    nyo: K("にょ", "ニョ", "nyo", null),
+    hya: K("ひゃ", "ヒャ", "hya", null),
+    hyu: K("ひゅ", "ヒュ", "hyu", null),
+    hyo: K("ひょ", "ヒョ", "hyo", null),
+    mya: K("みゃ", "ミャ", "mya", null),
+    myu: K("みゅ", "ミュ", "myu", null),
+    myo: K("みょ", "ミョ", "myo", null),
+    rya: K("りゃ", "リャ", "rya", null),
+    ryu: K("りゅ", "リュ", "ryu", null),
+    ryo: K("りょ", "リョ", "ryo", null),
+    gya: K("ぎゃ", "ギャ", "gya", null),
+    gyu: K("ぎゅ", "ギュ", "gyu", null),
+    gyo: K("ぎょ", "ギョ", "gyo", null),
+    ja: K("じゃ", "ジャ", "ja", null),
+    ju: K("じゅ", "ジュ", "ju", null),
+    jo: K("じょ", "ジョ", "jo", null),
+    bya: K("びゃ", "ビャ", "bya", null),
+    byu: K("びゅ", "ビュ", "byu", null),
+    byo: K("びょ", "ビョ", "byo", null),
+    pya: K("ぴゃ", "ピャ", "pya", null),
+    pyu: K("ぴゅ", "ピュ", "pyu", null),
+    pyo: K("ぴょ", "ピョ", "pyo", null),
+
+    // ── 外來語組合 (stage 1b) ── katakana only (hira = null).
+    fa: K(null, "ファ", "fa", "花", { note: FU_NOTE }),
+    fi: K(null, "フィ", "fi", null, { note: FU_NOTE }),
+    fe: K(null, "フェ", "fe", null, { note: FU_NOTE }),
+    fo: K(null, "フォ", "fo", "科", { note: FU_NOTE }),
+    ti: K(null, "ティ", "ti", null),
+    dhi: K(null, "ディ", "di", null),
+    che: K(null, "チェ", "che", "車"),
+    she: K(null, "シェ", "she", null),
+    je: K(null, "ジェ", "je", null),
+    wi: K(null, "ウィ", "wi", null),
+    we: K(null, "ウェ", "we", null),
+    who: K(null, "ウォ", "wo", "窩"),
   };
+
+  // Total distinct characters (hira + kata counted separately; 外來語組合
+  // only exist in katakana) — used for the 「答啱過 x / total」 counts.
+  const KANA_TOTAL = Object.values(KANA).reduce((n, k) => n + (k.hira ? 1 : 0) + (k.kata ? 1 : 0), 0);
 
   // Chart layout: 5 slots per row (null = empty slot, as in the
   // standard 五十音 table).
@@ -144,6 +200,23 @@ window.App.Content = window.App.Content || {};
     { key: "da", group: "dakuon", cells: ["da", "di", "du", "de", "do"] },
     { key: "ba", group: "dakuon", cells: ["ba", "bi", "bu", "be", "bo"] },
     { key: "pa", group: "handakuon", cells: ["pa", "pi", "pu", "pe", "po"] },
+    // stage 1b — 拗音: 3 slots (ゃ ゅ ょ)
+    { key: "kya", group: "yoon", cells: ["kya", "kyu", "kyo"] },
+    { key: "sha", group: "yoon", cells: ["sha", "shu", "sho"] },
+    { key: "cha", group: "yoon", cells: ["cha", "chu", "cho"] },
+    { key: "nya", group: "yoon", cells: ["nya", "nyu", "nyo"] },
+    { key: "hya", group: "yoon", cells: ["hya", "hyu", "hyo"] },
+    { key: "mya", group: "yoon", cells: ["mya", "myu", "myo"] },
+    { key: "rya", group: "yoon", cells: ["rya", "ryu", "ryo"] },
+    { key: "gya", group: "yoon", cells: ["gya", "gyu", "gyo"] },
+    { key: "ja", group: "yoon", cells: ["ja", "ju", "jo"] },
+    { key: "bya", group: "yoon", cells: ["bya", "byu", "byo"] },
+    { key: "pya", group: "yoon", cells: ["pya", "pyu", "pyo"] },
+    // stage 1b — 外來語組合: 4 slots, katakana only
+    { key: "fa", group: "gairaigo", cells: ["fa", "fi", "fe", "fo"] },
+    { key: "ti", group: "gairaigo", cells: ["ti", "dhi", null, null] },
+    { key: "che", group: "gairaigo", cells: ["che", "she", "je", null] },
+    { key: "wi", group: "gairaigo", cells: ["wi", "we", "who", null] },
   ];
 
   const GROUPS = [
@@ -154,11 +227,115 @@ window.App.Content = window.App.Content || {};
       note: "加「゛」：k→g、s→z、t→d、h→b。廣東話冇呢類「濁」音，請聽發音，喉嚨要震",
     },
     { key: "handakuon", label: "半濁音", note: "加「゜」：h→p" },
+    // stage 1b. `cols` = chart columns; `kataOnly` = hidden in the 平假名
+    // chart and skipped in 平假名 practice; `single` = one range chip for
+    // the whole group; `contrast` = 聽對比 pairs shown under the chart.
+    {
+      key: "yoon",
+      label: "拗音",
+      note: "い段字（き、し、ち…）＋細寫 ゃ／ゅ／ょ，兩個字合埋讀成一個音",
+      cols: 3,
+      contrast: {
+        labels: ["細寫 ょ（拗音）", "大寫 よ"],
+        pairs: [
+          [
+            { word: "びょういん", romaji: "byouin", meaning: "醫院" },
+            { word: "びよういん", romaji: "biyouin", meaning: "美容院" },
+          ],
+        ],
+      },
+    },
+    {
+      key: "gairaigo",
+      label: "外來語組合",
+      note: "只用喺片假名外來語：字＋細寫 ァ／ィ／ゥ／ェ／ォ，合埋讀成一個音（例如 チェックイン）",
+      cols: 4,
+      kataOnly: true,
+      single: true,
+    },
   ];
 
-  // 片假名真實例子 — stage 1a uses ONLY kana taught in 1a (no 拗音, っ, ー),
-  // so e.g. メニュー／コーヒー／タクシー wait for stage 1b.
-  // Each checked: katakana ↔ romaji ↔ meaning.
+  // 促音・長音 (stage 1b): 聽對比 pairs + common words. Shown on their own
+  // screen (js/sounds.js). Each word checked: kana ↔ romaji ↔ meaning.
+  // Long vowels are romanised by repeating the vowel as spelled
+  // (okaasan, otousan, koohii) — no macrons.
+  const SOUND_TOPICS = [
+    {
+      key: "sokuon",
+      title: "促音 っ／ッ",
+      intro: [
+        "細寫嘅 っ／ッ 唔發音，係停頓一拍。",
+        "羅馬拼音將下一個子音寫兩次，例如 kitte。",
+      ],
+      labels: ["冇 っ", "有 っ"],
+      pairs: [
+        [
+          { word: "きて", romaji: "kite", meaning: "嚟（來）" },
+          { word: "きって", romaji: "kitte", meaning: "郵票" },
+        ],
+        [
+          { word: "さか", romaji: "saka", meaning: "斜路" },
+          { word: "さっか", romaji: "sakka", meaning: "作家" },
+        ],
+        [
+          { word: "おと", romaji: "oto", meaning: "聲音" },
+          { word: "おっと", romaji: "otto", meaning: "老公（丈夫）" },
+        ],
+        [
+          { word: "かこ", romaji: "kako", meaning: "過去" },
+          { word: "かっこ", romaji: "kakko", meaning: "括號" },
+        ],
+      ],
+      words: [
+        { word: "きっぷ", romaji: "kippu", meaning: "車飛" },
+        { word: "ちょっと", romaji: "chotto", meaning: "少少、等一陣" },
+        { word: "チケット", romaji: "chiketto", meaning: "飛（門票）" },
+        { word: "ロッカー", romaji: "rokkaa", meaning: "儲物櫃" },
+      ],
+    },
+    {
+      key: "chouon",
+      title: "長音",
+      intro: [
+        "あ段＋あ、い段＋い、う段＋う：拉長一拍。",
+        "え段＋い：多數讀成長嘅「え」，例如 せんせい 讀 see。",
+        "お段＋う：讀成長嘅「お」，例如 ありがとう 嘅「とう」讀 too。",
+        "片假名用「ー」表示拉長。",
+      ],
+      labels: ["短", "長"],
+      pairs: [
+        [
+          { word: "おばさん", romaji: "obasan", meaning: "阿姨（中年女士）" },
+          { word: "おばあさん", romaji: "obaasan", meaning: "婆婆（老婆婆）" },
+        ],
+        [
+          { word: "おじさん", romaji: "ojisan", meaning: "叔叔（中年男士）" },
+          { word: "おじいさん", romaji: "ojiisan", meaning: "伯伯（老伯伯）" },
+        ],
+        [
+          { word: "ゆき", romaji: "yuki", meaning: "雪" },
+          { word: "ゆうき", romaji: "yuuki", meaning: "勇氣" },
+        ],
+        [
+          { word: "え", romaji: "e", meaning: "畫" },
+          { word: "ええ", romaji: "ee", meaning: "係呀" },
+        ],
+        [
+          { word: "ビル", romaji: "biru", meaning: "大廈" },
+          { word: "ビール", romaji: "biiru", meaning: "啤酒" },
+        ],
+      ],
+      words: [
+        { word: "おかあさん", romaji: "okaasan", meaning: "媽媽" },
+        { word: "おとうさん", romaji: "otousan", meaning: "爸爸" },
+        { word: "せんせい", romaji: "sensei", meaning: "老師" },
+        { word: "ありがとう", romaji: "arigatou", meaning: "多謝" },
+      ],
+    },
+  ];
+
+  // 片假名真實例子 — the first 23 use only 1a kana; the rest (stage 1b)
+  // need 拗音／っ／ー／外來語組合. Each checked: katakana ↔ romaji ↔ meaning.
   const KATAKANA_EXAMPLES = [
     { word: "ホテル", romaji: "hoteru", meaning: "酒店", scene: "酒店" },
     { word: "フロント", romaji: "furonto", meaning: "酒店前台／接待處", scene: "酒店" },
@@ -183,9 +360,48 @@ window.App.Content = window.App.Content || {};
     { word: "トマト", romaji: "tomato", meaning: "番茄", scene: "超市" },
     { word: "メロン", romaji: "meron", meaning: "蜜瓜", scene: "超市" },
     { word: "レモン", romaji: "remon", meaning: "檸檬", scene: "超市" },
+
+    // stage 1b — words needing 拗音／っ／ー／外來語組合
+    { word: "メニュー", romaji: "menyuu", meaning: "餐牌", scene: "餐廳" },
+    { word: "コーヒー", romaji: "koohii", meaning: "咖啡", scene: "餐廳" },
+    { word: "アイスコーヒー", romaji: "aisukoohii", meaning: "凍咖啡", scene: "餐廳" },
+    { word: "ホットコーヒー", romaji: "hottokoohii", meaning: "熱咖啡", scene: "餐廳" },
+    { word: "ビール", romaji: "biiru", meaning: "啤酒", scene: "餐廳" },
+    { word: "ジュース", romaji: "juusu", meaning: "果汁、甜飲品", scene: "餐廳" },
+    { word: "ラーメン", romaji: "raamen", meaning: "拉麵", scene: "餐廳" },
+    { word: "カレー", romaji: "karee", meaning: "咖喱", scene: "餐廳" },
+    { word: "ステーキ", romaji: "suteeki", meaning: "牛扒", scene: "餐廳" },
+    { word: "ケーキ", romaji: "keeki", meaning: "蛋糕", scene: "餐廳" },
+    { word: "チョコレート", romaji: "chokoreeto", meaning: "朱古力", scene: "餐廳" },
+    { word: "カフェ", romaji: "kafe", meaning: "咖啡店", scene: "餐廳" },
+    { word: "フォーク", romaji: "fooku", meaning: "叉", scene: "餐廳" },
+    { word: "ティッシュ", romaji: "tisshu", meaning: "紙巾", scene: "餐廳" },
+    { word: "ミネラルウォーター", romaji: "mineraruwootaa", meaning: "礦泉水", scene: "餐廳" },
+    { word: "ファストフード", romaji: "fasutofuudo", meaning: "快餐", scene: "餐廳" },
+    { word: "チェックイン", romaji: "chekkuin", meaning: "辦理入住", scene: "酒店" },
+    { word: "チェックアウト", romaji: "chekkuauto", meaning: "退房", scene: "酒店" },
+    { word: "ロビー", romaji: "robii", meaning: "大堂", scene: "酒店" },
+    { word: "シャワー", romaji: "shawaa", meaning: "花灑、沖涼", scene: "酒店" },
+    { word: "エレベーター", romaji: "erebeetaa", meaning: "升降機（𨋢）", scene: "酒店" },
+    { word: "ワイファイ", romaji: "waifai", meaning: "Wi-Fi", scene: "酒店" },
+    { word: "タクシー", romaji: "takushii", meaning: "的士", scene: "交通" },
+    { word: "チケット", romaji: "chiketto", meaning: "飛（車飛、門票）", scene: "交通" },
+    { word: "ホーム", romaji: "hoomu", meaning: "月台（車站）", scene: "交通" },
+    { word: "コインロッカー", romaji: "koinrokkaa", meaning: "投幣儲物櫃", scene: "交通" },
+    { word: "キャンセル", romaji: "kyanseru", meaning: "取消", scene: "交通" },
+    { word: "スーパー", romaji: "suupaa", meaning: "超級市場", scene: "購物" },
+    { word: "デパート", romaji: "depaato", meaning: "百貨公司", scene: "購物" },
+    { word: "エスカレーター", romaji: "esukareetaa", meaning: "扶手電梯", scene: "購物" },
+    { word: "レシート", romaji: "reshiito", meaning: "收據", scene: "購物" },
+    { word: "クレジットカード", romaji: "kurejittokaado", meaning: "信用卡", scene: "購物" },
+    { word: "セール", romaji: "seeru", meaning: "減價", scene: "購物" },
+    { word: "ディズニーランド", romaji: "dizuniirando", meaning: "迪士尼樂園", scene: "景點" },
+    { word: "ジェットコースター", romaji: "jettokoosutaa", meaning: "過山車", scene: "景點" },
   ];
 
   window.App.Content.KANA = KANA;
+  window.App.Content.KANA_TOTAL = KANA_TOTAL;
+  window.App.Content.SOUND_TOPICS = SOUND_TOPICS;
   window.App.Content.KANA_ROWS = ROWS;
   window.App.Content.KANA_GROUPS = GROUPS;
   window.App.Content.KATAKANA_EXAMPLES = KATAKANA_EXAMPLES;
