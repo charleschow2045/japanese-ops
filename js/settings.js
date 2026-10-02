@@ -52,17 +52,27 @@ window.App = window.App || {};
                 "div",
                 { class: "wrap mb-2", style: { gap: "8px" } },
                 voices.map((v) =>
-                  chip(cleanVoiceName(v.name), currentVoice === v.voiceURI, () => {
+                  chip(`${cleanVoiceName(v.name)}${v.localService ? "　📴 離線可用" : ""}`, currentVoice === v.voiceURI, () => {
                     ctx.onChange({ voiceURI: v.voiceURI });
                     speak("こんにちは", { ...settings, voiceURI: v.voiceURI });
                   })
                 )
               ),
+          voices.length > 0 &&
+            h(
+              "p",
+              { class: "xs muted mb-2" },
+              voices.some((v) => v.localService)
+                ? "標有「📴 離線可用」嘅語音係裝喺手機入面，冇網絡都可以發音。去旅行前建議揀返呢類語音。"
+                : "呢部裝置嘅日文語音冇標明離線可用，冇網絡時可能冇聲。可以開飛行模式試一試。"
+            ),
           h("p", { class: "small muted mb-1 mt-3" }, "⏱️ 速度"),
           h("div", { class: "chips-fill" }, RATES.map((r) => chip(r.label, settings.rate === r.rate, () => ctx.onChange({ rate: r.rate })))),
           inkButton(["🔊 試聽：", h("span", { lang: "ja", class: "jp" }, "あいうえお")], () => speak("あいうえお", settings), { class: "w-full mt-4" }),
         ]
       ),
+
+      installSection(),
 
       section(
         "進度",
@@ -109,7 +119,30 @@ window.App = window.App || {};
             )
       ),
 
-      h("p", { class: "xs muted center", style: { paddingBottom: "8px" } }, "Japanese Ops · 階段 2")
+      h(
+        "p",
+        { class: "xs muted center", style: { paddingBottom: "8px" } },
+        `Japanese Ops · 階段 3${window.App.appVersion ? ` · 版本 ${window.App.appVersion}` : ""}`
+      )
+    );
+  }
+
+  // 加入主畫面 guide (stage 3). Standalone = opened from the home screen.
+  function installSection() {
+    const standalone =
+      (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) || window.navigator.standalone === true;
+    return section(
+      "加入主畫面",
+      standalone
+        ? h("p", { class: "small mb-2", style: { color: "var(--good)" } }, "✅ 你而家用緊主畫面版本，冇網絡都用得。")
+        : h("p", { class: "small muted mb-2" }, "加入主畫面之後，好似獨立 App 咁打開，冇網絡都用得。"),
+      h(
+        "ul",
+        { class: "rules" },
+        h("li", null, "iPhone：用 Safari 打開 → 撳底部「分享」⬆️ → 「加入主畫面」"),
+        h("li", null, "Android：用 Chrome 打開 → 撳右上角 ⋮ → 「安裝應用程式」或者「加到主畫面」")
+      ),
+      h("p", { class: "note gold mt-3" }, "💡 建議固定從主畫面打開，進度才不會分散，資料也較不易被系統清除。")
     );
   }
 

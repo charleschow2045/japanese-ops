@@ -14,6 +14,41 @@ window.App = window.App || {};
       .filter((v) => v.lang && v.lang.replace("_", "-").toLowerCase().startsWith("ja"));
   }
 
+  // The voice speak() will actually use: the user's pick, else the first
+  // Japanese voice, else undefined (browser default).
+  function chosenVoice(settings = {}) {
+    const voices = getJaVoices();
+    return (settings.voiceURI && voices.find((v) => v.voiceURI === settings.voiceURI)) || voices[0];
+  }
+
+  // Short message at the bottom of the screen (stage 3: speech failures).
+  let toastTimer = null;
+  function toast(msg) {
+    const el = document.getElementById("toast");
+    if (!el) return;
+    el.textContent = msg;
+    el.hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => (el.hidden = true), 4000);
+  }
+
+  function makeUtterance(text, settings, voice) {
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.lang = "ja-JP";
+    utter.rate = settings.rate || 0.8;
+    if (voice) utter.voice = voice;
+    // "interrupted"/"canceled" just mean we started another sound.
+    utter.onerror = (e) => {
+      if (e.error === "interrupted" || e.error === "canceled") return;
+      toast(
+        window.App.isOffline
+          ? "📴 發音失敗：呢個語音可能要上網。請去「設定」揀標有「📴 離線可用」嘅語音。"
+          : "🔈 發音失敗，請再試，或者去「設定」揀第二個語音。"
+      );
+    };
+    return utter;
+  }
+
   // `settings` is state.settings ({ voiceURI, rate }). Falls back to the
   // first Japanese voice, and always sets lang so browsers without a
   // listed voice still try a Japanese one. Call from a tap handler —
@@ -22,13 +57,7 @@ window.App = window.App || {};
     if (!isTTSSupported() || !text) return false;
     const synth = window.speechSynthesis;
     synth.cancel();
-    const utter = new SpeechSynthesisUtterance(text);
-    utter.lang = "ja-JP";
-    utter.rate = settings.rate || 0.8;
-    const voices = getJaVoices();
-    const chosen = (settings.voiceURI && voices.find((v) => v.voiceURI === settings.voiceURI)) || voices[0];
-    if (chosen) utter.voice = chosen;
-    synth.speak(utter);
+    synth.speak(makeUtterance(text, settings, chosenVoice(settings)));
     return true;
   }
 
@@ -39,15 +68,8 @@ window.App = window.App || {};
     if (!isTTSSupported() || !texts.length) return false;
     const synth = window.speechSynthesis;
     synth.cancel();
-    const voices = getJaVoices();
-    const chosen = (settings.voiceURI && voices.find((v) => v.voiceURI === settings.voiceURI)) || voices[0];
-    texts.forEach((text) => {
-      const utter = new SpeechSynthesisUtterance(text);
-      utter.lang = "ja-JP";
-      utter.rate = settings.rate || 0.8;
-      if (chosen) utter.voice = chosen;
-      synth.speak(utter);
-    });
+    const voice = chosenVoice(settings);
+    texts.forEach((text) => synth.speak(makeUtterance(text, settings, voice)));
     return true;
   }
 
@@ -69,11 +91,28 @@ window.App = window.App || {};
   }
 
   // Clear notice shown wherever audio matters; null when a Japanese
-  // voice is available.
+  // voice is available (and, when offline, usable without internet).
+  // `localService === false` means the browser says the voice runs on a
+  // server — not every phone reports this accurately, so the wording is
+  // "may".
   function speechNotice() {
     const { h } = window.App.UI;
     const supported = isTTSSupported();
-    if (supported && getJaVoices().length > 0) return null;
+    const voices = getJaVoices();
+    if (supported && voices.length > 0) {
+      if (!window.App.isOffline) return null;
+      const settings = (window.App.currentSettings && window.App.currentSettings()) || {};
+      const voice = chosenVoice(settings);
+      if (!voice || voice.localService !== false) return null;
+      const hasLocal = voices.some((v) => v.localService);
+      return h(
+        "div",
+        { class: "notice" },
+        hasLocal
+          ? `📴 而家冇網絡，而你揀緊嘅語音（${voice.name}）要上網先用到，可能會冇聲。請去「設定」揀標有「📴 離線可用」嘅語音。`
+          : "📴 而家冇網絡，呢部裝置嘅日文語音要上網先用到，發音可能會冇聲。其他功能照常用得。"
+      );
+    }
     return h(
       "div",
       { class: "notice" },
@@ -83,5 +122,5 @@ window.App = window.App || {};
     );
   }
 
-  window.App.Speech = { isTTSSupported, getJaVoices, speak, speakSequence, onVoicesChanged, speechNotice };
+  window.App.Speech = { isTTSSupported, getJaVoices, chosenVoice, speak, speakSequence, onVoicesChanged, speechNotice, toast };
 })();

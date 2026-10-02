@@ -112,6 +112,9 @@ window.App = window.App || {};
   }
 
   App.render = render;
+  // Read-only view of current settings for js/speech.js's notice (which
+  // voice is chosen matters when offline).
+  App.currentSettings = () => state.settings;
   Speech.onVoicesChanged(() => render());
   render();
 })();

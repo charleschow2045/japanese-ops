@@ -14,6 +14,26 @@
   - 結構：`index.html`、`css/app.css`、`js/*.js`（普通 `<script>` 按次序載入，全部掛喺 `window.App`）、
     `fonts/`（自己 host 嘅字體）；所有路徑用相對路徑
   - 畫面做法：`js/ui.js` 嘅 `h()` 用嚟砌 DOM；state 一變就成個畫面重新 render（`App.render()`）
+- **離線 PWA（階段 3 起）**：`sw.js` + `manifest.webmanifest` + `js/pwa.js` + `icons/`
+  - ⚠️ **每次發佈新版本（任何 app 檔案有改）都要改 `sw.js` 嘅 `VERSION`**（格式 `YYYY-MM-DD` + 字母，例如
+    `2026-10-03a`、同日第二次 `2026-10-03b`）。唔改嘅話手機會一直用舊版
+  - ⚠️ **加／刪 app 檔案要同步改 `sw.js` 嘅 `FILES`**。發佈前喺 `japanese-ops/` 跑呢句檢查，冇輸出先算啱：
+    `comm -3 <(grep -oE '"\./[^"]+"' sw.js | tr -d '"' | sed 's#^\./##' | sort -u) <(find . -type f -not -path './.git/*' | sed 's#^\./##' | grep -vE '^(CLAUDE\.md|sw\.js|fonts/.*\.txt)$' | sort -u)`
+  - **同 English Ops／Chinese Ops 隔離**（三個 app 同一個網域 charleschow2045.github.io）：
+    `sw.js` 放喺 `/japanese-ops/`，登記時 `scope: "./"`，瀏覽器限制佢只管 `/japanese-ops/`；
+    Cache Storage 係成個網域共用，所以 cache 名一律 `japanese-ops-` 開頭，清舊版只刪呢個開頭嘅；
+    localStorage key `japaneseOps:v1` 本身已經獨立。**唔好改呢三樣**
+  - 更新流程：打開 app／切返嚟 app 時 `reg.update()`（`updateViaCache: "none"`，唔受 GitHub 10 分鐘快取影響）→
+    新版喺背景下載好 → 底部顯示「🆕 有新版本 [撳一下更新]」→ 撳先 `SKIP_WAITING` + 重新載入。
+    **刻意唔自動重載**，以免打斷練習
+  - 離線策略：cache first（所有 `FILES` 預先存）；導航一律用 cache 嘅 `index.html`；scope 內未存嘅檔案用過就存
+  - 發音離線：靠裝置語音引擎。`SpeechSynthesisVoice.localService` 為 true 嘅語音喺設定標「📴 離線可用」；
+    離線而揀咗要上網嘅語音 → `speechNotice()` 提示；發音出錯 → 底部 toast（`App.Speech.toast`）。
+    `localService` 唔係每部手機都準，最終以飛行模式實測為準
+  - 主畫面：`name` = Japanese Ops；`short_name` 同 iPhone `apple-mobile-web-app-title` = 日文 Ops；
+    `display: standalone`；圖示 = 印章紅 #A83A3A 底 + 米色 #EFE6D3「あ」（Yu Gothic Bold，PowerShell
+    System.Drawing 產生；maskable 版字細啲，留 Android 裁切位）
+  - iPhone：主畫面版同 Safari 版嘅 localStorage 係分開嘅（iOS 規定）→ 設定頁建議固定用主畫面版
 - 部署於 GitHub Pages（repo：japanese-ops），日後可能搬到自購網站，所以不要依賴 GitHub 專屬功能
 - **手機優先設計**：主要在手機上使用（包括旅行途中），按鈕要夠大，單手可操作
 - **導航：底部 tab 列**（主頁／設定），固定喺畫面底部，照顧 iPhone safe-area
@@ -169,6 +189,16 @@
   - 已自動測試：63 句嘅拼音由假名推算得返（は 可以係 wa、を = o）、日文句入面嘅假名同讀音一致、id 唔重複、
     句數、篩選數目、🔊／🐢／連續聽讀嘅文字同速度、`say` 修正生效但畫面照顯示原句、拼音開關、五十音冇受影響
   - **下一步**：用戶會用手機逐句聽，讀錯嘅句加 `say`；之後按計劃係階段 3（離線 PWA）
+- **階段 3 — 完成（2026-10-03）**：離線 PWA（版本 `2026-10-03a`），做法同規則見上面「技術規格 → 離線 PWA」
+  - 新檔案：`sw.js`、`manifest.webmanifest`、`js/pwa.js`、`icons/`（icon-192、icon-512、icon-maskable-512、
+    apple-touch-icon 180、favicon-32）
+  - 改動：`index.html`（manifest、圖示、`apple-mobile-web-app-title` 改「日文 Ops」、`#offline-badge`、
+    `#update-banner`、`#toast`、載入 `pwa.js`）；`js/speech.js`（`chosenVoice()`、發音出錯 toast、離線語音提示）；
+    `js/settings.js`（語音標「📴 離線可用」、「加入主畫面」教學、頁尾顯示版本）；`js/app.js`（`App.currentSettings()`）
+  - 已測試（本機）：24 個檔案全部預存；**關咗本機伺服器之後重新載入，成個 app 照用得**（字表、清濁對比、
+    促音長音、句子庫、設定、字體）；模擬新版本 → 出「有新版本」→ 撳之後變新版、舊 cache 刪除、
+    **另一個 app 嘅 cache（english-ops-fake）冇被刪**；離線標記；離線＋要上網語音嘅提示；發音出錯 toast
+  - 未能喺電腦測試、要用戶手機確認：iPhone／Android 加入主畫面、飛行模式下開 app 同發音
 
 ## 待確認內容
 - **濁音（が／ざ／だ／ば 行）嘅廣東話近似讀音**：暫時全部顯示「冇對應」。可以用廣東話不送氣音做近似
