@@ -9,7 +9,7 @@ window.App = window.App || {};
   const MODULES = [
     { key: "kana", label: "五十音", sub: "平假名・片假名", emoji: "あ", implemented: true },
     { key: "phrases", label: "情境句子庫", sub: "7 個旅行情境：餐廳、交通、酒店…", emoji: "💬", implemented: true },
-    { key: "listening", label: "聽力練習", sub: "聽句子揀意思", emoji: "🎧", implemented: false },
+    { key: "listening", label: "聽力練習", sub: "聽句子揀意思・錯題重溫", emoji: "🎧", implemented: true },
     { key: "speaking", label: "口語練習", sub: "讀出嚟，語音辨識", emoji: "🎤", implemented: false },
     { key: "reading", label: "看得明", sub: "餐牌、商品、車站", emoji: "🪧", implemented: false },
     { key: "dialogue", label: "情境對話", sub: "同店員一問一答", emoji: "🛎️", implemented: false },
@@ -34,10 +34,58 @@ window.App = window.App || {};
     };
   }
 
+  // listen (stage 5 聽力練習):
+  //   prefs: scenes picked, staffOnly (只練店員講), count (5/10/20)
+  //   stats: { [sentence id]: { c, w, last } }
+  function defaultListen() {
+    return {
+      prefs: { scenes: ["polite", "restaurant", "shopping", "transport", "hotel", "directions", "emergency"], staffOnly: false, count: 10 },
+      stats: {},
+    };
+  }
+
   // flags: 句子庫 sentence ids the user marked 🚩 讀錯 (pronunciation is
   // wrong on their phone) — listed in 設定 so they can copy and send them.
+  // review (stage 5 錯題重溫, spaced repetition): items keyed
+  //   "p:<sentence id>" or "k:<kana char>" → { box, due }
+  //   box = correct review answers in a row (0–4); due = local date
+  //   "YYYY-MM-DD" when it is next asked. See REVIEW_INTERVALS.
   function defaultState() {
-    return { settings: defaultSettings(), kana: defaultKana(), flags: [] };
+    return { settings: defaultSettings(), kana: defaultKana(), flags: [], listen: defaultListen(), review: { items: {} } };
+  }
+
+  // ── local dates (phone's own calendar day — never UTC) ──
+  function pad(n) {
+    return String(n).padStart(2, "0");
+  }
+  function formatLocal(d) {
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  }
+  function todayLocal() {
+    return formatLocal(new Date());
+  }
+  function addDaysLocal(dateStr, n) {
+    const [y, m, d] = dateStr.split("-").map(Number);
+    return formatLocal(new Date(y, m - 1, d + n)); // local-time constructor handles month ends
+  }
+
+  // ── 錯題重溫 schedule ──
+  // Wrong (anywhere) → box 0, due today. Correct IN REVIEW → next box:
+  // 1st correct → 1 day, 2nd → 3, 3rd → 7, 4th → 14, 5th → 畢業 (removed).
+  const REVIEW_INTERVALS = [1, 3, 7, 14];
+
+  function reviewWrong(state, key) {
+    return { ...state, review: { items: { ...state.review.items, [key]: { box: 0, due: todayLocal() } } } };
+  }
+
+  function reviewCorrect(state, key) {
+    const item = state.review.items[key];
+    if (!item) return state;
+    const items = { ...state.review.items };
+    const box = item.box + 1;
+    if (box > REVIEW_INTERVALS.length) delete items[key];
+    else items[key] = { box, due: addDaysLocal(todayLocal(), REVIEW_INTERVALS[box - 1]) };
+    return { ...state, review: { items } };
   }
 
   // Merges a saved state onto the defaults so saves from older versions
@@ -55,12 +103,26 @@ window.App = window.App || {};
       if (!Array.isArray(kana.mistakes)) kana.mistakes = [];
       if (!Array.isArray(kana.prefs.rows)) kana.prefs.rows = base.kana.prefs.rows;
       if (!Array.isArray(kana.prefs.contrastRows)) kana.prefs.contrastRows = base.kana.prefs.contrastRows;
+      const listen = { ...base.listen, ...(parsed.listen || {}) };
+      listen.prefs = { ...base.listen.prefs, ...((parsed.listen && parsed.listen.prefs) || {}) };
+      if (!Array.isArray(listen.prefs.scenes)) listen.prefs.scenes = base.listen.prefs.scenes;
+      if (![5, 10, 20].includes(listen.prefs.count)) listen.prefs.count = 10;
+      if (!listen.stats || typeof listen.stats !== "object") listen.stats = {};
+      let review = parsed.review && parsed.review.items && typeof parsed.review.items === "object" ? parsed.review : null;
+      if (!review) {
+        // First load with stage 5: existing 五十音 red-dot characters
+        // join 錯題重溫, due today.
+        review = { items: {} };
+        kana.mistakes.forEach((ch) => (review.items[`k:${ch}`] = { box: 0, due: todayLocal() }));
+      }
       return {
         ...base,
         ...parsed,
         settings: { ...base.settings, ...(parsed.settings || {}) },
         kana,
         flags: Array.isArray(parsed.flags) ? parsed.flags : [],
+        listen,
+        review,
       };
     } catch (e) {
       return defaultState();
@@ -90,7 +152,20 @@ window.App = window.App || {};
     };
     const without = state.kana.mistakes.filter((m) => m !== char);
     const mistakes = correct ? without : [...without, char];
-    return { ...state, kana: { ...state.kana, stats, mistakes } };
+    const next = { ...state, kana: { ...state.kana, stats, mistakes } };
+    // Any wrong 五十音 answer (字表練習、清濁對比、重溫) also (re)enters 錯題重溫.
+    return correct ? next : reviewWrong(next, `k:${char}`);
+  }
+
+  // 聽力練習／重溫 answer for a 句子庫 sentence.
+  function recordListenAnswer(state, id, correct) {
+    const prev = state.listen.stats[id] || { c: 0, w: 0, last: null };
+    const stats = {
+      ...state.listen.stats,
+      [id]: { c: prev.c + (correct ? 1 : 0), w: prev.w + (correct ? 0 : 1), last: new Date().toISOString() },
+    };
+    const next = { ...state, listen: { ...state.listen, stats } };
+    return correct ? next : reviewWrong(next, `p:${id}`);
   }
 
   function toggleFlag(state, id) {
@@ -100,6 +175,12 @@ window.App = window.App || {};
 
   window.App.Storage = {
     toggleFlag,
+    recordListenAnswer,
+    reviewWrong,
+    reviewCorrect,
+    todayLocal,
+    addDaysLocal,
+    REVIEW_INTERVALS,
     MODULES,
     loadState,
     saveState,

@@ -36,7 +36,11 @@ window.App = window.App || {};
       h(
         "div",
         { class: "stack-sm" },
-        window.App.Storage.MODULES.map((m) => moduleRow(m, () => onOpenModule(m.key)))
+        window.App.Storage.MODULES.map((m) => {
+          // 聽力練習 row shows today's 錯題重溫 count when there is any.
+          const due = m.key === "listening" ? window.App.Listening.dueCount(state) : 0;
+          return moduleRow(due > 0 ? { ...m, sub: `📝 今日要重溫 ${due} 句` } : m, () => onOpenModule(m.key));
+        })
       )
     );
   }

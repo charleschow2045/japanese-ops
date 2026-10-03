@@ -652,5 +652,5 @@ window.App = window.App || {};
 
   // `helpers` are shared with js/contrast.js (清濁對比) so both screens
   // display romaji / 廣東話近似讀音 / speak buttons identically.
-  window.App.KanaModule = { render, reset, helpers: { shuffle, romajiText, yueLine, speakButton, otherScript, QUIZ_LENGTH } };
+  window.App.KanaModule = { render, reset, helpers: { shuffle, romajiText, yueLine, speakButton, otherScript, pickDistractors, QUIZ_LENGTH } };
 })();

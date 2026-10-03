@@ -4,7 +4,7 @@
 window.App = window.App || {};
 
 (function () {
-  const { Storage, Home, Settings, KanaModule, Phrases, Speech } = window.App;
+  const { Storage, Home, Settings, KanaModule, Phrases, Listening, Speech } = window.App;
   const { h, accentVars } = window.App.UI;
 
   const TABS = [
@@ -29,6 +29,7 @@ window.App = window.App || {};
     nav.view = key;
     if (key === "kana") KanaModule.reset();
     if (key === "phrases") Phrases.reset();
+    if (key === "listening") Listening.reset();
     render({ scrollTop: true });
   }
 
@@ -94,6 +95,31 @@ window.App = window.App || {};
           settings: state.settings,
           flags: state.flags,
           onToggleFlag: (id) => setState((s) => Storage.toggleFlag(s, id)),
+          onBack: () => {
+            nav.view = "home";
+            render({ scrollTop: true });
+          },
+          rerender: render,
+        })
+      );
+    } else if (nav.view === "listening") {
+      content = h(
+        "div",
+        { style: accentVars("listening") },
+        Listening.render({
+          state,
+          onPrefsChange: (patch) => setState((s) => ({ ...s, listen: { ...s.listen, prefs: { ...s.listen.prefs, ...patch } } })),
+          // Wrong answers (re)enter 錯題重溫 inside record*Answer; only a
+          // correct answer DURING 重溫 moves an item to its next interval.
+          onAnswer: (q, correct, mode) =>
+            setState((s) => {
+              if (q.type === "phrase") {
+                const next = Storage.recordListenAnswer(s, q.target.p.id, correct);
+                return correct && mode === "review" ? Storage.reviewCorrect(next, `p:${q.target.p.id}`) : next;
+              }
+              const next = Storage.recordKanaAnswer(s, q.target.char, correct);
+              return correct && mode === "review" ? Storage.reviewCorrect(next, `k:${q.target.char}`) : next;
+            }),
           onBack: () => {
             nav.view = "home";
             render({ scrollTop: true });

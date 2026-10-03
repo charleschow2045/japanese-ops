@@ -540,3 +540,8 @@ p, h1, h2 { margin: 0; }
 .btn-flag:active { transform: translateY(2px); }
 .flag-list { margin: 0; padding-left: 1.25rem; font-size: 0.95rem; font-weight: 700; user-select: text; -webkit-user-select: text; }
 .flag-list li + li { margin-top: 4px; }
+
+/* ── 聽力練習 + 錯題重溫 (js/listening.js) ── */
+.opt.opt-text { min-height: 60px; padding: 10px 14px; font-size: 1.05rem; line-height: 1.35; text-align: left; }
+.review-card { border-color: var(--gold-tint-border); background: var(--gold-tint); }
+.review-count { font-size: 1.5rem; font-weight: 800; color: var(--gold-dark); margin-top: 4px; }
