@@ -503,3 +503,22 @@ p, h1, h2 { margin: 0; }
   border: 1.5px solid var(--gold-tint-border);
   box-shadow: 0 10px 24px -8px rgba(35, 49, 66, 0.35);
 }
+
+/* ── 緊急電話 card (js/phrases.js infoCard) ── */
+.info-card { border-color: var(--stamp-tint-border); background: var(--stamp-tint); }
+.tel-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 56px;
+  padding: 8px 12px;
+  border-radius: 14px;
+  background: var(--paper-card);
+  border: 1.5px solid var(--stamp-tint-border);
+  color: var(--ink);
+  text-decoration: none;
+}
+.tel-row:active { transform: translateY(2px); }
+.tel-label { font-size: 0.85rem; font-weight: 700; line-height: 1.35; }
+.tel-num { flex-shrink: 0; font-size: 1.15rem; font-weight: 800; color: var(--stamp); white-space: nowrap; }

@@ -122,7 +122,7 @@ window.App = window.App || {};
       h(
         "p",
         { class: "xs muted center", style: { paddingBottom: "8px" } },
-        `Japanese Ops · 階段 3${window.App.appVersion ? ` · 版本 ${window.App.appVersion}` : ""}`
+        `Japanese Ops · 階段 4${window.App.appVersion ? ` · 版本 ${window.App.appVersion}` : ""}`
       )
     );
   }

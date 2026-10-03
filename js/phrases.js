@@ -88,6 +88,28 @@ window.App = window.App || {};
     );
   }
 
+  // Info card at the top of a scene (緊急情況: emergency numbers). Each
+  // number is a tel: link, so tapping it opens the phone's dialler.
+  function infoCard(info) {
+    return h(
+      "div",
+      { class: "card info-card mb-4" },
+      h("p", { class: "h-heading mb-2" }, `📞 ${info.title}`),
+      h(
+        "div",
+        { class: "stack-sm" },
+        info.items.map((it) =>
+          h(
+            "a",
+            { class: "tel-row", href: `tel:${it.tel}`, "aria-label": `打電話 ${it.label} ${it.show}` },
+            h("span", { class: "tel-label" }, it.label),
+            h("span", { class: "tel-num" }, `📞 ${it.show}`)
+          )
+        )
+      )
+    );
+  }
+
   // ── screens ──────────────────────────────────────────────────────────
 
   function sceneList(ctx) {
@@ -136,6 +158,7 @@ window.App = window.App || {};
         ui.view = "scenes";
         ctx.rerender({ scrollTop: true });
       }),
+      scene.info && infoCard(scene.info),
       h(
         "div",
         { class: "chips-fill mb-4" },
