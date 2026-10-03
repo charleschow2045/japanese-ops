@@ -72,6 +72,8 @@ window.App = window.App || {};
         ]
       ),
 
+      flagSection(ctx.flags || []),
+
       installSection(),
 
       section(
@@ -124,6 +126,55 @@ window.App = window.App || {};
         { class: "xs muted center", style: { paddingBottom: "8px" } },
         `Japanese Ops · 階段 4${window.App.appVersion ? ` · 版本 ${window.App.appVersion}` : ""}`
       )
+    );
+  }
+
+  // 讀錯句子清單: sentences marked 🚩 in 句子庫, in scene order, with a
+  // 複製清單 button producing text like 「餐廳 2：何名様ですか。」.
+  function flagLines(flags) {
+    const order = window.App.Content.PHRASE_SCENES.map((s) => s.key);
+    return flags
+      .map((id) => window.App.Phrases.locate(id))
+      .filter(Boolean)
+      .sort((a, b) => order.indexOf(a.scene.key) - order.indexOf(b.scene.key) || a.num - b.num)
+      .map((l) => ({ id: l.phrase.id, text: `${l.scene.label} ${l.num}：${l.phrase.ja}` }));
+  }
+
+  function copyText(text) {
+    const done = () => window.App.Speech.toast("✅ 已複製讀錯句子清單，可以貼俾 Claude");
+    const fallback = () => {
+      // Older browsers / non-secure contexts: select a hidden textarea.
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.setAttribute("readonly", "");
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      let ok = false;
+      try {
+        ok = document.execCommand("copy");
+      } catch (e) {}
+      document.body.removeChild(ta);
+      if (ok) done();
+      else window.App.Speech.toast("複製唔到，請長按清單文字自己複製");
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, fallback);
+    else fallback();
+  }
+
+  function flagSection(flags) {
+    const lines = flagLines(flags);
+    const text = ["讀錯句子：", ...lines.map((l) => l.text)].join("\n");
+    return section(
+      "讀錯句子清單",
+      lines.length === 0
+        ? h("p", { class: "small muted" }, "未有標記。喺句子庫聽到讀錯嘅句，撳句子卡上面嘅「🚩 讀錯」就會列喺呢度。")
+        : [
+            h("p", { class: "small muted mb-2" }, `共 ${lines.length} 句。喺句子卡再撳一下「🚩 已標記」可以取消。`),
+            h("ul", { class: "flag-list" }, lines.map((l) => h("li", null, l.text))),
+            inkButton("📋 複製清單", () => copyText(text), { class: "w-full mt-3" }),
+          ]
     );
   }
 

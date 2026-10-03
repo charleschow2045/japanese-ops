@@ -43,13 +43,39 @@ window.App = window.App || {};
 
   // ── one sentence (used for questions and, smaller, for replies) ─────
 
-  function sentence(p, settings, isReply) {
+  // id → { scene, num, phrase }. `num` = position on the scene page, top
+  // to bottom, answers included (the numbering used when reporting 讀錯).
+  let index = null;
+  function locate(id) {
+    if (!index) {
+      index = {};
+      scenes().forEach((s) => {
+        let n = 0;
+        s.phrases.forEach((p) => {
+          index[p.id] = { scene: s, num: ++n, phrase: p };
+          (p.replies || []).forEach((r) => (index[r.id] = { scene: s, num: ++n, phrase: r }));
+        });
+      });
+    }
+    return index[id] || null;
+  }
+
+  // ctx: { settings, flags, onToggleFlag }
+  function sentence(p, ctx, isReply) {
+    const { settings } = ctx;
     const tts = isTTSSupported();
     const showKana = stripPunct(p.kana) !== stripPunct(p.ja);
+    const flagged = ctx.flags.includes(p.id);
+    const loc = locate(p.id);
     return h(
       "div",
       { class: isReply ? "phrase reply" : "phrase" },
-      h("span", { class: `who-tag ${p.who}` }, WHO[p.who]),
+      h(
+        "div",
+        { class: "row-between" },
+        h("span", { class: `who-tag ${p.who}` }, WHO[p.who]),
+        loc && h("span", { class: "phrase-num" }, `#${loc.num}`)
+      ),
       h("p", { lang: "ja", class: "jp phrase-ja" }, p.ja),
       showKana && h("p", { lang: "ja", class: "jp phrase-kana" }, p.kana),
       settings.showRomaji && h("p", { class: "phrase-rom" }, p.romaji),
@@ -60,23 +86,33 @@ window.App = window.App || {};
           "div",
           { class: "row-sm mt-2" },
           h("button", { class: "btn-soft grow", onclick: () => speak(sayText(p), settings) }, "🔊 聽"),
-          h("button", { class: "btn-soft grow", onclick: () => speak(sayText(p), { ...settings, rate: SLOW_RATE }) }, "🐢 慢慢聽")
+          h("button", { class: "btn-soft grow", onclick: () => speak(sayText(p), { ...settings, rate: SLOW_RATE }) }, "🐢 慢慢聽"),
+          h(
+            "button",
+            {
+              class: `btn-flag ${flagged ? "on" : ""}`.trim(),
+              "aria-pressed": flagged ? "true" : "false",
+              onclick: () => ctx.onToggleFlag(p.id),
+            },
+            flagged ? "🚩 已標記" : "🚩 讀錯"
+          )
         )
     );
   }
 
-  function phraseCard(p, settings) {
+  function phraseCard(p, ctx) {
+    const { settings } = ctx;
     const replies = p.replies || [];
     return h(
       "div",
       { class: "card accent phrase-card" },
-      sentence(p, settings, false),
+      sentence(p, ctx, false),
       replies.length > 0 &&
         h(
           "div",
           { class: "replies" },
           h("p", { class: "caption mb-1" }, replies.length > 1 ? "可以咁答（揀一句）" : "可以咁答"),
-          replies.map((r) => sentence(r, settings, true))
+          replies.map((r) => sentence(r, ctx, true))
         ),
       replies.length > 0 &&
         isTTSSupported() &&
@@ -147,7 +183,6 @@ window.App = window.App || {};
   }
 
   function scenePage(ctx) {
-    const { settings } = ctx;
     const scene = scenes().find((s) => s.key === ui.scene);
     // A 問答組合 is shown whenever the question or any reply matches.
     const shown = scene.phrases.filter((p) => matches(p, ui.filter) || (p.replies || []).some((r) => matches(r, ui.filter)));
@@ -169,16 +204,16 @@ window.App = window.App || {};
           })
         )
       ),
-      h("div", { class: "stack" }, shown.map((p) => phraseCard(p, settings)))
+      h("div", { class: "stack" }, shown.map((p) => phraseCard(p, ctx)))
     );
   }
 
-  // ctx: { settings, onBack, rerender }
+  // ctx: { settings, flags, onToggleFlag, onBack, rerender }
   function render(ctx) {
     if (ui.view === "scene" && ui.scene) return scenePage(ctx);
     ui.view = "scenes";
     return sceneList(ctx);
   }
 
-  window.App.Phrases = { render, reset, countOf };
+  window.App.Phrases = { render, reset, countOf, locate };
 })();

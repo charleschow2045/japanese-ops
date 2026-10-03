@@ -34,8 +34,10 @@ window.App = window.App || {};
     };
   }
 
+  // flags: 句子庫 sentence ids the user marked 🚩 讀錯 (pronunciation is
+  // wrong on their phone) — listed in 設定 so they can copy and send them.
   function defaultState() {
-    return { settings: defaultSettings(), kana: defaultKana() };
+    return { settings: defaultSettings(), kana: defaultKana(), flags: [] };
   }
 
   // Merges a saved state onto the defaults so saves from older versions
@@ -58,6 +60,7 @@ window.App = window.App || {};
         ...parsed,
         settings: { ...base.settings, ...(parsed.settings || {}) },
         kana,
+        flags: Array.isArray(parsed.flags) ? parsed.flags : [],
       };
     } catch (e) {
       return defaultState();
@@ -90,7 +93,13 @@ window.App = window.App || {};
     return { ...state, kana: { ...state.kana, stats, mistakes } };
   }
 
+  function toggleFlag(state, id) {
+    const flags = state.flags.includes(id) ? state.flags.filter((f) => f !== id) : [...state.flags, id];
+    return { ...state, flags };
+  }
+
   window.App.Storage = {
+    toggleFlag,
     MODULES,
     loadState,
     saveState,

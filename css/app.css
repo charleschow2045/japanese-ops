@@ -522,3 +522,21 @@ p, h1, h2 { margin: 0; }
 .tel-row:active { transform: translateY(2px); }
 .tel-label { font-size: 0.85rem; font-weight: 700; line-height: 1.35; }
 .tel-num { flex-shrink: 0; font-size: 1.15rem; font-weight: 800; color: var(--stamp); white-space: nowrap; }
+
+/* ── 🚩 讀錯 標記 (js/phrases.js) + 讀錯句子清單 (js/settings.js) ── */
+.phrase-num { font-size: 0.75rem; font-weight: 700; color: var(--muted); }
+.btn-flag {
+  flex-shrink: 0;
+  min-height: 48px;
+  padding: 0 12px;
+  border-radius: 16px;
+  font-size: 0.85rem;
+  font-weight: 800;
+  background: var(--paper);
+  color: var(--muted);
+  border: 1.5px dashed var(--border);
+}
+.btn-flag.on { background: var(--stamp-tint); color: var(--stamp-dark); border: 1.5px solid var(--stamp); }
+.btn-flag:active { transform: translateY(2px); }
+.flag-list { margin: 0; padding-left: 1.25rem; font-size: 0.95rem; font-weight: 700; user-select: text; -webkit-user-select: text; }
+.flag-list li + li { margin-top: 4px; }

@@ -64,6 +64,7 @@ window.App = window.App || {};
     if (nav.tab === "settings") {
       content = Settings.render({
         settings: state.settings,
+        flags: state.flags,
         onChange: (patch) => setState((s) => ({ ...s, settings: { ...s.settings, ...patch } })),
         onReset: () => {
           state = Storage.clearState();
@@ -91,6 +92,8 @@ window.App = window.App || {};
         { style: accentVars("phrases") },
         Phrases.render({
           settings: state.settings,
+          flags: state.flags,
+          onToggleFlag: (id) => setState((s) => Storage.toggleFlag(s, id)),
           onBack: () => {
             nav.view = "home";
             render({ scrollTop: true });
