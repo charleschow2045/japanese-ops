@@ -4,7 +4,7 @@
 window.App = window.App || {};
 
 (function () {
-  const { Storage, Home, Settings, KanaModule, Phrases, Listening, Speech } = window.App;
+  const { Storage, Home, Settings, KanaModule, Phrases, Listening, Speaking, Speech } = window.App;
   const { h, accentVars } = window.App.UI;
 
   const TABS = [
@@ -30,6 +30,7 @@ window.App = window.App || {};
     if (key === "kana") KanaModule.reset();
     if (key === "phrases") Phrases.reset();
     if (key === "listening") Listening.reset();
+    if (key === "speaking") Speaking.reset();
     render({ scrollTop: true });
   }
 
@@ -121,6 +122,28 @@ window.App = window.App || {};
               return correct && mode === "review" ? Storage.reviewCorrect(next, `k:${q.target.char}`) : next;
             }),
           onBack: () => {
+            nav.view = "home";
+            render({ scrollTop: true });
+          },
+          rerender: render,
+        })
+      );
+    } else if (nav.view === "speaking") {
+      content = h(
+        "div",
+        { style: accentVars("speaking") },
+        Speaking.render({
+          state,
+          onPrefsChange: (patch) => setState((s) => ({ ...s, speak: { ...s.speak, prefs: { ...s.speak.prefs, ...patch } } })),
+          // First attempt of a question (review: only a correct answer moves
+          // the item on; a wrong one — here or in practice — (re)enters 重溫).
+          onAnswer: (item, correct, kind) =>
+            setState((s) => {
+              const next = Storage.recordSpeakAnswer(s, item.p.id, correct);
+              return correct && kind === "review" ? Storage.reviewCorrect(next, `s:${item.p.id}`) : next;
+            }),
+          onBack: () => {
+            Speaking.reset();
             nav.view = "home";
             render({ scrollTop: true });
           },

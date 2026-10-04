@@ -10,7 +10,7 @@ window.App = window.App || {};
     { key: "kana", label: "五十音", sub: "平假名・片假名", emoji: "あ", implemented: true },
     { key: "phrases", label: "情境句子庫", sub: "7 個旅行情境：餐廳、交通、酒店…", emoji: "💬", implemented: true },
     { key: "listening", label: "聽力練習", sub: "聽句子揀意思・錯題重溫", emoji: "🎧", implemented: true },
-    { key: "speaking", label: "口語練習", sub: "讀出嚟，語音辨識", emoji: "🎤", implemented: false },
+    { key: "speaking", label: "口語練習", sub: "睇意思讀日文・語音辨識／鍵盤聽寫", emoji: "🎤", implemented: true },
     { key: "reading", label: "看得明", sub: "餐牌、商品、車站", emoji: "🪧", implemented: false },
     { key: "dialogue", label: "情境對話", sub: "同店員一問一答", emoji: "🛎️", implemented: false },
     { key: "daily", label: "每日任務及進度", sub: "每日 15–20 分鐘", emoji: "📅", implemented: false },
@@ -44,14 +44,25 @@ window.App = window.App || {};
     };
   }
 
+  // speak (stage 6 口語練習):
+  //   prefs: scenes picked, count (5/10/20), mode "voice" | "dictation" | "self"
+  //   stats: { [sentence id]: { c, w, last } } — first attempt per question only
+  function defaultSpeak() {
+    return {
+      prefs: { scenes: ["polite", "restaurant", "shopping", "transport", "hotel", "directions", "emergency"], count: 10, mode: "voice" },
+      stats: {},
+    };
+  }
+
   // flags: 句子庫 sentence ids the user marked 🚩 讀錯 (pronunciation is
   // wrong on their phone) — listed in 設定 so they can copy and send them.
   // review (stage 5 錯題重溫, spaced repetition): items keyed
-  //   "p:<sentence id>" or "k:<kana char>" → { box, due }
+  //   "p:<sentence id>" (聽力), "s:<sentence id>" (口語, stage 6) or
+  //   "k:<kana char>" → { box, due }
   //   box = correct review answers in a row (0–4); due = local date
   //   "YYYY-MM-DD" when it is next asked. See REVIEW_INTERVALS.
   function defaultState() {
-    return { settings: defaultSettings(), kana: defaultKana(), flags: [], listen: defaultListen(), review: { items: {} } };
+    return { settings: defaultSettings(), kana: defaultKana(), flags: [], listen: defaultListen(), speak: defaultSpeak(), review: { items: {} } };
   }
 
   // ── local dates (phone's own calendar day — never UTC) ──
@@ -108,7 +119,13 @@ window.App = window.App || {};
       if (!Array.isArray(listen.prefs.scenes)) listen.prefs.scenes = base.listen.prefs.scenes;
       if (![5, 10, 20].includes(listen.prefs.count)) listen.prefs.count = 10;
       if (!listen.stats || typeof listen.stats !== "object") listen.stats = {};
-      let review = parsed.review && parsed.review.items && typeof parsed.review.items === "object" ? parsed.review : null;
+      const speak = { ...base.speak, ...(parsed.speak || {}) };
+      speak.prefs = { ...base.speak.prefs, ...((parsed.speak && parsed.speak.prefs) || {}) };
+      if (!Array.isArray(speak.prefs.scenes)) speak.prefs.scenes = base.speak.prefs.scenes;
+      if (![5, 10, 20].includes(speak.prefs.count)) speak.prefs.count = 10;
+      if (!["voice", "dictation", "self"].includes(speak.prefs.mode)) speak.prefs.mode = "voice";
+      if (!speak.stats || typeof speak.stats !== "object") speak.stats = {};
+      let review = parsed.review &&parsed.review.items && typeof parsed.review.items === "object" ? parsed.review : null;
       if (!review) {
         // First load with stage 5: existing 五十音 red-dot characters
         // join 錯題重溫, due today.
@@ -122,6 +139,7 @@ window.App = window.App || {};
         kana,
         flags: Array.isArray(parsed.flags) ? parsed.flags : [],
         listen,
+        speak,
         review,
       };
     } catch (e) {
@@ -168,6 +186,18 @@ window.App = window.App || {};
     return correct ? next : reviewWrong(next, `p:${id}`);
   }
 
+  // 口語練習／口語重溫 answer (first attempt of a question). A wrong one
+  // enters 錯題重溫 as "s:<id>" (separate from 聽力 "p:<id>").
+  function recordSpeakAnswer(state, id, correct) {
+    const prev = state.speak.stats[id] || { c: 0, w: 0, last: null };
+    const stats = {
+      ...state.speak.stats,
+      [id]: { c: prev.c + (correct ? 1 : 0), w: prev.w + (correct ? 0 : 1), last: new Date().toISOString() },
+    };
+    const next = { ...state, speak: { ...state.speak, stats } };
+    return correct ? next : reviewWrong(next, `s:${id}`);
+  }
+
   function toggleFlag(state, id) {
     const flags = state.flags.includes(id) ? state.flags.filter((f) => f !== id) : [...state.flags, id];
     return { ...state, flags };
@@ -176,6 +206,7 @@ window.App = window.App || {};
   window.App.Storage = {
     toggleFlag,
     recordListenAnswer,
+    recordSpeakAnswer,
     reviewWrong,
     reviewCorrect,
     todayLocal,
