@@ -80,7 +80,7 @@ window.App = window.App || {};
       null,
       modHeader("促音・長音", back),
       notice && h("div", { class: "mb-4" }, notice),
-      h("p", { class: "small muted mb-4" }, "日文嘅停頓同拉長會改變意思。每組撳「連續聽」比較，或者逐個字撳嚟聽。"),
+      h("p", { class: "small muted mb-4" }, "日文的停頓與長短音會改變詞義。每組可按「連續聽」比較，或逐個詞按一下聆聽。"),
       window.App.Content.SOUND_TOPICS.map((t) =>
         h(
           "div",

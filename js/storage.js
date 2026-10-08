@@ -9,10 +9,10 @@ window.App = window.App || {};
   const MODULES = [
     { key: "kana", label: "五十音", sub: "平假名・片假名", emoji: "あ", implemented: true },
     { key: "phrases", label: "情境句子庫", sub: "7 個旅行情境：餐廳、交通、酒店…", emoji: "💬", implemented: true },
-    { key: "listening", label: "聽力練習", sub: "聽句子揀意思・錯題重溫", emoji: "🎧", implemented: true },
-    { key: "speaking", label: "口語練習", sub: "睇意思讀日文・語音辨識／鍵盤聽寫", emoji: "🎤", implemented: true },
-    { key: "reading", label: "看得明", sub: "餐牌、商品、車站", emoji: "🪧", implemented: false },
-    { key: "dialogue", label: "情境對話", sub: "同店員一問一答", emoji: "🛎️", implemented: false },
+    { key: "listening", label: "聽力練習", sub: "聽句子選意思・錯題重溫", emoji: "🎧", implemented: true },
+    { key: "speaking", label: "口語練習", sub: "看意思讀日文・語音辨識／鍵盤聽寫", emoji: "🎤", implemented: true },
+    { key: "reading", label: "看得懂", sub: "餐牌、商品、車站", emoji: "🪧", implemented: false },
+    { key: "dialogue", label: "情境對話", sub: "與店員一問一答", emoji: "🛎️", implemented: false },
     { key: "daily", label: "每日任務及進度", sub: "每日 15–20 分鐘", emoji: "📅", implemented: false },
   ];
 

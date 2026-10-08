@@ -18,80 +18,80 @@ window.App.Content = window.App.Content || {};
 (function () {
   const K = (hira, kata, romaji, yue, extra = {}) => ({ hira, kata, romaji, yue, ...extra });
 
-  const RA_NOTE = "ら行嘅 r 介乎廣東話 l 同英文 r 之間，舌尖輕輕彈一下";
-  const N_NOTE = "要用鼻音 n，唔好讀成 l";
+  const RA_NOTE = "ら行的 r 介於廣東話的 l 與英文的 r 之間，舌尖輕輕彈一下";
+  const N_NOTE = "要用鼻音 n，不要讀成 l";
   // Same wording as ふ's note — used for ファ／フィ／フェ／フォ (stage 1b).
-  const FU_NOTE = "介乎 f 同 h 之間：上下唇唔掂埋，輕輕吹氣";
+  const FU_NOTE = "介於 f 與 h 之間：上下唇不要碰在一起，輕輕吹氣";
 
   const KANA = {
     // ── 清音 ──
     a: K("あ", "ア", "a", "呀"),
     i: K("い", "イ", "i", "衣"),
-    u: K("う", "ウ", "u", "烏", { note: "嘴唇唔使撮圓，比廣東話「烏」扁啲" }),
+    u: K("う", "ウ", "u", "烏", { note: "嘴唇不必撮圓，比廣東話的「烏」更扁" }),
     e: K("え", "エ", "e", null),
     o: K("お", "オ", "o", "柯"),
 
     ka: K("か", "カ", "ka", "卡"),
     ki: K("き", "キ", "ki", null),
-    ku: K("く", "ク", "ku", "箍", { yueHint: "鐵箍嘅箍" }),
-    ke: K("け", "ケ", "ke", "茄", { yueHint: "番茄嘅茄" }),
+    ku: K("く", "ク", "ku", "箍", { yueHint: "「鐵箍」的「箍」" }),
+    ke: K("け", "ケ", "ke", "茄", { yueHint: "「番茄」的「茄」" }),
     ko: K("こ", "コ", "ko", null),
 
-    sa: K("さ", "サ", "sa", "沙", { hiraNote: "小心同「ち」：さ 下面個彎凸向左，ち 凸向右（似數字 5）" }),
+    sa: K("さ", "サ", "sa", "沙", { hiraNote: "請留意與「ち」的分別：さ 下方的彎向左凸，ち 向右凸（形似數字 5）" }),
     shi: K("し", "シ", "shi", "詩", {
-      kataNote: "小心同「ツ」：シ 兩點喺左邊、打斜排，長筆由左下向右上挑",
+      kataNote: "請留意與「ツ」的分別：シ 兩點在左邊、斜向排列，長筆由左下向右上挑",
     }),
     su: K("す", "ス", "su", null),
     se: K("せ", "セ", "se", "些"),
     so: K("そ", "ソ", "so", "梳", {
-      kataNote: "小心同「ン」：ソ 短筆喺上面、差唔多直落，長筆由右上向左下撇",
+      kataNote: "請留意與「ン」的分別：ソ 短筆在上方、幾乎垂直向下，長筆由右上向左下撇",
     }),
 
     ta: K("た", "タ", "ta", "他"),
-    chi: K("ち", "チ", "chi", "痴", { hiraNote: "小心同「さ」：ち 下面個彎凸向右（似數字 5），さ 凸向左" }),
+    chi: K("ち", "チ", "chi", "痴", { hiraNote: "請留意與「さ」的分別：ち 下方的彎向右凸（形似數字 5），さ 向左凸" }),
     tsu: K("つ", "ツ", "tsu", null, {
-      note: "有啲似英文 cats 尾嗰個 ts 音",
-      kataNote: "小心同「シ」：ツ 兩點喺上面、橫排，長筆由右上向左下撇",
+      note: "近似英文 cats 結尾的 ts 音",
+      kataNote: "請留意與「シ」的分別：ツ 兩點在上方、橫向排列，長筆由右上向左下撇",
     }),
     te: K("て", "テ", "te", null),
     to: K("と", "ト", "to", "拖"),
 
     na: K("な", "ナ", "na", "拿", { note: N_NOTE }),
-    ni: K("に", "ニ", "ni", "呢", { yueHint: "呢個嘅呢", note: N_NOTE }),
-    nu: K("ぬ", "ヌ", "nu", null, { hiraNote: "小心同「め」：ぬ 尾有個小圈，め 冇" }),
-    ne: K("ね", "ネ", "ne", null, { hiraNote: "小心同「れ」「わ」：ね 尾有個小圈" }),
+    ni: K("に", "ニ", "ni", "呢", { yueHint: "「呢個」的「呢」", note: N_NOTE }),
+    nu: K("ぬ", "ヌ", "nu", null, { hiraNote: "請留意與「め」的分別：ぬ 末端有個小圈，め 沒有" }),
+    ne: K("ね", "ネ", "ne", null, { hiraNote: "請留意與「れ」「わ」的分別：ね 末端有個小圈" }),
     no: K("の", "ノ", "no", "挪", { note: N_NOTE }),
 
-    ha: K("は", "ハ", "ha", "哈", { note: "做助詞時讀 wa，例如 こんにちは（konnichiwa）", hiraNote: "小心同「ほ」：ほ 上面多一劃" }),
+    ha: K("は", "ハ", "ha", "哈", { note: "作助詞時讀作 wa，例如 こんにちは（konnichiwa）", hiraNote: "請留意與「ほ」的分別：ほ 上方多一畫" }),
     hi: K("ひ", "ヒ", "hi", null),
-    fu: K("ふ", "フ", "fu", null, { note: "介乎 f 同 h 之間：上下唇唔掂埋，輕輕吹氣" }),
-    he: K("へ", "ヘ", "he", null, { note: "做助詞（表示方向）時讀 e", kataNote: "平假名 へ 同片假名 ヘ 寫法差唔多一樣" }),
-    ho: K("ほ", "ホ", "ho", "呵", { hiraNote: "小心同「は」：ほ 上面多一劃" }),
+    fu: K("ふ", "フ", "fu", null, { note: "介於 f 與 h 之間：上下唇不要碰在一起，輕輕吹氣" }),
+    he: K("へ", "ヘ", "he", null, { note: "作助詞（表示方向）時讀作 e", kataNote: "平假名 へ 與片假名 ヘ 寫法幾乎相同" }),
+    ho: K("ほ", "ホ", "ho", "呵", { hiraNote: "請留意與「は」的分別：ほ 上方多一畫" }),
 
     ma: K("ま", "マ", "ma", "媽"),
-    mi: K("み", "ミ", "mi", "咪", { yueHint: "咪咪（貓仔）嘅咪" }),
+    mi: K("み", "ミ", "mi", "咪", { yueHint: "「咪咪（小貓）」的「咪」" }),
     mu: K("む", "ム", "mu", null),
-    me: K("め", "メ", "me", "咩", { hiraNote: "小心同「ぬ」：め 尾冇小圈" }),
+    me: K("め", "メ", "me", "咩", { hiraNote: "請留意與「ぬ」的分別：め 末端沒有小圈" }),
     mo: K("も", "モ", "mo", "摸"),
 
     ya: K("や", "ヤ", "ya", "也"),
     yu: K("ゆ", "ユ", "yu", null),
-    yo: K("よ", "ヨ", "yo", "唷", { yueHint: "哎唷嘅唷" }),
+    yo: K("よ", "ヨ", "yo", "唷", { yueHint: "「哎唷」的「唷」" }),
 
     ra: K("ら", "ラ", "ra", "啦", { note: RA_NOTE }),
     ri: K("り", "リ", "ri", null, { note: RA_NOTE }),
-    ru: K("る", "ル", "ru", null, { note: RA_NOTE, hiraNote: "小心同「ろ」：る 尾有個小圈，ろ 冇" }),
-    re: K("れ", "レ", "re", null, { note: RA_NOTE, hiraNote: "小心同「わ」「ね」：れ 尾向外撇" }),
-    ro: K("ろ", "ロ", "ro", "囉", { note: RA_NOTE, hiraNote: "小心同「る」：ろ 尾冇小圈" }),
+    ru: K("る", "ル", "ru", null, { note: RA_NOTE, hiraNote: "請留意與「ろ」的分別：る 末端有個小圈，ろ 沒有" }),
+    re: K("れ", "レ", "re", null, { note: RA_NOTE, hiraNote: "請留意與「わ」「ね」的分別：れ 末端向外撇" }),
+    ro: K("ろ", "ロ", "ro", "囉", { note: RA_NOTE, hiraNote: "請留意與「る」的分別：ろ 末端沒有小圈" }),
 
-    wa: K("わ", "ワ", "wa", "娃", { hiraNote: "小心同「れ」「ね」：わ 尾向內彎" }),
+    wa: K("わ", "ワ", "wa", "娃", { hiraNote: "請留意與「れ」「ね」的分別：わ 末端向內彎" }),
     wo: K("を", "ヲ", "o", "柯", {
       romajiAlt: "wo",
-      note: "只用嚟做助詞，讀音同「お」一樣；片假名 ヲ 好少見",
+      note: "只用作助詞，讀音與「お」相同；片假名 ヲ 很少見",
     }),
     n: K("ん", "ン", "n", null, {
-      note: "鼻音，自己唔成一個字，差唔多唔會喺字嘅開頭出現",
-      kataNote: "小心同「ソ」：ン 短筆喺左上、橫啲，長筆由左下向右上挑",
+      note: "鼻音，不能單獨成字，幾乎不會出現在詞語開頭",
+      kataNote: "請留意與「ソ」的分別：ン 短筆在左上、較橫，長筆由左下向右上挑",
     }),
 
     // ── 濁音 ──
@@ -108,8 +108,8 @@ window.App.Content = window.App.Content || {};
     zo: K("ぞ", "ゾ", "zo", null),
 
     da: K("だ", "ダ", "da", null),
-    di: K("ぢ", "ヂ", "ji", null, { note: "好少用，讀音同「じ」一樣" }),
-    du: K("づ", "ヅ", "zu", null, { note: "好少用，讀音同「ず」一樣" }),
+    di: K("ぢ", "ヂ", "ji", null, { note: "很少使用，讀音與「じ」相同" }),
+    du: K("づ", "ヅ", "zu", null, { note: "很少使用，讀音與「ず」相同" }),
     de: K("で", "デ", "de", null),
     do: K("ど", "ド", "do", null),
 
@@ -120,7 +120,7 @@ window.App.Content = window.App.Content || {};
     bo: K("ぼ", "ボ", "bo", null),
 
     // ── 半濁音 ──
-    pa: K("ぱ", "パ", "pa", "趴", { yueHint: "趴低嘅趴" }),
+    pa: K("ぱ", "パ", "pa", "趴", { yueHint: "「趴下」的「趴」" }),
     pi: K("ぴ", "ピ", "pi", null),
     pu: K("ぷ", "プ", "pu", null),
     pe: K("ぺ", "ペ", "pe", null),
@@ -136,7 +136,7 @@ window.App.Content = window.App.Content || {};
     sho: K("しょ", "ショ", "sho", null),
     cha: K("ちゃ", "チャ", "cha", "茶"),
     chu: K("ちゅ", "チュ", "chu", null),
-    cho: K("ちょ", "チョ", "cho", "錯", { yueHint: "錯誤嘅錯" }),
+    cho: K("ちょ", "チョ", "cho", "錯", { yueHint: "「錯誤」的「錯」" }),
     nya: K("にゃ", "ニャ", "nya", null),
     nyu: K("にゅ", "ニュ", "nyu", null),
     nyo: K("にょ", "ニョ", "nyo", null),
@@ -224,19 +224,19 @@ window.App.Content = window.App.Content || {};
     {
       key: "dakuon",
       label: "濁音",
-      note: "加「゛」：k→g、s→z、t→d、h→b。廣東話冇呢類「濁」音，請聽發音，喉嚨要震",
+      note: "加上「゛」：k→g、s→z、t→d、h→b。廣東話沒有這類「濁音」，請聽發音，發音時喉嚨要震動",
     },
-    { key: "handakuon", label: "半濁音", note: "加「゜」：h→p" },
+    { key: "handakuon", label: "半濁音", note: "加上「゜」：h→p" },
     // stage 1b. `cols` = chart columns; `kataOnly` = hidden in the 平假名
     // chart and skipped in 平假名 practice; `single` = one range chip for
     // the whole group; `contrast` = 聽對比 pairs shown under the chart.
     {
       key: "yoon",
       label: "拗音",
-      note: "い段字（き、し、ち…）＋細寫 ゃ／ゅ／ょ，兩個字合埋讀成一個音",
+      note: "い段字（き、し、ち…）加上小寫 ゃ／ゅ／ょ，兩個字合起來讀成一個音",
       cols: 3,
       contrast: {
-        labels: ["細寫 ょ（拗音）", "大寫 よ"],
+        labels: ["小寫 ょ（拗音）", "大寫 よ"],
         pairs: [
           [
             { word: "びょういん", romaji: "byouin", meaning: "醫院" },
@@ -248,7 +248,7 @@ window.App.Content = window.App.Content || {};
     {
       key: "gairaigo",
       label: "外來語組合",
-      note: "只用喺片假名外來語：字＋細寫 ァ／ィ／ゥ／ェ／ォ，合埋讀成一個音（例如 チェックイン）",
+      note: "只用於片假名外來語：假名加上小寫 ァ／ィ／ゥ／ェ／ォ，合起來讀成一個音（例如 チェックイン）",
       cols: 4,
       kataOnly: true,
       single: true,
@@ -264,13 +264,13 @@ window.App.Content = window.App.Content || {};
       key: "sokuon",
       title: "促音 っ／ッ",
       intro: [
-        "細寫嘅 っ／ッ 唔發音，係停頓一拍。",
-        "羅馬拼音將下一個子音寫兩次，例如 kitte。",
+        "小寫的 っ／ッ 不發音，而是停頓一拍。",
+        "羅馬拼音會把下一個子音寫兩次，例如 kitte。",
       ],
-      labels: ["冇 っ", "有 っ"],
+      labels: ["無 っ", "有 っ"],
       pairs: [
         [
-          { word: "きて", romaji: "kite", meaning: "嚟（來）" },
+          { word: "きて", romaji: "kite", meaning: "來" },
           { word: "きって", romaji: "kitte", meaning: "郵票" },
         ],
         [
@@ -279,7 +279,7 @@ window.App.Content = window.App.Content || {};
         ],
         [
           { word: "おと", romaji: "oto", meaning: "聲音" },
-          { word: "おっと", romaji: "otto", meaning: "老公（丈夫）" },
+          { word: "おっと", romaji: "otto", meaning: "丈夫" },
         ],
         [
           { word: "かこ", romaji: "kako", meaning: "過去" },
@@ -287,9 +287,9 @@ window.App.Content = window.App.Content || {};
         ],
       ],
       words: [
-        { word: "きっぷ", romaji: "kippu", meaning: "車飛" },
-        { word: "ちょっと", romaji: "chotto", meaning: "少少、等一陣" },
-        { word: "チケット", romaji: "chiketto", meaning: "飛（門票）" },
+        { word: "きっぷ", romaji: "kippu", meaning: "車票" },
+        { word: "ちょっと", romaji: "chotto", meaning: "一點點、稍等" },
+        { word: "チケット", romaji: "chiketto", meaning: "票（門票）" },
         { word: "ロッカー", romaji: "rokkaa", meaning: "儲物櫃" },
       ],
     },
@@ -298,19 +298,19 @@ window.App.Content = window.App.Content || {};
       title: "長音",
       intro: [
         "あ段＋あ、い段＋い、う段＋う：拉長一拍。",
-        "え段＋い：多數讀成長嘅「え」，例如 せんせい 讀 see。",
-        "お段＋う：讀成長嘅「お」，例如 ありがとう 嘅「とう」讀 too。",
+        "え段＋い：多數讀成長音的「え」，例如 せんせい 讀作 see。",
+        "お段＋う：讀成長音的「お」，例如 ありがとう 的「とう」讀作 too。",
         "片假名用「ー」表示拉長。",
       ],
       labels: ["短", "長"],
       pairs: [
         [
           { word: "おばさん", romaji: "obasan", meaning: "阿姨（中年女士）" },
-          { word: "おばあさん", romaji: "obaasan", meaning: "婆婆（老婆婆）" },
+          { word: "おばあさん", romaji: "obaasan", meaning: "婆婆（年長女士）" },
         ],
         [
           { word: "おじさん", romaji: "ojisan", meaning: "叔叔（中年男士）" },
-          { word: "おじいさん", romaji: "ojiisan", meaning: "伯伯（老伯伯）" },
+          { word: "おじいさん", romaji: "ojiisan", meaning: "伯伯（年長男士）" },
         ],
         [
           { word: "ゆき", romaji: "yuki", meaning: "雪" },
@@ -318,7 +318,7 @@ window.App.Content = window.App.Content || {};
         ],
         [
           { word: "え", romaji: "e", meaning: "畫" },
-          { word: "ええ", romaji: "ee", meaning: "係呀" },
+          { word: "ええ", romaji: "ee", meaning: "是的" },
         ],
         [
           { word: "ビル", romaji: "biru", meaning: "大廈" },
@@ -329,7 +329,7 @@ window.App.Content = window.App.Content || {};
         { word: "おかあさん", romaji: "okaasan", meaning: "媽媽" },
         { word: "おとうさん", romaji: "otousan", meaning: "爸爸" },
         { word: "せんせい", romaji: "sensei", meaning: "老師" },
-        { word: "ありがとう", romaji: "arigatou", meaning: "多謝" },
+        { word: "ありがとう", romaji: "arigatou", meaning: "謝謝" },
       ],
     },
   ];
@@ -346,14 +346,14 @@ window.App.Content = window.App.Content || {};
     { word: "ドア", romaji: "doa", meaning: "門", scene: "指示牌" },
     { word: "バス", romaji: "basu", meaning: "巴士", scene: "交通" },
     { word: "レジ", romaji: "reji", meaning: "收銀處", scene: "購物" },
-    { word: "サイズ", romaji: "saizu", meaning: "尺碼、大細", scene: "購物" },
+    { word: "サイズ", romaji: "saizu", meaning: "尺碼、大小", scene: "購物" },
     { word: "マスク", romaji: "masuku", meaning: "口罩", scene: "購物" },
     { word: "カメラ", romaji: "kamera", meaning: "相機", scene: "購物" },
     { word: "パン", romaji: "pan", meaning: "麵包", scene: "餐廳" },
     { word: "パスタ", romaji: "pasuta", meaning: "意粉", scene: "餐廳" },
     { word: "ピザ", romaji: "piza", meaning: "薄餅（pizza）", scene: "餐廳" },
     { word: "サラダ", romaji: "sarada", meaning: "沙律", scene: "餐廳" },
-    { word: "チキン", romaji: "chikin", meaning: "雞（雞肉，例如炸雞）", scene: "餐廳" },
+    { word: "チキン", romaji: "chikin", meaning: "雞肉（例如炸雞）", scene: "餐廳" },
     { word: "ミルク", romaji: "miruku", meaning: "牛奶", scene: "餐廳" },
     { word: "ワイン", romaji: "wain", meaning: "葡萄酒（紅酒、白酒）", scene: "餐廳" },
     { word: "アイス", romaji: "aisu", meaning: "雪糕", scene: "餐廳" },
@@ -374,18 +374,18 @@ window.App.Content = window.App.Content || {};
     { word: "ケーキ", romaji: "keeki", meaning: "蛋糕", scene: "餐廳" },
     { word: "チョコレート", romaji: "chokoreeto", meaning: "朱古力", scene: "餐廳" },
     { word: "カフェ", romaji: "kafe", meaning: "咖啡店", scene: "餐廳" },
-    { word: "フォーク", romaji: "fooku", meaning: "叉", scene: "餐廳" },
+    { word: "フォーク", romaji: "fooku", meaning: "叉子", scene: "餐廳" },
     { word: "ティッシュ", romaji: "tisshu", meaning: "紙巾", scene: "餐廳" },
     { word: "ミネラルウォーター", romaji: "mineraruwootaa", meaning: "礦泉水", scene: "餐廳" },
     { word: "ファストフード", romaji: "fasutofuudo", meaning: "快餐", scene: "餐廳" },
     { word: "チェックイン", romaji: "chekkuin", meaning: "辦理入住", scene: "酒店" },
     { word: "チェックアウト", romaji: "chekkuauto", meaning: "退房", scene: "酒店" },
     { word: "ロビー", romaji: "robii", meaning: "大堂", scene: "酒店" },
-    { word: "シャワー", romaji: "shawaa", meaning: "花灑、沖涼", scene: "酒店" },
-    { word: "エレベーター", romaji: "erebeetaa", meaning: "升降機（𨋢）", scene: "酒店" },
+    { word: "シャワー", romaji: "shawaa", meaning: "花灑、淋浴", scene: "酒店" },
+    { word: "エレベーター", romaji: "erebeetaa", meaning: "升降機（電梯）", scene: "酒店" },
     { word: "ワイファイ", romaji: "waifai", meaning: "Wi-Fi", scene: "酒店" },
     { word: "タクシー", romaji: "takushii", meaning: "的士", scene: "交通" },
-    { word: "チケット", romaji: "chiketto", meaning: "飛（車飛、門票）", scene: "交通" },
+    { word: "チケット", romaji: "chiketto", meaning: "票（車票、門票）", scene: "交通" },
     { word: "ホーム", romaji: "hoomu", meaning: "月台（車站）", scene: "交通" },
     { word: "コインロッカー", romaji: "koinrokkaa", meaning: "投幣儲物櫃", scene: "交通" },
     { word: "キャンセル", romaji: "kyanseru", meaning: "取消", scene: "交通" },

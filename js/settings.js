@@ -37,8 +37,8 @@ window.App = window.App || {};
 
       section(
         "顯示",
-        toggle("顯示羅馬拼音", "熟咗之後可以關，逐步靠假名去讀", settings.showRomaji, (v) => ctx.onChange({ showRomaji: v })),
-        toggle("顯示廣東話近似讀音", "只係近似，以發音為準", settings.showYue, (v) => ctx.onChange({ showYue: v }))
+        toggle("顯示羅馬拼音", "熟悉之後可以關閉，逐步改為憑假名閱讀", settings.showRomaji, (v) => ctx.onChange({ showRomaji: v })),
+        toggle("顯示廣東話近似讀音", "僅為近似，請以發音為準", settings.showYue, (v) => ctx.onChange({ showYue: v }))
       ),
 
       section(
@@ -47,7 +47,7 @@ window.App = window.App || {};
         tts && [
           h("p", { class: "small muted mb-1 mt-1" }, "🔊 日文語音"),
           voices.length === 0
-            ? h("p", { class: "small muted mb-2" }, "用緊裝置預設語音")
+            ? h("p", { class: "small muted mb-2" }, "正在使用裝置的預設語音")
             : h(
                 "div",
                 { class: "wrap mb-2", style: { gap: "8px" } },
@@ -63,8 +63,8 @@ window.App = window.App || {};
               "p",
               { class: "xs muted mb-2" },
               voices.some((v) => v.localService)
-                ? "標有「📴 離線可用」嘅語音係裝喺手機入面，冇網絡都可以發音。去旅行前建議揀返呢類語音。"
-                : "呢部裝置嘅日文語音冇標明離線可用，冇網絡時可能冇聲。可以開飛行模式試一試。"
+                ? "標有「📴 離線可用」的語音安裝在手機內，沒有網絡也能發音。出發旅行前建議選用這類語音。"
+                : "此裝置的日文語音沒有標明可離線使用，沒有網絡時可能沒有聲音。可以開啟飛行模式測試。"
             ),
           h("p", { class: "small muted mb-1 mt-3" }, "⏱️ 速度"),
           h("div", { class: "chips-fill" }, RATES.map((r) => chip(r.label, settings.rate === r.rate, () => ctx.onChange({ rate: r.rate })))),
@@ -78,7 +78,7 @@ window.App = window.App || {};
 
       section(
         "進度",
-        h("p", { class: "small muted mb-3" }, "進度同設定只儲存喺呢部裝置嘅瀏覽器入面。"),
+        h("p", { class: "small muted mb-3" }, "進度與設定只儲存在這部裝置的瀏覽器中。"),
         !confirmReset
           ? h(
               "button",
@@ -94,7 +94,7 @@ window.App = window.App || {};
           : h(
               "div",
               { class: "confirm" },
-              h("p", { class: "mb-3" }, "確定清除？答題紀錄同設定會全部刪除，冇得復原。"),
+              h("p", { class: "mb-3" }, "確定清除？答題紀錄與設定會全部刪除，無法復原。"),
               h(
                 "div",
                 { class: "row-sm" },
@@ -141,7 +141,7 @@ window.App = window.App || {};
   }
 
   function copyText(text) {
-    const done = () => window.App.Speech.toast("✅ 已複製讀錯句子清單，可以貼俾 Claude");
+    const done = () => window.App.Speech.toast("✅ 已複製讀錯句子清單，可以貼給 Claude");
     const fallback = () => {
       // Older browsers / non-secure contexts: select a hidden textarea.
       const ta = document.createElement("textarea");
@@ -157,7 +157,7 @@ window.App = window.App || {};
       } catch (e) {}
       document.body.removeChild(ta);
       if (ok) done();
-      else window.App.Speech.toast("複製唔到，請長按清單文字自己複製");
+      else window.App.Speech.toast("無法複製，請長按清單文字自行複製");
     };
     if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, fallback);
     else fallback();
@@ -169,9 +169,9 @@ window.App = window.App || {};
     return section(
       "讀錯句子清單",
       lines.length === 0
-        ? h("p", { class: "small muted" }, "未有標記。喺句子庫聽到讀錯嘅句，撳句子卡上面嘅「🚩 讀錯」就會列喺呢度。")
+        ? h("p", { class: "small muted" }, "尚未有標記。在句子庫聽到發音有誤的句子時，按句子卡上的「🚩 讀錯」，就會列在這裡。")
         : [
-            h("p", { class: "small muted mb-2" }, `共 ${lines.length} 句。喺句子卡再撳一下「🚩 已標記」可以取消。`),
+            h("p", { class: "small muted mb-2" }, `共 ${lines.length} 句。在句子卡上再按一下「🚩 已標記」即可取消。`),
             h("ul", { class: "flag-list" }, lines.map((l) => h("li", null, l.text))),
             inkButton("📋 複製清單", () => copyText(text), { class: "w-full mt-3" }),
           ]
@@ -185,13 +185,13 @@ window.App = window.App || {};
     return section(
       "加入主畫面",
       standalone
-        ? h("p", { class: "small mb-2", style: { color: "var(--good)" } }, "✅ 你而家用緊主畫面版本，冇網絡都用得。")
-        : h("p", { class: "small muted mb-2" }, "加入主畫面之後，好似獨立 App 咁打開，冇網絡都用得。"),
+        ? h("p", { class: "small mb-2", style: { color: "var(--good)" } }, "✅ 你現在使用的是主畫面版本，沒有網絡也能使用。")
+        : h("p", { class: "small muted mb-2" }, "加入主畫面後，會像獨立 App 一樣開啟，沒有網絡也能使用。"),
       h(
         "ul",
         { class: "rules" },
-        h("li", null, "iPhone：用 Safari 打開 → 撳底部「分享」⬆️ → 「加入主畫面」"),
-        h("li", null, "Android：用 Chrome 打開 → 撳右上角 ⋮ → 「安裝應用程式」或者「加到主畫面」")
+        h("li", null, "iPhone：用 Safari 開啟 → 點按底部「分享」⬆️ →「加入主畫面」"),
+        h("li", null, "Android：用 Chrome 開啟 → 點按右上角 ⋮ →「安裝應用程式」或「加到主畫面」")
       ),
       h("p", { class: "note gold mt-3" }, "💡 建議固定從主畫面打開，進度才不會分散，資料也較不易被系統清除。")
     );

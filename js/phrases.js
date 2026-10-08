@@ -1,5 +1,5 @@
-// 情境句子庫 module (stage 2): scene list → scene page with 全部／🗣️ 我講／
-// 👂 店員講 filter → sentence cards (日文、假名、拼音、廣東話意思、使用場合)
+// 情境句子庫 module (stage 2): scene list → scene page with 全部／🗣️ 我說／
+// 👂 店員說 filter → sentence cards (日文、假名、拼音、廣東話意思、使用場合)
 // with 🔊 聽, 🐢 慢慢聽 (0.6×) and, for 問答組合, 連續聽 question → answers.
 // No learning progress is recorded in stage 2 (by decision).
 // Content: js/content/phrases.js.
@@ -11,14 +11,14 @@ window.App = window.App || {};
 
   const SLOW_RATE = 0.6;
   const WHO = {
-    me: "🗣️ 你講",
-    staff: "👂 店員講",
-    both: "🗣️👂 你同店員都會講",
+    me: "🗣️ 你說",
+    staff: "👂 店員說",
+    both: "🗣️👂 你與店員都會說",
   };
   const FILTERS = [
     { key: "all", label: "全部" },
-    { key: "me", label: "🗣️ 我講" },
-    { key: "staff", label: "👂 店員講" },
+    { key: "me", label: "🗣️ 我說" },
+    { key: "staff", label: "👂 店員說" },
   ];
 
   // view: "scenes" | "scene"
@@ -111,7 +111,7 @@ window.App = window.App || {};
         h(
           "div",
           { class: "replies" },
-          h("p", { class: "caption mb-1" }, replies.length > 1 ? "可以咁答（揀一句）" : "可以咁答"),
+          h("p", { class: "caption mb-1" }, replies.length > 1 ? "可這樣回答（任選一句）" : "可這樣回答"),
           replies.map((r) => sentence(r, ctx, true))
         ),
       replies.length > 0 &&
@@ -157,7 +157,7 @@ window.App = window.App || {};
         const n = speechNotice();
         return n && h("div", { class: "mb-4" }, n);
       })(),
-      h("p", { class: "small muted mb-4" }, "旅行時最常用嘅句子。每句都有日文、假名、拼音同廣東話意思，撳 🔊 聽發音。"),
+      h("p", { class: "small muted mb-4" }, "旅行時最常用的句子。每句都有日文、假名、拼音和中文意思，按 🔊 可聽發音。"),
       h(
         "div",
         { class: "stack" },

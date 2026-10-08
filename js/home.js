@@ -24,12 +24,12 @@ window.App = window.App || {};
       h(
         "div",
         { class: "card" },
-        h("p", { class: "h-heading", style: { fontSize: "1.25rem" } }, "今日學少少，去日本用得著 ✈️"),
-        h("p", { class: "small muted mt-1" }, "第一步：先認得平假名同片假名。"),
+        h("p", { class: "h-heading", style: { fontSize: "1.25rem" } }, "每天學一點，前往日本時就用得上 ✈️"),
+        h("p", { class: "small muted mt-1" }, "第一步：先認識平假名和片假名。"),
         h(
           "div",
           { class: "mt-3" },
-          h("div", { class: "row-between xs muted mb-1" }, h("span", null, "五十音答啱過"), h("span", { style: { color: "var(--gold-dark)" } }, `${learnt} / ${total}`)),
+          h("div", { class: "row-between xs muted mb-1" }, h("span", null, "五十音答對過"), h("span", { style: { color: "var(--gold-dark)" } }, `${learnt} / ${total}`)),
           h("div", { class: "bar" }, h("div", { style: { width: `${(learnt / total) * 100}%` } }))
         )
       ),
@@ -40,7 +40,7 @@ window.App = window.App || {};
           // 聽力練習 row shows today's 錯題重溫 count when there is any.
           const due =
             m.key === "listening" ? window.App.Listening.dueCount(state) : m.key === "speaking" ? window.App.Speaking.dueCount(state) : 0;
-          return moduleRow(due > 0 ? { ...m, sub: `📝 今日要重溫 ${due} 句` } : m, () => onOpenModule(m.key));
+          return moduleRow(due > 0 ? { ...m, sub: `📝 今天需重溫 ${due} 句` } : m, () => onOpenModule(m.key));
         })
       )
     );

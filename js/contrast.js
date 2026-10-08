@@ -17,7 +17,7 @@ window.App = window.App || {};
   const CONTRAST_ROWS = [
     { key: "ka", rows: ["ka", "ga"] },
     { key: "sa", rows: ["sa", "za"] },
-    { key: "ta", rows: ["ta", "da"], note: "ぢ、づ 好少用，讀音同 じ、ず 一樣" },
+    { key: "ta", rows: ["ta", "da"], note: "ぢ、づ 很少使用，讀音與 じ、ず 相同" },
     { key: "ha", rows: ["ha", "ba", "pa"] },
   ];
 
@@ -84,7 +84,7 @@ window.App = window.App || {};
       h(
         "p",
         { class: "small muted mb-4" },
-        "清音同濁音嘅分別：濁音發音時喉嚨要震（廣東話冇呢類音）。半濁音係 は行 加「゜」，讀 p。撳一組，會順序讀出嚟。"
+        "清音與濁音的分別：濁音發音時喉嚨要震動（廣東話沒有這類音）。半濁音是 は行 加上「゜」，讀作 p。按一組，會依次讀出來。"
       ),
       CONTRAST_ROWS.map((crow) =>
         h(
@@ -103,7 +103,7 @@ window.App = window.App || {};
         h(
           "p",
           { class: "xs muted mb-3" },
-          `每輪 ${helpers().QUIZ_LENGTH} 題：聽一個字，揀係清音、濁音定半濁音。練習用「練邊種？」揀咗嘅平假名／片假名。`
+          `每輪 ${helpers().QUIZ_LENGTH} 題：聽一個字，選擇是清音、濁音還是半濁音。練習使用「練習哪一種？」所選的平假名／片假名。`
         ),
         h("p", { class: "small mb-1" }, "練習範圍"),
         h(
@@ -116,12 +116,12 @@ window.App = window.App || {};
             })
           )
         ),
-        selected.length === 0 && h("p", { class: "xs mt-3", style: { color: "var(--stamp)" } }, "最少揀一行"),
+        selected.length === 0 && h("p", { class: "xs mt-3", style: { color: "var(--stamp)" } }, "請至少選擇一行"),
         h(
           "div",
           { class: "stack mt-4" },
           inkButton("👂 開始分辨練習", () => startQuiz(ctx), { accent: true, disabled: selected.length === 0 || !tts, class: "w-full" }),
-          !tts && h("p", { class: "xs muted" }, "呢個瀏覽器冇發音功能，所以用唔到分辨練習")
+          !tts && h("p", { class: "xs muted" }, "此瀏覽器沒有發音功能，因此無法使用分辨練習")
         )
       ),
     ];
@@ -219,7 +219,7 @@ window.App = window.App || {};
       feedback = h(
         "div",
         { class: "card mt-4 feedback", "data-autoscroll": autoscroll ? "end" : null },
-        h("p", { class: `fb-title ${gotIt ? "ok" : "no"}` }, gotIt ? "✅ 啱咗！" : "❌ 唔啱，答案係："),
+        h("p", { class: `fb-title ${gotIt ? "ok" : "no"}` }, gotIt ? "✅ 答對了！" : "❌ 答錯了，答案是："),
         h(
           "div",
           { class: "row mt-1" },
@@ -240,7 +240,7 @@ window.App = window.App || {};
             h("button", { class: "btn-soft grow", onclick: () => speakSequence(setChars, settings) }, `🔊 重聽整組`)
         ),
         h("p", { lang: "ja", class: "xs muted center mt-2 jp" }, setChars.join(" … ")),
-        inkButton(quiz.index + 1 < QUIZ_LENGTH ? "下一題 →" : "睇結果", next, { class: "w-full mt-3" })
+        inkButton(quiz.index + 1 < QUIZ_LENGTH ? "下一題 →" : "查看結果", next, { class: "w-full mt-3" })
       );
     }
 
@@ -249,15 +249,15 @@ window.App = window.App || {};
         "div",
         { class: "row-between mb-2" },
         h("span", { class: "caption" }, `第 ${quiz.index + 1} / ${QUIZ_LENGTH} 題`),
-        h("span", { class: "caption", style: { color: "var(--gold-dark)" } }, `啱 ${correctSoFar} 題`)
+        h("span", { class: "caption", style: { color: "var(--gold-dark)" } }, `答對 ${correctSoFar} 題`)
       ),
       h("div", { class: "bar accent mb-4" }, h("div", { style: { width: `${(quiz.index / QUIZ_LENGTH) * 100}%` } })),
       h(
         "div",
         { class: "card accent center mb-4" },
-        h("p", { class: "muted mb-3", style: { fontWeight: 700 } }, "聽下係邊個？"),
+        h("p", { class: "muted mb-3", style: { fontWeight: 700 } }, "聽聽看是哪一個？"),
         h("button", { class: "hear-btn", onclick: () => speak(target, settings), "aria-label": "再聽一次" }, "🔊"),
-        h("p", { class: "xs muted mt-3" }, "撳喇叭可以再聽")
+        h("p", { class: "xs muted mt-3" }, "按喇叭可以再聽一次")
       ),
       options,
       feedback,
@@ -278,13 +278,13 @@ window.App = window.App || {};
       h(
         "p",
         { class: "muted mt-1", style: { fontWeight: 700 } },
-        score === QUIZ_LENGTH ? "全對！耳仔好靈！" : score >= 7 ? "唔錯！再聽多幾次就分到" : "慢慢嚟，返去對比表多聽幾次"
+        score === QUIZ_LENGTH ? "全對！聽力很好！" : score >= 7 ? "不錯！多聽幾次就能分辨了" : "慢慢來，回到對比表多聽幾次"
       ),
       wrong.length > 0 &&
         h(
           "div",
           { class: "mt-4", style: { textAlign: "left" } },
-          h("p", { class: "caption mb-2" }, "答錯咗（撳一下聽發音）"),
+          h("p", { class: "caption mb-2" }, "答錯的字（按一下可聽發音）"),
           h(
             "div",
             { class: "wrap", style: { gap: "8px" } },
@@ -296,7 +296,7 @@ window.App = window.App || {};
       h(
         "div",
         { class: "stack mt-4" },
-        inkButton("再嚟一輪", () => startQuiz(ctx), { class: "w-full" }),
+        inkButton("再來一輪", () => startQuiz(ctx), { class: "w-full" }),
         inkButton("返回對比表", toTable, { accent: true, class: "w-full" })
       )
     );

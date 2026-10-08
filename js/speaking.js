@@ -1,7 +1,7 @@
 // 口語練習 + 口語重溫 (stage 6).
 //
 // A 句子庫 sentence is shown as its 廣東話意思 + 使用場合; the user says the
-// Japanese. Only "🗣️ 你講" sentences (me / both) are practised.
+// Japanese. Only "🗣️ 你說" sentences (me / both) are practised.
 // Three ways to answer (same scoring for the first two):
 //   voice     語音辨識 (Web Speech API SpeechRecognition, ja-JP)
 //             – needs internet, unless Chrome has the ja-JP on-device pack
@@ -14,7 +14,7 @@
 // full kana reading); best of up to 5 recognition alternatives.
 //   ≥ 90% ✅  60–90% 🟡  < 60% ❌   (🟡 and ❌ count as wrong)
 // Only the FIRST attempt of a question is recorded (再試 doesn't count);
-// 「其實我讀啱 ✔」 turns a wrong first attempt into correct before it is
+// 「其實我讀對了 ✔」 turns a wrong first attempt into correct before it is
 // recorded (recorded when moving on with 下一題).
 // Wrong → 錯題重溫 item "s:<id>" (口語, kept apart from 聽力 "p:<id>").
 // 🚩-flagged sentences are not asked (their audio is wrong).
@@ -85,7 +85,7 @@ window.App = window.App || {};
     return { sim, grade: sim >= GOOD ? "good" : sim >= NEAR ? "near" : "bad", best };
   }
 
-  const GRADE_TEXT = { good: "✅ 啱！", near: "🟡 差少少", bad: "❌ 唔啱" };
+  const GRADE_TEXT = { good: "✅ 正確！", near: "🟡 差一點", bad: "❌ 不正確" };
 
   // ── what this phone can do ───────────────────────────────────────────
 
@@ -117,18 +117,18 @@ window.App = window.App || {};
   // { ok, reason, note }
   function voiceStatus() {
     checkLocal();
-    if (!SR()) return { ok: false, reason: "呢個瀏覽器唔支援語音辨識（例如 Firefox）。" };
+    if (!SR()) return { ok: false, reason: "此瀏覽器不支援語音辨識（例如 Firefox）。" };
     if (isIOS() && isStandalone())
       return {
         ok: false,
         reason:
-          "Apple 未開放主畫面 app 用語音辨識。想用就喺 Safari 打開（但 Safari 同主畫面版嘅進度係分開嘅）；主畫面版可以用「鍵盤聽寫」。",
+          "Apple 尚未開放主畫面 App 使用語音辨識。想使用的話，請在 Safari 開啟（但 Safari 與主畫面版的進度是分開的）；主畫面版可以使用「鍵盤聽寫」。",
       };
     if (!navigator.onLine && !localJa)
-      return { ok: false, reason: "📴 而家冇網絡：語音辨識要上網（由 Apple／Google 處理）。可以用「鍵盤聽寫」或者「自己對答案」。" };
+      return { ok: false, reason: "📴 目前沒有網絡：語音辨識需要網絡（由 Apple／Google 處理）。可以使用「鍵盤聽寫」或「自己對答案」。" };
     return {
       ok: true,
-      note: localJa ? "✅ 日文離線辨識已啟用：錄音留喺手機入面。" : "錄音會傳去 Apple／Google 處理，所以要上網。第一次用要允許使用咪。",
+      note: localJa ? "✅ 日文離線辨識已啟用：錄音保留在手機內。" : "錄音會傳送到 Apple／Google 處理，因此需要網絡。第一次使用時要允許使用麥克風。",
     };
   }
 
@@ -141,15 +141,15 @@ window.App = window.App || {};
     switch (err) {
       case "not-allowed":
       case "service-not-allowed":
-        return "用唔到咪：請允許咪權限。iPhone：設定 → Safari → 咪；Android：撳網址列左邊嘅 🔒 → 權限。（iPhone 亦要開啟「設定 → 一般 → 鍵盤 → 啟用聽寫」。）";
+        return "無法使用麥克風：請允許麥克風權限。iPhone：設定 → Safari → 麥克風；Android：點按網址列左邊的 🔒 → 權限。（iPhone 亦需開啟「設定 → 一般 → 鍵盤 → 啟用聽寫」。）";
       case "no-speech":
-        return "冇聽到聲音，請再撳 🎤 試一次。";
+        return "沒有聽到聲音，請再按 🎤 試一次。";
       case "audio-capture":
-        return "搵唔到咪，請檢查手機有冇咪。";
+        return "找不到麥克風，請檢查手機是否有麥克風。";
       case "network":
-        return "網絡有問題，辨識唔到。請再試，或者轉用「鍵盤聽寫」／「自己對答案」。";
+        return "網絡有問題，無法辨識。請再試一次，或改用「鍵盤聽寫」／「自己對答案」。";
       case "language-not-supported":
-        return "呢部裝置未支援日文辨識。請轉用「鍵盤聽寫」或者「自己對答案」。";
+        return "此裝置尚未支援日文辨識。請改用「鍵盤聽寫」或「自己對答案」。";
       case "aborted":
         return "已取消。";
       default:
@@ -336,7 +336,7 @@ window.App = window.App || {};
     const q = ui.q;
     const target = ui.quiz.questions[ui.quiz.index].p;
     if (!norm(q.typed)) {
-      q.msg = "請先用鍵盤聽寫（或者打字）輸入你讀嘅日文。";
+      q.msg = "請先用鍵盤聽寫（或打字）輸入你所讀的日文。";
       ctx.rerender();
       return;
     }
@@ -421,11 +421,11 @@ window.App = window.App || {};
             {
               class: `mic-btn ${listening ? "on" : ""}`.trim(),
               onclick: () => (listening ? rec && rec.stop() : listen(ctx)),
-              "aria-label": listening ? "停止" : "開始讀",
+              "aria-label": listening ? "停止" : "開始朗讀",
             },
             listening ? "⏹" : "🎤"
           ),
-          h("p", { class: "small muted mt-2" }, listening ? "聽緊…讀完會自動停止（或者撳 ⏹）" : "撳 🎤，然後讀出日文"),
+          h("p", { class: "small muted mt-2" }, listening ? "聆聽中…讀完會自動停止（或按 ⏹）" : "按 🎤，然後讀出日文"),
           listening && h("p", { id: "live-heard", lang: "ja", class: "jp live-heard" }, q.interim || "…"),
           q.msg && h("p", { class: "notice mt-3", style: { textAlign: "left" } }, q.msg)
         );
@@ -438,19 +438,19 @@ window.App = window.App || {};
             lang: "ja",
             class: "dict-input",
             value: q.typed,
-            placeholder: "喺度用日文鍵盤聽寫…",
+            placeholder: "在此用日文鍵盤聽寫…",
             autocomplete: "off",
             autocapitalize: "off",
             autocorrect: "off",
             spellcheck: "false",
             enterkeyhint: "done",
-            "aria-label": "用日文鍵盤聽寫你讀嘅句子",
+            "aria-label": "用日文鍵盤聽寫你所讀的句子",
             oninput: (e) => (q.typed = e.target.value),
             onkeydown: (e) => {
               if (e.key === "Enter") checkTyped(ctx);
             },
           }),
-          h("p", { class: "xs muted mt-2" }, "撳輸入框 → 鍵盤切去日文（撳 🌐）→ 撳鍵盤上嘅 🎤 讀出句子 → 撳「對答案」。"),
+          h("p", { class: "xs muted mt-2" }, "點按輸入框 → 鍵盤切換到日文（按 🌐）→ 按鍵盤上的 🎤 讀出句子 → 按「對答案」。"),
           q.msg && h("p", { class: "notice mt-2" }, q.msg),
           inkButton("對答案", () => checkTyped(ctx), { accent: true, class: "w-full mt-3" })
         );
@@ -458,7 +458,7 @@ window.App = window.App || {};
         body = h(
           "div",
           null,
-          h("p", { class: "small muted center mb-3" }, "先自己讀出嚟，然後撳「顯示答案」。"),
+          h("p", { class: "small muted center mb-3" }, "先自己讀出來，然後按「顯示答案」。"),
           inkButton("顯示答案", () => {
             q.phase = "reveal";
             if (tts) speak(p.say || p.ja, settings);
@@ -476,11 +476,11 @@ window.App = window.App || {};
         h("p", { class: "caption" }, "正確答案"),
         answerBlock(p, settings),
         tts && h("button", { class: "btn-soft w-full mt-3", onclick: () => speak(p.say || p.ja, settings) }, "🔊 再聽"),
-        h("p", { class: "small mt-3 mb-2" }, "你讀得啱唔啱？"),
+        h("p", { class: "small mt-3 mb-2" }, "你讀得對嗎？"),
         h(
           "div",
           { class: "row-sm" },
-          h("button", { class: "btn-soft grow", onclick: () => finishScore(ctx, "good", 1, "") }, "✅ 我讀啱"),
+          h("button", { class: "btn-soft grow", onclick: () => finishScore(ctx, "good", 1, "") }, "✅ 我讀對了"),
           h("button", { class: "btn-soft grow", onclick: () => finishScore(ctx, "bad", 0, "") }, "❌ 要再練")
         )
       );
@@ -499,24 +499,24 @@ window.App = window.App || {};
         h(
           "p",
           { class: `fb-title ${(first ? result && result.correct : q.grade === "good") ? "ok" : "no"}` },
-          overridden ? "✅ 已當作答啱" : first ? GRADE_TEXT[q.grade] : `${GRADE_TEXT[q.grade]}（再試，唔計分）`
+          overridden ? "✅ 已視為答對" : first ? GRADE_TEXT[q.grade] : `${GRADE_TEXT[q.grade]}（再試，不計分）`
         ),
-        !selfMode && h("p", { class: "small muted mt-1" }, `聽到／輸入：`, jp(q.heard || "（冇）"), `　相似度 ${Math.round(q.sim * 100)}%`),
+        !selfMode && h("p", { class: "small muted mt-1" }, `聽到／輸入：`, jp(q.heard || "（無）"), `　相似度 ${Math.round(q.sim * 100)}%`),
         h("p", { class: "caption mt-2" }, "正確答案"),
         answerBlock(p, settings),
         tts && h("button", { class: "btn-soft w-full mt-3", onclick: () => speak(p.say || p.ja, settings) }, "🔊 聽正確讀音"),
         h(
           "div",
           { class: "row-sm mt-3" },
-          h("button", { class: "btn-soft grow", onclick: retry }, "🔁 再試（唔計分）"),
+          h("button", { class: "btn-soft grow", onclick: retry }, "🔁 再試（不計分）"),
           !selfMode &&
             first &&
             q.grade !== "good" &&
             !(result && result.correct) &&
-            h("button", { class: "btn-soft grow", onclick: () => ((result.correct = true), ctx.rerender()) }, "其實我讀啱 ✔")
+            h("button", { class: "btn-soft grow", onclick: () => ((result.correct = true), ctx.rerender()) }, "其實我讀對了 ✔")
         ),
-        result && !result.correct && h("p", { class: "xs muted mt-2" }, first ? "答錯嘅句子會加入「口語重溫」。" : "第一次冇答啱，已記錄為答錯，會加入「口語重溫」。"),
-        inkButton(quiz.index + 1 < total ? "下一題 →" : "睇結果", next, { class: "w-full mt-3" })
+        result && !result.correct && h("p", { class: "xs muted mt-2" }, first ? "答錯的句子會加入「口語重溫」。" : "第一次沒有答對，已記錄為答錯，會加入「口語重溫」。"),
+        inkButton(quiz.index + 1 < total ? "下一題 →" : "查看結果", next, { class: "w-full mt-3" })
       );
     }
 
@@ -529,7 +529,7 @@ window.App = window.App || {};
         "div",
         { class: "row-between mb-2" },
         h("span", { class: "caption" }, `第 ${quiz.index + 1} / ${total} 題`),
-        h("span", { class: "caption", style: { color: "var(--gold-dark)" } }, `啱 ${correctSoFar} 題`)
+        h("span", { class: "caption", style: { color: "var(--gold-dark)" } }, `答對 ${correctSoFar} 題`)
       ),
       h("div", { class: "bar accent mb-4" }, h("div", { style: { width: `${(quiz.index / total) * 100}%` } })),
       prompt,
@@ -557,13 +557,13 @@ window.App = window.App || {};
         h(
           "p",
           { class: "muted mt-1", style: { fontWeight: 700 } },
-          review ? "答錯嘅今日會再出，答啱嘅會隔幾日先再重溫" : score_ === total ? "全部啱！" : "答錯嘅已經加入「口語重溫」"
+          review ? "答錯的今天會再出現，答對的會隔幾天才再重溫" : score_ === total ? "全部答對！" : "答錯的已加入「口語重溫」"
         ),
         wrong.length > 0 &&
           h(
             "div",
             { class: "mt-4", style: { textAlign: "left" } },
-            h("p", { class: "caption mb-2" }, "要再練（撳一下聽正確讀音）"),
+            h("p", { class: "caption mb-2" }, "需要再練習（按一下可聽正確讀音）"),
             h(
               "div",
               { class: "stack-sm" },
@@ -580,7 +580,7 @@ window.App = window.App || {};
         h(
           "div",
           { class: "stack mt-4" },
-          !review && inkButton("再嚟一輪", () => start(ctx, "practice"), { class: "w-full" }),
+          !review && inkButton("再來一輪", () => start(ctx, "practice"), { class: "w-full" }),
           inkButton("返回口語練習", back, { accent: true, class: "w-full" })
         )
       )
@@ -590,16 +590,16 @@ window.App = window.App || {};
   // ── menu ─────────────────────────────────────────────────────────────
 
   const MODES = [
-    { key: "voice", title: "🎤 語音辨識", desc: "對住咪讀，App 自動聽同評分" },
-    { key: "dictation", title: "⌨️ 鍵盤聽寫", desc: "用手機鍵盤嘅 🎤 聽寫，再對答案（iPhone 主畫面版都用得）" },
-    { key: "self", title: "✋ 自己對答案", desc: "自己讀出嚟，睇答案後自己判斷（冇網絡都用得）" },
+    { key: "voice", title: "🎤 語音辨識", desc: "對著麥克風朗讀，App 會自動辨識並評分" },
+    { key: "dictation", title: "⌨️ 鍵盤聽寫", desc: "使用手機鍵盤的 🎤 聽寫，再核對答案（iPhone 主畫面版也能使用）" },
+    { key: "self", title: "✋ 自己對答案", desc: "自己讀出來，看過答案後自行判斷（沒有網絡也能使用）" },
   ];
 
   function dictationHelp() {
     return h(
       "div",
       { class: "note blue mt-2" },
-      h("p", { class: "small mb-1" }, "加入日文鍵盤（只需做一次）"),
+      h("p", { class: "small mb-1" }, "加入日文鍵盤（只需設定一次）"),
       h(
         "ul",
         { class: "rules" },
@@ -607,15 +607,15 @@ window.App = window.App || {};
         h("li", null, "開啟聽寫：設定 → 一般 → 鍵盤 → 啟用聽寫"),
         h("li", null, "Android（Gboard）：設定 → 系統 → 語言 → 鍵盤 → Gboard → 語言 → 新增日文")
       ),
-      h("p", { class: "small mt-2 mb-1" }, "點用"),
+      h("p", { class: "small mt-2 mb-1" }, "使用方法"),
       h(
         "ul",
         { class: "rules" },
-        h("li", null, "撳練習嘅輸入框，鍵盤出現後撳 🌐（或者長按）切換去日文鍵盤"),
-        h("li", null, "撳鍵盤上嘅 🎤，讀出日文，手機會將讀音變成文字填入輸入框"),
-        h("li", null, "撳「對答案」，用同語音辨識一樣嘅方法評分")
+        h("li", null, "點按練習的輸入框，鍵盤出現後按 🌐（或長按）切換到日文鍵盤"),
+        h("li", null, "按鍵盤上的 🎤，讀出日文，手機會把讀音轉成文字填入輸入框"),
+        h("li", null, "按「對答案」，以與語音辨識相同的方法評分")
       ),
-      h("p", { class: "xs muted mt-2" }, "聽寫出嚟嘅字有機會同答案唔同（漢字／假名），App 會容許。冇網絡時，聽寫能否使用要視乎手機。")
+      h("p", { class: "xs muted mt-2" }, "聽寫出來的文字可能與答案寫法不同（漢字／假名），App 會容許。沒有網絡時，聽寫能否使用要視手機而定。")
     );
   }
 
@@ -646,11 +646,11 @@ window.App = window.App || {};
       h(
         "div",
         { class: "card accent mb-4" },
-        h("p", { class: "h-heading accent-text" }, "點樣答？"),
+        h("p", { class: "h-heading accent-text" }, "如何作答？"),
         h("div", { class: "stack-sm mt-2" }, MODES.map((m) => modeOption(ctx, m, eff, vs))),
         eff === "dictation" && dictationHelp(),
         eff === "voice" && vs.note && h("p", { class: "xs muted mt-2" }, `🔒 ${vs.note}`),
-        prefs.mode === "voice" && !vs.ok && h("p", { class: "notice mt-2" }, `${vs.reason}　而家會用「自己對答案」。`)
+        prefs.mode === "voice" && !vs.ok && h("p", { class: "notice mt-2" }, `${vs.reason}　目前會使用「自己對答案」。`)
       ),
 
       // 口語重溫
@@ -658,11 +658,11 @@ window.App = window.App || {};
         "div",
         { class: "card review-card mb-4" },
         h("p", { class: "h-heading" }, "📝 口語重溫"),
-        due.length > 0 ? h("p", { class: "review-count" }, `今日要重溫 ${due.length} 句`) : h("p", { class: "small muted mt-1" }, "今日冇嘢要重溫 🎉"),
+        due.length > 0 ? h("p", { class: "review-count" }, `今天需重溫 ${due.length} 句`) : h("p", { class: "small muted mt-1" }, "今天沒有需要重溫的內容 🎉"),
         due.length > REVIEW_MAX && h("p", { class: "xs muted" }, `每次最多 ${REVIEW_MAX} 題`),
-        waitingFlagged > 0 && h("p", { class: "xs muted mt-1" }, `另有 ${waitingFlagged} 句標咗 🚩 讀錯，修正前唔會出`),
+        waitingFlagged > 0 && h("p", { class: "xs muted mt-1" }, `另有 ${waitingFlagged} 句已標記 🚩 讀錯，修正前不會出題`),
         later && h("p", { class: "xs muted mt-1" }, `下一批重溫：${later}`),
-        h("p", { class: "xs muted mt-1" }, "第一次讀得 🟡 或 ❌ 嘅句會加入；重溫答啱隔 1、3、7、14 日再出，第 5 次答啱就畢業。"),
+        h("p", { class: "xs muted mt-1" }, "第一次得到 🟡 或 ❌ 的句子會加入；重溫答對後隔 1、3、7、14 天再出現，第 5 次答對即畢業。"),
         inkButton("開始口語重溫", () => start(ctx, "review"), { disabled: due.length === 0, class: "w-full mt-3" })
       ),
 
@@ -670,8 +670,8 @@ window.App = window.App || {};
       h(
         "div",
         { class: "card accent mb-4" },
-        h("p", { class: "h-heading accent-text" }, "🗣️ 睇意思讀日文"),
-        h("p", { class: "xs muted mb-3" }, "畫面顯示廣東話意思，你讀出日文。只練「🗣️ 你講」嘅句子。"),
+        h("p", { class: "h-heading accent-text" }, "🗣️ 看意思讀日文"),
+        h("p", { class: "xs muted mb-3" }, "畫面顯示中文意思，你讀出日文。只練習「🗣️ 你說」的句子。"),
         h("p", { class: "small mb-1" }, "情境"),
         h("div", { class: "wrap mb-3" }, mineScenes.map((s) => chip(`${s.emoji} ${s.label}`, prefs.scenes.includes(s.key), () => toggleScene(s.key)))),
         h("p", { class: "small mb-1" }, "題數"),
@@ -679,7 +679,7 @@ window.App = window.App || {};
         h(
           "p",
           { class: "xs mt-3", style: { color: usable.length ? "var(--muted)" : "var(--stamp)" } },
-          usable.length ? `可以出題嘅句子：${usable.length} 句${skippedFlagged ? `（略過 🚩 讀錯 ${skippedFlagged} 句）` : ""}` : "揀最少一個情境"
+          usable.length ? `可出題的句子：${usable.length} 句${skippedFlagged ? `（略過 🚩 讀錯 ${skippedFlagged} 句）` : ""}` : "請至少選擇一個情境"
         ),
         inkButton("🎤 開始口語練習", () => start(ctx, "practice"), { accent: true, disabled: usable.length === 0, class: "w-full mt-3" })
       )
@@ -696,7 +696,7 @@ window.App = window.App || {};
         "aria-pressed": active ? "true" : "false",
         onclick: () => ctx.onPrefsChange({ mode: m.key }),
       },
-      h("span", { class: "mode-title" }, m.title, disabled && h("span", { class: "mode-badge" }, "呢部手機用唔到")),
+      h("span", { class: "mode-title" }, m.title, disabled && h("span", { class: "mode-badge" }, "此手機無法使用")),
       h("span", { class: "mode-desc" }, m.key === "voice" && disabled ? vs.reason : m.desc)
     );
   }

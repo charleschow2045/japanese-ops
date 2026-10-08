@@ -15,7 +15,7 @@ window.App = window.App || {};
   const SCRIPTS = [
     { key: "hira", label: "平假名" },
     { key: "kata", label: "片假名" },
-    { key: "both", label: "兩樣" },
+    { key: "both", label: "兩種" },
   ];
 
   // view: "menu" | "chart" | "see" | "hear" | "examples"
@@ -136,9 +136,9 @@ window.App = window.App || {};
         ? [
             `廣東話近似讀音：「${k.yue}」`,
             k.yueHint && h("span", { class: "muted" }, `（${k.yueHint}）`),
-            h("span", { class: "xs muted", style: { display: "block", marginTop: "2px" } }, "只係近似，唔理聲調，以發音為準"),
+            h("span", { class: "xs muted", style: { display: "block", marginTop: "2px" } }, "僅為近似讀音，不計聲調，請以發音為準"),
           ]
-        : h("span", { class: "muted" }, "廣東話冇對應，請聽發音")
+        : h("span", { class: "muted" }, "廣東話沒有對應讀音，請聽發音")
     );
   }
 
@@ -188,7 +188,7 @@ window.App = window.App || {};
             jp(char, "sheet-kana"),
             k[otherScript(script)]
               ? h("p", { class: "small muted mt-2" }, `${script === "hira" ? "片假名" : "平假名"}：`, jp(k[otherScript(script)]))
-              : h("p", { class: "small muted mt-2" }, "只用喺片假名外來語")
+              : h("p", { class: "small muted mt-2" }, "只用於片假名外來語")
           ),
           h("button", { class: "sheet-close", onclick: close, "aria-label": "關閉" }, "✕")
         ),
@@ -206,7 +206,7 @@ window.App = window.App || {};
           h(
             "div",
             { class: "mt-4" },
-            h("p", { class: "caption mb-2" }, "喺日本會見到"),
+            h("p", { class: "caption mb-2" }, "在日本會看到"),
             h(
               "div",
               { class: "stack-sm" },
@@ -251,7 +251,7 @@ window.App = window.App || {};
           })
         )
       ),
-      h("p", { class: "xs muted mb-3" }, "撳一個字：聽發音、睇讀音同提示。紅點 = 之前答錯過"),
+      h("p", { class: "xs muted mb-3" }, "按一個字：聽發音、看讀音與提示。紅點 = 曾經答錯"),
       KANA_GROUPS.filter((g) => !(g.kataOnly && script === "hira")).map((g) =>
         h(
           "div",
@@ -340,14 +340,14 @@ window.App = window.App || {};
       ? h(
           "div",
           { class: "card accent center mb-4" },
-          h("p", { class: "muted mb-3", style: { fontWeight: 700 } }, "聽下係邊個字？"),
+          h("p", { class: "muted mb-3", style: { fontWeight: 700 } }, "聽聽看是哪一個字？"),
           h("button", { class: "hear-btn", onclick: () => speak(q.target.char, settings), "aria-label": "再聽一次" }, "🔊"),
-          h("p", { class: "xs muted mt-3" }, "撳喇叭可以再聽")
+          h("p", { class: "xs muted mt-3" }, "按喇叭可以再聽一次")
         )
       : h(
           "div",
           { class: "card accent center mb-4" },
-          h("p", { class: "muted mb-1", style: { fontWeight: 700 } }, "呢個字點讀？"),
+          h("p", { class: "muted mb-1", style: { fontWeight: 700 } }, "這個字怎麼讀？"),
           jp(q.target.char, "quiz-kana")
         );
 
@@ -378,7 +378,7 @@ window.App = window.App || {};
       feedback = h(
         "div",
         { class: "card mt-4 feedback", "data-autoscroll": autoscroll ? "end" : null },
-        h("p", { class: `fb-title ${gotIt ? "ok" : "no"}` }, gotIt ? "✅ 啱咗！" : "❌ 唔啱，答案係："),
+        h("p", { class: `fb-title ${gotIt ? "ok" : "no"}` }, gotIt ? "✅ 答對了！" : "❌ 答錯了，答案是："),
         h(
           "div",
           { class: "row mt-1" },
@@ -397,7 +397,7 @@ window.App = window.App || {};
           "div",
           { class: "row-sm mt-4" },
           speakButton(t.char, settings, "再聽"),
-          inkButton(quiz.index + 1 < QUIZ_LENGTH ? "下一題 →" : "睇結果", next, { class: "grow" })
+          inkButton(quiz.index + 1 < QUIZ_LENGTH ? "下一題 →" : "查看結果", next, { class: "grow" })
         )
       );
     }
@@ -410,7 +410,7 @@ window.App = window.App || {};
         "div",
         { class: "row-between mb-2" },
         h("span", { class: "caption" }, `第 ${quiz.index + 1} / ${QUIZ_LENGTH} 題`),
-        h("span", { class: "caption", style: { color: "var(--gold-dark)" } }, `啱 ${correctSoFar} 題`)
+        h("span", { class: "caption", style: { color: "var(--gold-dark)" } }, `答對 ${correctSoFar} 題`)
       ),
       h("div", { class: "bar accent mb-4" }, h("div", { style: { width: `${(quiz.index / QUIZ_LENGTH) * 100}%` } })),
       prompt,
@@ -438,13 +438,13 @@ window.App = window.App || {};
         h(
           "p",
           { class: "muted mt-1", style: { fontWeight: 700 } },
-          score === QUIZ_LENGTH ? "全對！好嘢！" : score >= 7 ? "唔錯！再練多幾次就熟" : "慢慢嚟，多聽多睇就會記得"
+          score === QUIZ_LENGTH ? "全對！太棒了！" : score >= 7 ? "不錯！多練習幾次就會熟練" : "慢慢來，多聽多看就會記住"
         ),
         wrong.length > 0 &&
           h(
             "div",
             { class: "mt-4", style: { textAlign: "left" } },
-            h("p", { class: "caption mb-2" }, "答錯咗（撳一下聽發音）"),
+            h("p", { class: "caption mb-2" }, "答錯的字（按一下可聽發音）"),
             h(
               "div",
               { class: "wrap", style: { gap: "8px" } },
@@ -453,7 +453,7 @@ window.App = window.App || {};
               )
             )
           ),
-        h("div", { class: "stack mt-4" }, inkButton("再嚟一輪", restart, { class: "w-full" }), inkButton("返回五十音", back, { accent: true, class: "w-full" }))
+        h("div", { class: "stack mt-4" }, inkButton("再來一輪", restart, { class: "w-full" }), inkButton("返回五十音", back, { accent: true, class: "w-full" }))
       )
     );
   }
@@ -474,7 +474,7 @@ window.App = window.App || {};
       h(
         "p",
         { class: "small muted mb-4" },
-        "外來語多數用片假名寫。以下都係喺日本餐牌、商店、酒店、車站成日見到嘅字。撳一下聽發音。"
+        "外來語多數以片假名書寫。以下都是在日本的餐牌、商店、酒店、車站經常看到的字。按一下即可聽發音。"
       ),
       scenes.map((scene) =>
         h(
@@ -544,7 +544,7 @@ window.App = window.App || {};
             g.kataOnly &&
               allOn &&
               prefs.script === "hira" &&
-              h("p", { class: "xs muted mt-1" }, "揀咗「平假名」，所以呢組唔會出題")
+              h("p", { class: "xs muted mt-1" }, "已選擇「平假名」，因此這一組不會出題")
           );
         return h(
           "div",
@@ -590,17 +590,17 @@ window.App = window.App || {};
       h(
         "div",
         { class: "stack mb-4" },
-        menuCard("📋", "字表", "清音・濁音・半濁音，撳字聽發音", () => go("chart")),
-        menuCard("🪧", "片假名實例", "餐牌、商店、酒店見到嘅字", () => go("examples")),
-        menuCard("👂", "清濁對比", "か／が 並排聽，練分辨清音濁音", () => go("contrast")),
+        menuCard("📋", "字表", "清音・濁音・半濁音，按字即可聽發音", () => go("chart")),
+        menuCard("🪧", "片假名實例", "餐牌、商店、酒店常見的字", () => go("examples")),
+        menuCard("👂", "清濁對比", "か／が 並排聆聽，練習分辨清音與濁音", () => go("contrast")),
         menuCard("⏸️", "促音・長音", "きて／きって、おばさん／おばあさん", () => go("sounds"))
       ),
       h(
         "div",
         { class: "card accent mb-4" },
         h("p", { class: "h-heading accent-text" }, "練習"),
-        h("p", { class: "xs muted mb-3" }, `每輪 ${QUIZ_LENGTH} 題。已經答啱過嘅字：${learnt} / ${window.App.Content.KANA_TOTAL}`),
-        h("p", { class: "small mb-1" }, "練邊種？"),
+        h("p", { class: "xs muted mb-3" }, `每輪 ${QUIZ_LENGTH} 題。已答對過的字：${learnt} / ${window.App.Content.KANA_TOTAL}`),
+        h("p", { class: "small mb-1" }, "練習哪一種？"),
         h(
           "div",
           { class: "chips-fill mb-4" },
@@ -611,14 +611,14 @@ window.App = window.App || {};
         h(
           "p",
           { class: "xs mt-3", style: { color: enough ? "var(--muted)" : "var(--stamp)" } },
-          enough ? `揀咗 ${pool.length} 個字` : "揀多啲行（最少要有 4 個唔同讀音先出到題）"
+          enough ? `已選擇 ${pool.length} 個字` : "請多選幾行（至少要有 4 個不同讀音才能出題）"
         ),
         h(
           "div",
           { class: "stack mt-4" },
           inkButton("👀 看字選音", () => startQuiz(ctx, "see", pool), { accent: true, disabled: !enough, class: "w-full" }),
           inkButton("👂 聽音選字", () => startQuiz(ctx, "hear", pool), { accent: true, disabled: !enough || !tts, class: "w-full" }),
-          !tts && h("p", { class: "xs muted" }, "呢個瀏覽器冇發音功能，所以用唔到聽音選字")
+          !tts && h("p", { class: "xs muted" }, "此瀏覽器沒有發音功能，因此無法使用聽音選字")
         )
       )
     );

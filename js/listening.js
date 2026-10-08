@@ -18,7 +18,7 @@ window.App = window.App || {};
   const SLOW_RATE = 0.6;
   const COUNTS = [5, 10, 20];
   const REVIEW_MAX = 10;
-  const WHO = { me: "🗣️ 你講", staff: "👂 店員講", both: "🗣️👂 你同店員都會講" };
+  const WHO = { me: "🗣️ 你說", staff: "👂 店員說", both: "🗣️👂 你與店員都會說" };
 
   // view: "menu" | "quiz"; quiz: { mode, questions, index, picked, results }
   const ui = { view: "menu", quiz: null, scrollFeedback: false };
@@ -219,7 +219,7 @@ window.App = window.App || {};
       feedback = h(
         "div",
         { class: "card mt-4 feedback", "data-autoscroll": autoscroll ? "end" : null },
-        h("p", { class: `fb-title ${gotIt ? "ok" : "no"}` }, gotIt ? "✅ 啱咗！" : "❌ 唔啱，正確答案係："),
+        h("p", { class: `fb-title ${gotIt ? "ok" : "no"}` }, gotIt ? "✅ 答對了！" : "❌ 答錯了，正確答案是："),
         feedbackBody(q, settings),
         isTTSSupported() &&
           h(
@@ -228,7 +228,7 @@ window.App = window.App || {};
             h("button", { class: "btn-soft grow", onclick: () => playQ(q, settings) }, "🔊 再聽"),
             h("button", { class: "btn-soft grow", onclick: () => playQ(q, settings, SLOW_RATE) }, "🐢 慢慢聽")
           ),
-        inkButton(quiz.index + 1 < total ? "下一題 →" : "睇結果", next, { class: "w-full mt-3" })
+        inkButton(quiz.index + 1 < total ? "下一題 →" : "查看結果", next, { class: "w-full mt-3" })
       );
     }
 
@@ -240,13 +240,13 @@ window.App = window.App || {};
         "div",
         { class: "row-between mb-2" },
         h("span", { class: "caption" }, `第 ${quiz.index + 1} / ${total} 題`),
-        h("span", { class: "caption", style: { color: "var(--gold-dark)" } }, `啱 ${quiz.results.filter((r) => r.correct).length} 題`)
+        h("span", { class: "caption", style: { color: "var(--gold-dark)" } }, `答對 ${quiz.results.filter((r) => r.correct).length} 題`)
       ),
       h("div", { class: "bar accent mb-4" }, h("div", { style: { width: `${(quiz.index / total) * 100}%` } })),
       h(
         "div",
         { class: "card accent center mb-4" },
-        h("p", { class: "muted mb-3", style: { fontWeight: 700 } }, q.type === "phrase" ? "聽下呢句係咩意思？" : "聽下係邊個字？（五十音）"),
+        h("p", { class: "muted mb-3", style: { fontWeight: 700 } }, q.type === "phrase" ? "聽聽看這句是什麼意思？" : "聽聽看是哪一個字？（五十音）"),
         h("button", { class: "hear-btn", onclick: () => playQ(q, settings), "aria-label": "再聽一次" }, "🔊"),
         h(
           "div",
@@ -280,17 +280,17 @@ window.App = window.App || {};
           { class: "muted mt-1", style: { fontWeight: 700 } },
           review
             ? score === total
-              ? "全部答啱！呢啲會隔耐啲先再出"
-              : "答錯嘅今日會再出，答啱嘅會隔幾日先再重溫"
+              ? "全部答對！這些會隔較長時間才再出現"
+              : "答錯的今天會再出現，答對的會隔幾天才再重溫"
             : score === total
-              ? "全對！耳仔好靈！"
-              : "答錯嘅已經加入「錯題重溫」"
+              ? "全對！聽力很好！"
+              : "答錯的已加入「錯題重溫」"
         ),
         wrong.length > 0 &&
           h(
             "div",
             { class: "mt-4", style: { textAlign: "left" } },
-            h("p", { class: "caption mb-2" }, "答錯咗（撳一下再聽）"),
+            h("p", { class: "caption mb-2" }, "答錯的內容（按一下可再聽）"),
             h(
               "div",
               { class: "stack-sm" },
@@ -308,7 +308,7 @@ window.App = window.App || {};
         h(
           "div",
           { class: "stack mt-4" },
-          !review && inkButton("再嚟一輪", () => start(ctx, "practice"), { class: "w-full" }),
+          !review && inkButton("再來一輪", () => start(ctx, "practice"), { class: "w-full" }),
           inkButton("返回聽力練習", back, { accent: true, class: "w-full" })
         )
       )
@@ -353,12 +353,12 @@ window.App = window.App || {};
         { class: "card review-card mb-4" },
         h("p", { class: "h-heading" }, "📝 錯題重溫"),
         due.length > 0
-          ? h("p", { class: "review-count" }, `今日要重溫 ${due.length} 句`)
-          : h("p", { class: "small muted mt-1" }, "今日冇嘢要重溫 🎉"),
+          ? h("p", { class: "review-count" }, `今天需重溫 ${due.length} 句`)
+          : h("p", { class: "small muted mt-1" }, "今天沒有需要重溫的內容 🎉"),
         due.length > 0 && h("p", { class: "xs muted" }, `句子 ${dueP}・五十音 ${dueK}${due.length > REVIEW_MAX ? `（每次最多 ${REVIEW_MAX} 題）` : ""}`),
-        waitingFlagged > 0 && h("p", { class: "xs muted mt-1" }, `另有 ${waitingFlagged} 句標咗 🚩 讀錯，修正前唔會出`),
+        waitingFlagged > 0 && h("p", { class: "xs muted mt-1" }, `另有 ${waitingFlagged} 句已標記 🚩 讀錯，修正前不會出題`),
         later && h("p", { class: "xs muted mt-1" }, `下一批重溫：${later}`),
-        h("p", { class: "xs muted mt-1" }, "答錯 → 今日再出；重溫答啱 → 隔 1、3、7、14 日再出，第 5 次答啱就畢業。"),
+        h("p", { class: "xs muted mt-1" }, "答錯 → 今天再出現；重溫答對 → 隔 1、3、7、14 天再出現，第 5 次答對即畢業。"),
         inkButton("開始重溫", () => start(ctx, "review"), { disabled: due.length === 0 || !tts, class: "w-full mt-3" })
       ),
 
@@ -366,22 +366,22 @@ window.App = window.App || {};
       h(
         "div",
         { class: "card accent mb-4" },
-        h("p", { class: "h-heading accent-text" }, "🎧 聽句子揀意思"),
-        h("p", { class: "xs muted mb-3" }, "播一句日文（唔顯示字），喺 4 個廣東話意思入面揀一個。"),
+        h("p", { class: "h-heading accent-text" }, "🎧 聽句子選意思"),
+        h("p", { class: "xs muted mb-3" }, "播放一句日文（不顯示文字），從 4 個中文意思中選出一個。"),
         h("p", { class: "small mb-1" }, "情境"),
         h("div", { class: "wrap mb-3" }, scenes().map((s) => chip(`${s.emoji} ${s.label}`, prefs.scenes.includes(s.key), () => toggleScene(s.key)))),
-        toggle("只練「👂 店員講」", "專門練聽懂店員、司機、廣播", prefs.staffOnly, (v) => ctx.onPrefsChange({ staffOnly: v })),
+        toggle("只練「👂 店員說」", "專門練習聽懂店員、司機與廣播", prefs.staffOnly, (v) => ctx.onPrefsChange({ staffOnly: v })),
         h("p", { class: "small mb-1 mt-2" }, "題數"),
         h("div", { class: "chips-fill" }, COUNTS.map((n) => chip(`${n} 題`, prefs.count === n, () => ctx.onPrefsChange({ count: n })))),
         h(
           "p",
           { class: "xs mt-3", style: { color: enough ? "var(--muted)" : "var(--stamp)" } },
           enough
-            ? `可以出題嘅句子：${usable.length} 句${skippedFlagged ? `（略過 🚩 讀錯 ${skippedFlagged} 句）` : ""}`
-            : "揀最少一個情境（或者熄咗「只練店員講」）"
+            ? `可出題的句子：${usable.length} 句${skippedFlagged ? `（略過 🚩 讀錯 ${skippedFlagged} 句）` : ""}`
+            : "請至少選擇一個情境（或關閉「只練店員說」）"
         ),
         inkButton("👂 開始聽力練習", () => start(ctx, "practice"), { accent: true, disabled: !enough || !tts, class: "w-full mt-3" }),
-        !tts && h("p", { class: "xs muted mt-2" }, "呢個瀏覽器冇發音功能，所以用唔到聽力練習")
+        !tts && h("p", { class: "xs muted mt-2" }, "此瀏覽器沒有發音功能，因此無法使用聽力練習")
       )
     );
   }
