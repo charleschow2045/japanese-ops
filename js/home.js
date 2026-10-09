@@ -1,8 +1,8 @@
-// Home screen: module list (only 五十音 is live in stage 1a).
+// Home screen: 今日任務 card (stage 7b) + the module list.
 window.App = window.App || {};
 
 (function () {
-  const { h, accentVars } = window.App.UI;
+  const { h, accentVars, inkButton } = window.App.UI;
 
   function moduleRow(mod, onOpen) {
     const isKana = mod.key === "kana";
@@ -15,24 +15,31 @@ window.App = window.App || {};
     );
   }
 
+  // 今日任務 card: progress, streak, countdown and the one button that
+  // opens the daily task page.
+  function todayCard(state, onOpen) {
+    const sum = window.App.Daily.summary(state);
+    const all = sum.count === sum.total;
+    return h(
+      "div",
+      { class: "card", style: accentVars("daily") },
+      h("p", { class: "h-heading", style: { fontSize: "1.25rem" } }, "每天學一點，前往日本時就用得上 ✈️"),
+      h(
+        "div",
+        { class: "mt-3" },
+        h("div", { class: "row-between small mb-1" }, h("span", null, "📅 今日任務"), h("span", { style: { color: "var(--a-solid)" } }, `已完成 ${sum.count} / ${sum.total}`)),
+        h("div", { class: "bar accent" }, h("div", { style: { width: `${(sum.count / sum.total) * 100}%` } }))
+      ),
+      h("p", { class: "small mt-3" }, sum.streak.current > 0 ? `🔥 連續 ${sum.streak.current} 天` : "🔥 今天開始累積連續天數", sum.countdown ? `　${sum.countdown}` : ""),
+      inkButton(all ? "今天完成了 🎉　查看" : sum.count === 0 ? "開始今日任務" : `繼續：${sum.nextTitle}`, onOpen, { accent: true, class: "w-full mt-3" })
+    );
+  }
+
   function render(state, onOpenModule) {
-    const learnt = Object.values(state.kana.stats).filter((s) => s.c > 0).length;
-    const total = window.App.Content.KANA_TOTAL;
     return h(
       "div",
       { class: "stack-lg" },
-      h(
-        "div",
-        { class: "card" },
-        h("p", { class: "h-heading", style: { fontSize: "1.25rem" } }, "每天學一點，前往日本時就用得上 ✈️"),
-        h("p", { class: "small muted mt-1" }, "第一步：先認識平假名和片假名。"),
-        h(
-          "div",
-          { class: "mt-3" },
-          h("div", { class: "row-between xs muted mb-1" }, h("span", null, "五十音答對過"), h("span", { style: { color: "var(--gold-dark)" } }, `${learnt} / ${total}`)),
-          h("div", { class: "bar" }, h("div", { style: { width: `${(learnt / total) * 100}%` } }))
-        )
-      ),
+      todayCard(state, () => onOpenModule("daily")),
       h(
         "div",
         { class: "stack-sm" },

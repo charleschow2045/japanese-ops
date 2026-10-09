@@ -21,7 +21,7 @@ window.App = window.App || {};
   const WHO = { me: "🗣️ 你說", staff: "👂 店員說", both: "🗣️👂 你與店員都會說" };
 
   // view: "menu" | "quiz"; quiz: { mode, questions, index, picked, results }
-  const ui = { view: "menu", quiz: null, scrollFeedback: false };
+  const ui = { view: "menu", quiz: null, scrollFeedback: false, taskId: null };
   function reset() {
     ui.view = "menu";
     ui.quiz = null;
@@ -141,6 +141,27 @@ window.App = window.App || {};
     ctx.rerender({ scrollTop: true });
   }
 
+  // 每日任務 (stage 7b): the 今日任務 page hands over a spec — { mode: "review" } for
+  // 錯題重溫, { ids: [sentence ids] } for 今日新句子小測, { kana: [chars] } for
+  // 五十音熱身. Built while rendering, which runs inside the launching tap, so
+  // the first sound still plays within the user gesture.
+  function startTask(ctx) {
+    const t = ctx.task;
+    const { shuffle } = kanaHelpers();
+    let questions;
+    if (t.mode === "review") questions = buildReview(ctx.state);
+    else if (t.kana) questions = shuffle(t.kana.filter((ch) => kanaInfo(ch))).map(kanaQuestion);
+    else questions = shuffle((t.ids || []).filter((id) => !!phraseById(id) && !ctx.state.flags.includes(id))).map((id) => phraseQuestion(phraseById(id)));
+    if (!questions.length) {
+      ui.quiz = null;
+      ui.view = "menu";
+      return;
+    }
+    ui.quiz = { mode: t.mode === "review" ? "review" : "practice", questions, index: 0, picked: null, results: [] };
+    ui.view = "quiz";
+    playQ(questions[0], ctx.state.settings);
+  }
+
   const isRight = (q, opt) => (q.type === "phrase" ? opt.p.id === q.target.p.id : opt.char === q.target.char);
 
   function feedbackBody(q, settings) {
@@ -168,8 +189,9 @@ window.App = window.App || {};
     const settings = ctx.state.settings;
     const quiz = ui.quiz;
     const total = quiz.questions.length;
-    const title = quiz.mode === "review" ? "錯題重溫" : "聽力練習";
+    const title = ctx.task && ctx.task.title ? ctx.task.title : quiz.mode === "review" ? "錯題重溫" : "聽力練習";
     const back = () => {
+      if (ctx.task) return ctx.onBack();
       ui.view = "menu";
       ui.quiz = null;
       ctx.rerender({ scrollTop: true });
@@ -193,6 +215,7 @@ window.App = window.App || {};
       quiz.index += 1;
       quiz.picked = null;
       if (quiz.index < total) playQ(quiz.questions[quiz.index], settings);
+      else if (ctx.task) ctx.onTaskDone(); // 每日任務: finished the whole set
       ctx.rerender({ scrollTop: true });
     }
 
@@ -308,8 +331,8 @@ window.App = window.App || {};
         h(
           "div",
           { class: "stack mt-4" },
-          !review && inkButton("再來一輪", () => start(ctx, "practice"), { class: "w-full" }),
-          inkButton("返回聽力練習", back, { accent: true, class: "w-full" })
+          !review && !ctx.task && inkButton("再來一輪", () => start(ctx, "practice"), { class: "w-full" }),
+          inkButton(ctx.task ? "返回今日任務" : "返回聽力練習", back, { accent: true, class: "w-full" })
         )
       )
     );
@@ -386,8 +409,22 @@ window.App = window.App || {};
     );
   }
 
-  // ctx: { state, onPrefsChange, onAnswer(q, correct, mode), onBack, rerender }
+  // ctx: { state, task, onPrefsChange, onAnswer(q, correct, mode), onTaskDone, onBack, rerender }
+  function emptyTask(ctx) {
+    return h(
+      "div",
+      null,
+      modHeader(ctx.task.title || "錯題重溫", ctx.onBack),
+      h("div", { class: "card accent center" }, h("p", { class: "h-heading" }, "今天沒有需要重溫的內容 🎉"), inkButton("返回今日任務", ctx.onBack, { accent: true, class: "w-full mt-4" }))
+    );
+  }
+
   function render(ctx) {
+    if (ctx.task && ui.taskId !== ctx.task.id) {
+      ui.taskId = ctx.task.id;
+      startTask(ctx);
+    }
+    if (ctx.task && !ui.quiz) return emptyTask(ctx);
     if (ui.view === "quiz" && ui.quiz) return quizScreen(ctx);
     ui.view = "menu";
     return menu(ctx);

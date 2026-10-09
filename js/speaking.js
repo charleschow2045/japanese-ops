@@ -204,7 +204,7 @@ window.App = window.App || {};
 
   // view: "menu" | "quiz".  quiz: { kind: "practice"|"review", mode,
   // questions, index, results[] }.  q: state of the current question.
-  const ui = { view: "menu", quiz: null, q: null, scrollFeedback: false };
+  const ui = { view: "menu", quiz: null, q: null, scrollFeedback: false, taskId: null };
   let rec = null; // active SpeechRecognition
 
   function newQ() {
@@ -246,6 +246,25 @@ window.App = window.App || {};
     ui.view = "quiz";
     newQ();
     ctx.rerender({ scrollTop: true });
+  }
+
+  // 每日任務 (stage 7b): { kind: "review" } or { ids: [sentence ids] } from the
+  // 今日任務 page; built while rendering inside the launching tap.
+  function startTask(ctx) {
+    const t = ctx.task;
+    const state = ctx.state;
+    let questions;
+    if (t.kind === "review") questions = shuffle(dueItems(state).slice(0, REVIEW_MAX)).map(([key]) => byId(key.slice(2)));
+    else questions = shuffle((t.ids || []).filter((id) => !state.flags.includes(id)).map(byId).filter(Boolean));
+    if (!questions.length) {
+      ui.quiz = null;
+      ui.q = null;
+      ui.view = "menu";
+      return;
+    }
+    ui.quiz = { kind: t.kind === "review" ? "review" : "practice", mode: effectiveMode(state.speak.prefs.mode), questions, index: 0, results: [] };
+    ui.view = "quiz";
+    newQ();
   }
 
   // Record the first attempt of the current question (once). Called when
@@ -369,6 +388,7 @@ window.App = window.App || {};
     const title = quiz.kind === "review" ? "口語重溫" : "口語練習";
     const back = () => {
       stopRec();
+      if (ctx.task) return ctx.onBack();
       ui.view = "menu";
       ui.quiz = null;
       ctx.rerender({ scrollTop: true });
@@ -384,6 +404,7 @@ window.App = window.App || {};
       commit(ctx);
       quiz.index += 1;
       newQ();
+      if (quiz.index >= total && ctx.task) ctx.onTaskDone(); // 每日任務: finished the whole set
       ctx.rerender({ scrollTop: true });
     }
     function retry() {
@@ -580,8 +601,8 @@ window.App = window.App || {};
         h(
           "div",
           { class: "stack mt-4" },
-          !review && inkButton("再來一輪", () => start(ctx, "practice"), { class: "w-full" }),
-          inkButton("返回口語練習", back, { accent: true, class: "w-full" })
+          !review && !ctx.task && inkButton("再來一輪", () => start(ctx, "practice"), { class: "w-full" }),
+          inkButton(ctx.task ? "返回今日任務" : "返回口語練習", back, { accent: true, class: "w-full" })
         )
       )
     );
@@ -701,8 +722,22 @@ window.App = window.App || {};
     );
   }
 
-  // ctx: { state, onPrefsChange, onAnswer(item, correct, kind), onBack, rerender }
+  // ctx: { state, task, onPrefsChange, onAnswer(item, correct, kind), onTaskDone, onBack, rerender }
+  function emptyTask(ctx) {
+    return h(
+      "div",
+      null,
+      modHeader("口語重溫", ctx.onBack),
+      h("div", { class: "card accent center" }, h("p", { class: "h-heading" }, "今天沒有需要重溫的內容 🎉"), inkButton("返回今日任務", ctx.onBack, { accent: true, class: "w-full mt-4" }))
+    );
+  }
+
   function render(ctx) {
+    if (ctx.task && ui.taskId !== ctx.task.id) {
+      ui.taskId = ctx.task.id;
+      startTask(ctx);
+    }
+    if (ctx.task && !ui.quiz) return emptyTask(ctx);
     if (ui.view === "quiz" && ui.quiz && ui.q) return quizScreen(ctx);
     ui.view = "menu";
     return menu(ctx);

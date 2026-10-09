@@ -13,11 +13,10 @@ window.App = window.App || {};
     { key: "speaking", label: "口語練習", sub: "看意思讀日文・語音辨識／鍵盤聽寫", emoji: "🎤", implemented: true },
     { key: "reading", label: "看得懂", sub: "餐牌、商品、車站", emoji: "🪧", implemented: false },
     { key: "dialogue", label: "情境對話", sub: "9 個情境・與店員一問一答", emoji: "🛎️", implemented: true },
-    { key: "daily", label: "每日任務及進度", sub: "每日 15–20 分鐘", emoji: "📅", implemented: false },
   ];
 
   function defaultSettings() {
-    return { showRomaji: true, showYue: true, voiceURI: null, rate: 0.8 };
+    return { showRomaji: true, showYue: true, voiceURI: null, rate: 0.8, travelDate: null, dailyNew: 5 };
   }
 
   // kana.stats is keyed by the character itself (あ and ア tracked
@@ -62,6 +61,16 @@ window.App = window.App || {};
     return { prefs: { showText: true, showMeaning: true }, stats: {} };
   }
 
+  // daily (stage 7b 每日任務):
+  //   learned:  { [sentence id]: "YYYY-MM-DD" } 每日任務「今日新句子」學過的句子
+  //   days:     { [date]: { newIds, speakIds, dialogueId, due0: { l, s }, done: { reviewL, reviewS, new, speak, dialogue, kana } } }
+  //             每日的任務內容在當天第一次打開時固定下來；done 只增不減
+  //   activity: { [date]: { a: 答題數, c: 答對數 } } 每次答題累加（包括不經任務頁的練習）
+  //   cursor:   下一個輪到的情境（今日新句子按情境輪流）
+  function defaultDaily() {
+    return { learned: {}, days: {}, activity: {}, cursor: 0 };
+  }
+
   // flags: 句子庫 sentence ids the user marked 🚩 讀錯 (pronunciation is
   // wrong on their phone) — listed in 設定 so they can copy and send them.
   // review (stage 5 錯題重溫, spaced repetition): items keyed
@@ -70,7 +79,7 @@ window.App = window.App || {};
   //   box = correct review answers in a row (0–4); due = local date
   //   "YYYY-MM-DD" when it is next asked. See REVIEW_INTERVALS.
   function defaultState() {
-    return { settings: defaultSettings(), kana: defaultKana(), flags: [], listen: defaultListen(), speak: defaultSpeak(), dialogue: defaultDialogue(), review: { items: {} } };
+    return { settings: defaultSettings(), kana: defaultKana(), flags: [], listen: defaultListen(), speak: defaultSpeak(), dialogue: defaultDialogue(), daily: defaultDaily(), review: { items: {}, graduated: 0 } };
   }
 
   // ── local dates (phone's own calendar day — never UTC) ──
@@ -94,7 +103,7 @@ window.App = window.App || {};
   const REVIEW_INTERVALS = [1, 3, 7, 14];
 
   function reviewWrong(state, key) {
-    return { ...state, review: { items: { ...state.review.items, [key]: { box: 0, due: todayLocal() } } } };
+    return { ...state, review: { ...state.review, items: { ...state.review.items, [key]: { box: 0, due: todayLocal() } } } };
   }
 
   function reviewCorrect(state, key) {
@@ -102,9 +111,12 @@ window.App = window.App || {};
     if (!item) return state;
     const items = { ...state.review.items };
     const box = item.box + 1;
-    if (box > REVIEW_INTERVALS.length) delete items[key];
-    else items[key] = { box, due: addDaysLocal(todayLocal(), REVIEW_INTERVALS[box - 1]) };
-    return { ...state, review: { items } };
+    let graduated = state.review.graduated || 0;
+    if (box > REVIEW_INTERVALS.length) {
+      delete items[key];
+      graduated += 1; // 畢業
+    } else items[key] = { box, due: addDaysLocal(todayLocal(), REVIEW_INTERVALS[box - 1]) };
+    return { ...state, review: { ...state.review, items, graduated } };
   }
 
   // Merges a saved state onto the defaults so saves from older versions
@@ -143,15 +155,25 @@ window.App = window.App || {};
         review = { items: {} };
         kana.mistakes.forEach((ch) => (review.items[`k:${ch}`] = { box: 0, due: todayLocal() }));
       }
+      review = { ...review, graduated: Number(review.graduated) > 0 ? Math.floor(Number(review.graduated)) : 0 };
+      const settings = { ...base.settings, ...(parsed.settings || {}) };
+      if (![3, 5, 8].includes(settings.dailyNew)) settings.dailyNew = 5;
+      if (typeof settings.travelDate !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(settings.travelDate)) settings.travelDate = null;
+      const daily = { ...base.daily, ...(parsed.daily || {}) };
+      ["learned", "days", "activity"].forEach((k) => {
+        if (!daily[k] || typeof daily[k] !== "object" || Array.isArray(daily[k])) daily[k] = {};
+      });
+      if (!(daily.cursor >= 0)) daily.cursor = 0;
       return {
         ...base,
         ...parsed,
-        settings: { ...base.settings, ...(parsed.settings || {}) },
+        settings,
         kana,
         flags: Array.isArray(parsed.flags) ? parsed.flags : [],
         listen,
         speak,
         dialogue,
+        daily,
         review,
       };
     } catch (e) {
@@ -174,6 +196,21 @@ window.App = window.App || {};
     return defaultState();
   }
 
+  // Count one answered question towards today's activity (進度頁 最近 7 天).
+  function bumpActivity(state, correct, n = 1, right = correct ? n : 0) {
+    const today = todayLocal();
+    const prev = state.daily.activity[today] || { a: 0, c: 0 };
+    return { ...state, daily: { ...state.daily, activity: { ...state.daily.activity, [today]: { a: prev.a + n, c: prev.c + right } } } };
+  }
+
+  // Consecutive correct answers in a row. Saves from before stage 7b have no
+  // `run`: a sentence never answered wrong counts its correct answers.
+  function runOf(stat) {
+    if (!stat) return 0;
+    if (typeof stat.run === "number") return stat.run;
+    return stat.w === 0 ? stat.c : 0;
+  }
+
   function recordKanaAnswer(state, char, correct) {
     const prev = state.kana.stats[char] || { c: 0, w: 0, last: null };
     const stats = {
@@ -182,7 +219,7 @@ window.App = window.App || {};
     };
     const without = state.kana.mistakes.filter((m) => m !== char);
     const mistakes = correct ? without : [...without, char];
-    const next = { ...state, kana: { ...state.kana, stats, mistakes } };
+    const next = bumpActivity({ ...state, kana: { ...state.kana, stats, mistakes } }, correct);
     // Any wrong 五十音 answer (字表練習、清濁對比、重溫) also (re)enters 錯題重溫.
     return correct ? next : reviewWrong(next, `k:${char}`);
   }
@@ -192,9 +229,9 @@ window.App = window.App || {};
     const prev = state.listen.stats[id] || { c: 0, w: 0, last: null };
     const stats = {
       ...state.listen.stats,
-      [id]: { c: prev.c + (correct ? 1 : 0), w: prev.w + (correct ? 0 : 1), last: new Date().toISOString() },
+      [id]: { c: prev.c + (correct ? 1 : 0), w: prev.w + (correct ? 0 : 1), run: correct ? runOf(prev) + 1 : 0, last: new Date().toISOString() },
     };
-    const next = { ...state, listen: { ...state.listen, stats } };
+    const next = bumpActivity({ ...state, listen: { ...state.listen, stats } }, correct);
     return correct ? next : reviewWrong(next, `p:${id}`);
   }
 
@@ -204,9 +241,9 @@ window.App = window.App || {};
     const prev = state.speak.stats[id] || { c: 0, w: 0, last: null };
     const stats = {
       ...state.speak.stats,
-      [id]: { c: prev.c + (correct ? 1 : 0), w: prev.w + (correct ? 0 : 1), last: new Date().toISOString() },
+      [id]: { c: prev.c + (correct ? 1 : 0), w: prev.w + (correct ? 0 : 1), run: correct ? runOf(prev) + 1 : 0, last: new Date().toISOString() },
     };
-    const next = { ...state, speak: { ...state.speak, stats } };
+    const next = bumpActivity({ ...state, speak: { ...state.speak, stats } }, correct);
     return correct ? next : reviewWrong(next, `s:${id}`);
   }
 
@@ -218,7 +255,7 @@ window.App = window.App || {};
       ...state.dialogue.stats,
       [id]: { plays: prev.plays + 1, perfect: prev.perfect + (correct === total ? 1 : 0), best: Math.max(prev.best, pct), last: new Date().toISOString() },
     };
-    return { ...state, dialogue: { ...state.dialogue, stats } };
+    return bumpActivity({ ...state, dialogue: { ...state.dialogue, stats } }, true, total, correct);
   }
 
   function toggleFlag(state, id) {
@@ -231,6 +268,8 @@ window.App = window.App || {};
     recordListenAnswer,
     recordSpeakAnswer,
     recordDialogue,
+    runOf,
+    bumpActivity,
     reviewWrong,
     reviewCorrect,
     todayLocal,

@@ -215,5 +215,6 @@ window.App = window.App || {};
     return sceneList(ctx);
   }
 
-  window.App.Phrases = { render, reset, countOf, locate };
+  // One sentence card (日文、假名、拼音、意思、🔊 🐢 🚩) — reused by 今日新句子.
+  window.App.Phrases = { render, reset, countOf, locate, sentenceCard: (p, ctx) => sentence(p, ctx, false) };
 })();

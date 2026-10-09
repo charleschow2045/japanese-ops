@@ -72,6 +72,8 @@ window.App = window.App || {};
         ]
       ),
 
+      goalSection(ctx),
+
       flagSection(ctx.flags || []),
 
       installSection(),
@@ -124,8 +126,46 @@ window.App = window.App || {};
       h(
         "p",
         { class: "xs muted center", style: { paddingBottom: "8px" } },
-        `Japanese Ops · 階段 7a${window.App.appVersion ? ` · 版本 ${window.App.appVersion}` : ""}`
+        `Japanese Ops · 階段 7b${window.App.appVersion ? ` · 版本 ${window.App.appVersion}` : ""}`
       )
+    );
+  }
+
+  // 學習目標 (stage 7b): 旅行日期 (for the countdown) and 每日新句子數.
+  function goalSection(ctx) {
+    const { settings } = ctx;
+    const today = window.App.Storage.todayLocal();
+    const left = window.App.Daily.daysUntil(settings.travelDate);
+    return section(
+      "學習目標",
+      h("p", { class: "small muted mb-1" }, "✈️ 旅行日期"),
+      h(
+        "div",
+        { class: "row-sm" },
+        h("input", {
+          type: "date",
+          class: "date-input grow",
+          value: settings.travelDate || "",
+          min: today,
+          "aria-label": "旅行日期",
+          onchange: (e) => ctx.onChange({ travelDate: e.target.value || null }),
+        }),
+        settings.travelDate && h("button", { class: "btn-soft", onclick: () => ctx.onChange({ travelDate: null }) }, "清除")
+      ),
+      h(
+        "p",
+        { class: "xs muted mt-1 mb-3" },
+        !settings.travelDate
+          ? "設定後，主頁和進度頁會顯示出發倒數（可以留空）。"
+          : left > 0
+            ? `距離出發還有 ${left} 天。`
+            : left === 0
+              ? "今天出發！"
+              : "這個日期已經過去了，倒數不會顯示。"
+      ),
+      h("p", { class: "small muted mb-1" }, "📅 每日新句子"),
+      h("div", { class: "chips-fill" }, [3, 5, 8].map((n) => chip(`${n} 句`, settings.dailyNew === n, () => ctx.onChange({ dailyNew: n })))),
+      h("p", { class: "xs muted mt-1" }, "只影響之後的日子；今天的任務已經固定。")
     );
   }
 

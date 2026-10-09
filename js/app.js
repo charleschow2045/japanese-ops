@@ -1,19 +1,21 @@
-// App shell: state, bottom tab bar (主頁 / 設定), and the render loop.
+// App shell: state, bottom tab bar (主頁 / 進度 / 設定), and the render loop.
 // Any state change → save to localStorage → App.render() rebuilds the
 // screen from scratch (the app is small, so this is simple and fast).
 window.App = window.App || {};
 
 (function () {
-  const { Storage, Home, Settings, KanaModule, Phrases, Listening, Speaking, Dialogue, Speech } = window.App;
+  const { Storage, Home, Settings, KanaModule, Phrases, Listening, Speaking, Dialogue, Speech, Daily, Progress } = window.App;
   const { h, accentVars } = window.App.UI;
 
   const TABS = [
     { key: "home", label: "主頁", icon: "🏠" },
+    { key: "progress", label: "進度", icon: "📊" },
     { key: "settings", label: "設定", icon: "⚙️" },
   ];
 
   let state = Storage.loadState();
-  const nav = { tab: "home", view: "home" }; // view = screen inside the 主頁 tab
+  const nav = { tab: "home", view: "home", task: null }; // view = screen inside the 主頁 tab; task = 每日任務 session in progress
+  let taskSeq = 0;
 
   const mainEl = document.getElementById("main");
   const overlayEl = document.getElementById("overlay");
@@ -25,8 +27,19 @@ window.App = window.App || {};
     render();
   }
 
+  // Back from a module to the module list (also drops any half-finished session).
+  function goHome() {
+    Listening.reset();
+    Speaking.reset();
+    Dialogue.reset();
+    nav.view = "home";
+    render({ scrollTop: true });
+  }
+
   function openModule(key) {
     nav.view = key;
+    nav.task = null;
+    if (key === "daily") Daily.reset();
     if (key === "kana") KanaModule.reset();
     if (key === "phrases") Phrases.reset();
     if (key === "listening") Listening.reset();
@@ -35,8 +48,37 @@ window.App = window.App || {};
     render({ scrollTop: true });
   }
 
+  // 每日任務: hand a spec from the 今日任務 page to the module that runs it.
+  // The module starts the session while rendering (inside the tap that
+  // launched it, so audio is allowed on iOS) and reports back through
+  // onTaskDone; leaving returns to the 今日任務 page.
+  function launchTask(spec) {
+    nav.task = { ...spec, id: ++taskSeq, date: Storage.todayLocal() };
+    nav.tab = "home";
+    nav.view = spec.module;
+    Listening.reset();
+    Speaking.reset();
+    Dialogue.reset();
+    render({ scrollTop: true });
+  }
+
+  function taskDone() {
+    const t = nav.task;
+    if (t) setState((s) => Daily.markDone(s, t.date, t.key));
+  }
+
+  function leaveTask() {
+    nav.task = null;
+    Listening.reset();
+    Speaking.reset();
+    Dialogue.reset();
+    nav.view = "daily";
+    render({ scrollTop: true });
+  }
+
   function selectTab(key) {
     nav.tab = key;
+    nav.task = null;
     if (key === "home") nav.view = "home"; // tapping 主頁 always returns to the module list
     Settings.reset();
     render({ scrollTop: true });
@@ -64,7 +106,16 @@ window.App = window.App || {};
     let content = null;
     let overlay = null;
 
-    if (nav.tab === "settings") {
+    // Today's 每日任務 plan is fixed the first time the app renders that day.
+    const ready = Daily.ensureToday(state);
+    if (ready !== state) {
+      state = ready;
+      Storage.saveState(state);
+    }
+
+    if (nav.tab === "progress") {
+      content = h("div", { style: accentVars("daily") }, Progress.render({ state }));
+    } else if (nav.tab === "settings") {
       content = Settings.render({
         settings: state.settings,
         flags: state.flags,
@@ -110,6 +161,8 @@ window.App = window.App || {};
         { style: accentVars("listening") },
         Listening.render({
           state,
+          task: nav.task,
+          onTaskDone: taskDone,
           onPrefsChange: (patch) => setState((s) => ({ ...s, listen: { ...s.listen, prefs: { ...s.listen.prefs, ...patch } } })),
           // Wrong answers (re)enter 錯題重溫 inside record*Answer; only a
           // correct answer DURING 重溫 moves an item to its next interval.
@@ -122,10 +175,7 @@ window.App = window.App || {};
               const next = Storage.recordKanaAnswer(s, q.target.char, correct);
               return correct && mode === "review" ? Storage.reviewCorrect(next, `k:${q.target.char}`) : next;
             }),
-          onBack: () => {
-            nav.view = "home";
-            render({ scrollTop: true });
-          },
+          onBack: () => (nav.task ? leaveTask() : goHome()),
           rerender: render,
         })
       );
@@ -139,12 +189,13 @@ window.App = window.App || {};
           // First wrong pick of a turn: a sentence you should say → 口語重溫 ("s:"),
           // a staff line you misheard → 聽力重溫 ("p:").
           onMistake: (kind, id) => setState((s) => Storage.reviewWrong(s, `${kind === "speak" ? "s" : "p"}:${id}`)),
-          onFinish: (id, correct, total) => setState((s) => Storage.recordDialogue(s, id, correct, total)),
-          onBack: () => {
-            Dialogue.reset();
-            nav.view = "home";
-            render({ scrollTop: true });
-          },
+          onFinish: (id, correct, total) =>
+            setState((s) => {
+              const next = Storage.recordDialogue(s, id, correct, total);
+              return nav.task && nav.task.key === "dialogue" ? Daily.markDone(next, nav.task.date, "dialogue") : next;
+            }),
+          task: nav.task,
+          onBack: () => (nav.task ? leaveTask() : goHome()),
           rerender: render,
         })
       );
@@ -162,10 +213,26 @@ window.App = window.App || {};
               const next = Storage.recordSpeakAnswer(s, item.p.id, correct);
               return correct && kind === "review" ? Storage.reviewCorrect(next, `s:${item.p.id}`) : next;
             }),
+          task: nav.task,
+          onTaskDone: taskDone,
+          onBack: () => (nav.task ? leaveTask() : goHome()),
+          rerender: render,
+        })
+      );
+    } else if (nav.view === "daily") {
+      content = h(
+        "div",
+        { style: accentVars("daily") },
+        Daily.render({
+          state,
+          settings: state.settings,
+          flags: state.flags,
+          onToggleFlag: (id) => setState((s) => Storage.toggleFlag(s, id)),
+          onUpdate: (fn) => setState(fn),
+          onLaunch: launchTask,
           onBack: () => {
-            Speaking.reset();
-            nav.view = "home";
-            render({ scrollTop: true });
+            Daily.reset();
+            goHome();
           },
           rerender: render,
         })

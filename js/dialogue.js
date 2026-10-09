@@ -46,15 +46,16 @@ window.App = window.App || {};
 
   // ── session state ──
   let ui = null; // null = list view
+  let taskId = null; // 每日任務 (stage 7b) already started on this screen
   function reset() {
     ui = null;
   }
 
-  function begin(ctx, dlg) {
+  function begin(ctx, dlg, inRender) {
     ui = { dlg, log: [], pending: null, revealed: {}, total: 0, correct: 0, mistakes: [], done: false, queue: [], scroll: true, saved: false };
     enter(ctx, dlg.start);
     flush(ctx);
-    ctx.rerender({ scrollTop: true });
+    if (!inRender) ctx.rerender({ scrollTop: true });
   }
 
   // Everything spoken during one tap is queued, then played in one go
@@ -308,8 +309,9 @@ window.App = window.App || {};
       h(
         "div",
         { class: "stack mt-4" },
-        inkButton("再玩一次", () => begin(ctx, dlg), { class: "w-full" }),
-        inkButton("返回對話列表", () => {
+        !ctx.task && inkButton("再玩一次", () => begin(ctx, dlg), { class: "w-full" }),
+        inkButton(ctx.task ? "返回今日任務" : "返回對話列表", () => {
+          if (ctx.task) return ctx.onBack();
           reset();
           ctx.rerender({ scrollTop: true });
         }, { accent: true, class: "w-full" })
@@ -325,6 +327,7 @@ window.App = window.App || {};
       "div",
       null,
       modHeader(`${dlg.emoji} ${dlg.title}`, () => {
+        if (ctx.task) return ctx.onBack();
         reset();
         ctx.rerender({ scrollTop: true });
       }),
@@ -373,8 +376,13 @@ window.App = window.App || {};
     );
   }
 
-  // ctx: { state, onPrefsChange, onMistake(kind, id), onFinish(id, correct, total), onBack, rerender }
+  // ctx: { state, task, onPrefsChange, onMistake(kind, id), onFinish(id, correct, total), onBack, rerender }
   function render(ctx) {
+    if (ctx.task && taskId !== ctx.task.id) {
+      taskId = ctx.task.id;
+      const d = dialogues().find((x) => x.id === ctx.task.dlgId);
+      if (d) begin(ctx, d, true); // inside the launching tap, so the first lines still play (iOS)
+    }
     return ui ? playScreen(ctx) : listScreen(ctx);
   }
 
