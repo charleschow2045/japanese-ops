@@ -12,6 +12,7 @@ window.App = window.App || {};
   ];
 
   let confirmReset = false; // screen-local: two-step reset
+  let view = "main"; // "main" | "backup" (進度備份 sub-screen)
 
   function cleanVoiceName(name) {
     return name.replace(/^(Microsoft|Google)\s*/, "").replace(/\s*\(.*\)\s*$/, "").replace(/\s*-\s*Japanese.*$/i, "");
@@ -21,8 +22,22 @@ window.App = window.App || {};
     return h("div", { class: "card" }, h("p", { class: "h-heading mb-1" }, title), ...children);
   }
 
-  // ctx: { settings, onChange(patch), onReset(), rerender }
+  // ctx: { settings, state, flags, onChange(patch), onReset(), onUpdate(fn), onRestore(state), onUndo(), rerender }
   function render(ctx) {
+    if (view === "backup") {
+      return window.App.Backup.render({
+        state: ctx.state,
+        onUpdate: ctx.onUpdate,
+        onRestore: ctx.onRestore,
+        onUndo: ctx.onUndo,
+        rerender: ctx.rerender,
+        onBack: () => {
+          view = "main";
+          window.App.Backup.reset();
+          ctx.rerender({ scrollTop: true });
+        },
+      });
+    }
     const { settings } = ctx;
     const voices = getJaVoices();
     const tts = isTTSSupported();
@@ -78,9 +93,11 @@ window.App = window.App || {};
 
       installSection(),
 
+      backupSection(ctx),
+
       section(
         "進度",
-        h("p", { class: "small muted mb-3" }, "進度與設定只儲存在這部裝置的瀏覽器中。"),
+        h("p", { class: "small muted mb-3" }, "進度與設定只儲存在這部裝置的瀏覽器中。清除前建議先到上面的「進度備份」匯出一份。"),
         !confirmReset
           ? h(
               "button",
@@ -126,7 +143,7 @@ window.App = window.App || {};
       h(
         "p",
         { class: "xs muted center", style: { paddingBottom: "8px" } },
-        `Japanese Ops · 階段 7b${window.App.appVersion ? ` · 版本 ${window.App.appVersion}` : ""}`
+        `Japanese Ops · 階段 8${window.App.appVersion ? ` · 版本 ${window.App.appVersion}` : ""}`
       )
     );
   }
@@ -237,10 +254,28 @@ window.App = window.App || {};
     );
   }
 
-  // Leaving the tab cancels a half-finished reset confirmation.
-  function reset() {
-    confirmReset = false;
+  // 進度備份 entry (stage 8): last backup + a button into the sub-screen.
+  function backupSection(ctx) {
+    return section(
+      "💾 進度備份／還原",
+      h("p", { class: "small muted mb-1" }, "進度只存在這部手機。匯出備份檔，換手機或清除資料後就能還原。"),
+      h("p", { class: "small mb-3" }, `上次備份：${window.App.Backup.lastBackupText(ctx.state)}`),
+      h("button", { class: "btn-soft w-full", onclick: () => open("backup", ctx) }, "前往進度備份")
+    );
   }
 
-  window.App.Settings = { render, reset };
+  function open(which, ctx) {
+    view = which;
+    window.App.Backup.reset();
+    if (ctx) ctx.rerender({ scrollTop: true });
+  }
+
+  // Leaving the tab cancels a half-finished reset confirmation (and closes 進度備份).
+  function reset() {
+    confirmReset = false;
+    view = "main";
+    window.App.Backup.reset();
+  }
+
+  window.App.Settings = { render, reset, open };
 })();

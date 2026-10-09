@@ -668,3 +668,21 @@ p, h1, h2 { margin: 0; }
 .seg > i { display: block; height: 100%; }
 .seg > i.m { background: var(--good-solid); }
 .seg > i.l { background: var(--gold); }
+
+/* ── 進度備份／還原 (js/backup.js) ── */
+.file-btn { cursor: pointer; min-height: 52px; font-size: 1.05rem; }
+.sum-table { border: 1.5px solid var(--border); border-radius: 12px; overflow: hidden; font-size: 0.875rem; }
+.sum-row { display: grid; grid-template-columns: 1.1fr 1.3fr 1.3fr; gap: 8px; padding: 8px 12px; border-top: 1px solid var(--border); align-items: center; }
+.sum-row.head { background: var(--gold-tint); border-top: 0; font-size: 0.75rem; font-weight: 700; color: var(--muted); }
+.paste-box {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1.5px solid var(--a-border);
+  background: var(--paper-card);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.875rem;
+  resize: vertical;
+}
+.paste-box:focus { outline: none; border-color: var(--a-solid); }

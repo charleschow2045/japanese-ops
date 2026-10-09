@@ -217,11 +217,37 @@ window.App = window.App || {};
     );
   }
 
-  // ctx: { state }
-  function render(ctx) {
-    const { state } = ctx;
-    return h("div", { class: "stack-lg" }, h("h2", { class: "h-display" }, "進度"), overview(state), weekChart(state), kanaSection(state), phraseSection(state), dialogueSection(state), reviewSection(state));
+  // One-line numbers for the backup confirmation screen (js/backup.js).
+  function summary(state) {
+    const streak = Daily.streakInfo(state);
+    const sc = sentenceCounts(state);
+    const k = kanaCounts(state);
+    const list = window.App.Content.DIALOGUES;
+    return {
+      streak: streak.current,
+      best: streak.best,
+      answers: totalAnswers(state),
+      mastered: sc.total.mastered,
+      sentences: sc.total.all,
+      kanaDone: k.hira.done + k.kata.done,
+      kanaTotal: k.hira.total + k.kata.total,
+      dialogues: list.filter((d) => state.dialogue.stats[d.id] && state.dialogue.stats[d.id].plays > 0).length,
+      reviewActive: Object.keys(state.review.items).length,
+    };
   }
 
-  window.App.Progress = { render };
+  // 備份提醒: a quiet line, only once there is something worth protecting.
+  function backupNudge(ctx) {
+    const text = window.App.Backup.reminder(ctx.state);
+    if (!text) return null;
+    return h("div", { class: "note gold" }, h("p", null, `💾 ${text}`), ctx.onOpenBackup && h("button", { class: "btn-soft w-full mt-2", onclick: ctx.onOpenBackup }, "前往進度備份"));
+  }
+
+  // ctx: { state, onOpenBackup }
+  function render(ctx) {
+    const { state } = ctx;
+    return h("div", { class: "stack-lg" }, h("h2", { class: "h-display" }, "進度"), backupNudge(ctx), overview(state), weekChart(state), kanaSection(state), phraseSection(state), dialogueSection(state), reviewSection(state));
+  }
+
+  window.App.Progress = { render, summary };
 })();

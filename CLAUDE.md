@@ -37,7 +37,7 @@
 - 部署於 GitHub Pages（repo：japanese-ops），日後可能搬到自購網站，所以不要依賴 GitHub 專屬功能
 - **手機優先設計**：主要在手機上使用（包括旅行途中），按鈕要夠大，單手可操作
 - **導航：底部 tab 列**（主頁／設定），固定喺畫面底部，照顧 iPhone safe-area
-- 進度及設定儲存在 localStorage（key：`japaneseOps:v1`）
+- 進度及設定儲存在 localStorage（key：`japaneseOps:v1`；另有 `japaneseOps:v1:beforeRestore` 只喺還原備份後暫存舊進度，供撤銷一次）
 - 發音：Web Speech API（SpeechSynthesis，lang = "ja-JP"）
 - 口語練習：Web Speech API（SpeechRecognition，lang = "ja-JP"）
 - 若瀏覽器不支援語音功能，要顯示清楚提示，其他功能照常運作
@@ -357,6 +357,33 @@
     `statusOf` 熟練／學習中／未學 各種組合（包括舊格式）；畢業計數；全新使用者；375px 冇橫向捲動、所有掣 ≥ 44px
   - **7b 之後值得做**：「看得懂」模組（餐牌、車站標示）、數字／價錢／時間聽力練習、機場入境等缺少嘅情境、對話開口作答模式、
     「指給店員看」大字卡、進度匯出／匯入（備份）；用戶仍未提供嘅「🚩 讀錯」句子清單
+
+- **階段 8（第 1 項）— 進度備份／還原 完成（2026-10-09，版本 `2026-10-09c`）**：做法參考 English Ops 嘅
+  `BackupScreen.jsx`／`storage.jsx`。用戶之後仲有 3 項按次序逐項計劃：② 數字・價錢・時間聽力 ③「指給店員看」大字卡 ④ 機場入境情境
+  - **入口**：設定頁新增「💾 進度備份／還原」區（顯示「上次備份：…」＋「前往進度備份」）→ 設定分頁內嘅子畫面 `js/backup.js`
+    （`Settings.open("backup")`，離開分頁就關）。進度頁喺「超過 7 日冇備份」（從未備份就由第一個練習日起計 7 日）時頂部有一行提醒＋
+    「前往進度備份」掣，唔彈窗。「清除所有進度」確認文字提醒先匯出
+  - **檔案格式**：`{ app: "japanese-ops", version: 1, exportedAt, data: { "japaneseOps:v1": <state> } }`，檔名
+    `japanese-ops-backup-YYYY-MM-DD.json`（本地日期）。**語音選擇 `settings.voiceURI` 唔跟備份**（每部機嘅語音唔同）：
+    `app.js` `restoreBackup` 保留呢部機自己嗰個，其餘設定照還原
+  - **匯出**：iPhone（`isIOS()` 且 `navigator.canShare({files})`）用分享表（儲存到「檔案」等）；取消分享唔算匯出；其餘用 Blob＋`<a download>`。
+    成功先寫 `state.backup.lastExportAt`（檔案入面嘅都係呢個時間）。進階摺疊區有「📋 複製備份文字」同「貼上備份文字還原」
+    （檔案流程喺某部手機失靈時嘅後備）
+  - **匯入／還原**：`Storage.parseBackup(text)` 永不拋錯，拒絕原因 `too_big`（> 2 MB）／`not_json`／`wrong_app`（`app` 唔係 japanese-ops，
+    包括 English Ops 等嘅檔）／`too_new`（version > 1）／`invalid`。檢查通過先顯示確認畫面（備份檔日期、備份檔 vs 現在嘅對比表：
+    連續天數、累計答題、句子熟練、五十音掌握、已玩對話、重溫中；備份檔累計答題比現在少會加紅色警告；明確寫「會覆蓋現有進度和設定，
+    無法復原」），按「確認覆蓋」先寫入，取消唔改任何嘢。`sanitizeState` 白名單＋逐項型別檢查（壞單筆就丟棄、整個區塊型別錯就 `invalid`、
+    擋 `__proto__`／`constructor`／`prototype` 鍵、每個 map ≤ 5000 項、日期／數字範圍檢查），再經 `normalizeState`（由 `loadState`
+    抽出嚟，兩邊共用，行為不變）補預設值。`Progress.summary(state)` 供確認畫面用
+  - **還原前自動保留舊進度**：`Storage.saveUndo` 將現有 state 寫入 `japaneseOps:v1:beforeRestore`（唯一第二個 key，唔入備份、
+    「清除所有進度」會一併刪除）；保留失敗（儲存空間滿）就取消還原。還原後備份畫面有「↩️ 撤銷上一次還原」（再確認一次，因為會覆蓋還原
+    之後嘅練習紀錄），只能撤銷一次（`loadUndo`／`clearUndo`）。再做一次還原就覆蓋舊嘅保留
+  - **新增資料**：`state.backup = { lastExportAt }`（舊存檔缺少就補 null）。其餘舊進度完全唔受影響
+  - 已測試：匯出→匯入往返逐項相同；約 40 種壞輸入（空、截斷、陣列／數字、其他 App 檔、版本 0／2／字串、缺 data／key、每個區塊型別錯、
+    flags 型別錯、壞單筆、壞日期鍵、`__proto__`、過大）全部正確分類且進度不變；3000 次隨機破壞冇拋錯、冇污染 prototype、
+    所有被接受嘅 state 都可以被 App 正常使用；真實畫面（375px）：匯出下載、複製文字、貼上還原、真 `<input type=file>` 選檔、確認／取消、
+    還原後語音選擇保留、撤銷（含取消撤銷）、壞檔錯誤訊息、提醒（各情況）、離開分頁關閉備份畫面、清除進度刪走撤銷副本、舊格式存檔升級。
+    **未能測試（要真機）**：iPhone 分享表匯出、主畫面版本選檔、Android 下載位置
 
 ## 待確認內容
 - **濁音（が／ざ／だ／ば 行）嘅廣東話近似讀音**：暫時全部顯示「冇對應」。可以用廣東話不送氣音做近似

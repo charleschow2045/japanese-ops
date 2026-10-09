@@ -27,6 +27,37 @@ window.App = window.App || {};
     render();
   }
 
+  // 進度備份 (stage 8). A restore first keeps the current progress for one
+  // 撤銷; this phone's own voice choice is kept (voices differ per device).
+  function restoreBackup(imported) {
+    if (!Storage.saveUndo(state)) return false;
+    state = { ...imported, settings: { ...imported.settings, voiceURI: state.settings.voiceURI } };
+    Storage.saveState(state);
+    nav.task = null;
+    Daily.reset();
+    render();
+    return true;
+  }
+
+  function undoRestore() {
+    const undo = Storage.loadUndo();
+    if (!undo) return false;
+    state = undo.state;
+    Storage.saveState(state);
+    Storage.clearUndo();
+    nav.task = null;
+    Daily.reset();
+    render();
+    return true;
+  }
+
+  function openBackup() {
+    nav.tab = "settings";
+    nav.task = null;
+    Settings.open("backup");
+    render({ scrollTop: true });
+  }
+
   // Back from a module to the module list (also drops any half-finished session).
   function goHome() {
     Listening.reset();
@@ -114,11 +145,15 @@ window.App = window.App || {};
     }
 
     if (nav.tab === "progress") {
-      content = h("div", { style: accentVars("daily") }, Progress.render({ state }));
+      content = h("div", { style: accentVars("daily") }, Progress.render({ state, onOpenBackup: openBackup }));
     } else if (nav.tab === "settings") {
       content = Settings.render({
         settings: state.settings,
+        state,
         flags: state.flags,
+        onUpdate: (fn) => setState(fn),
+        onRestore: restoreBackup,
+        onUndo: undoRestore,
         onChange: (patch) => setState((s) => ({ ...s, settings: { ...s.settings, ...patch } })),
         onReset: () => {
           state = Storage.clearState();
