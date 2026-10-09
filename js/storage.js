@@ -12,7 +12,7 @@ window.App = window.App || {};
     { key: "listening", label: "聽力練習", sub: "聽句子選意思・錯題重溫", emoji: "🎧", implemented: true },
     { key: "speaking", label: "口語練習", sub: "看意思讀日文・語音辨識／鍵盤聽寫", emoji: "🎤", implemented: true },
     { key: "reading", label: "看得懂", sub: "餐牌、商品、車站", emoji: "🪧", implemented: false },
-    { key: "dialogue", label: "情境對話", sub: "與店員一問一答", emoji: "🛎️", implemented: false },
+    { key: "dialogue", label: "情境對話", sub: "9 個情境・與店員一問一答", emoji: "🛎️", implemented: true },
     { key: "daily", label: "每日任務及進度", sub: "每日 15–20 分鐘", emoji: "📅", implemented: false },
   ];
 
@@ -54,6 +54,14 @@ window.App = window.App || {};
     };
   }
 
+  // dialogue (stage 7a 情境對話):
+  //   prefs: showText (對方的話預設顯示文字；關 = 先聽後看), showMeaning (選項顯示中文意思)
+  //   stats: { [dialogue id]: { plays, perfect, best, last } } — perfect = 一次過全對嘅次數,
+  //          best = 最佳首次答對率 (0–100)
+  function defaultDialogue() {
+    return { prefs: { showText: true, showMeaning: true }, stats: {} };
+  }
+
   // flags: 句子庫 sentence ids the user marked 🚩 讀錯 (pronunciation is
   // wrong on their phone) — listed in 設定 so they can copy and send them.
   // review (stage 5 錯題重溫, spaced repetition): items keyed
@@ -62,7 +70,7 @@ window.App = window.App || {};
   //   box = correct review answers in a row (0–4); due = local date
   //   "YYYY-MM-DD" when it is next asked. See REVIEW_INTERVALS.
   function defaultState() {
-    return { settings: defaultSettings(), kana: defaultKana(), flags: [], listen: defaultListen(), speak: defaultSpeak(), review: { items: {} } };
+    return { settings: defaultSettings(), kana: defaultKana(), flags: [], listen: defaultListen(), speak: defaultSpeak(), dialogue: defaultDialogue(), review: { items: {} } };
   }
 
   // ── local dates (phone's own calendar day — never UTC) ──
@@ -125,6 +133,9 @@ window.App = window.App || {};
       if (![5, 10, 20].includes(speak.prefs.count)) speak.prefs.count = 10;
       if (!["voice", "dictation", "self"].includes(speak.prefs.mode)) speak.prefs.mode = "voice";
       if (!speak.stats || typeof speak.stats !== "object") speak.stats = {};
+      const dialogue = { ...base.dialogue, ...(parsed.dialogue || {}) };
+      dialogue.prefs = { ...base.dialogue.prefs, ...((parsed.dialogue && parsed.dialogue.prefs) || {}) };
+      if (!dialogue.stats || typeof dialogue.stats !== "object") dialogue.stats = {};
       let review = parsed.review &&parsed.review.items && typeof parsed.review.items === "object" ? parsed.review : null;
       if (!review) {
         // First load with stage 5: existing 五十音 red-dot characters
@@ -140,6 +151,7 @@ window.App = window.App || {};
         flags: Array.isArray(parsed.flags) ? parsed.flags : [],
         listen,
         speak,
+        dialogue,
         review,
       };
     } catch (e) {
@@ -198,6 +210,17 @@ window.App = window.App || {};
     return correct ? next : reviewWrong(next, `s:${id}`);
   }
 
+  // A finished 情境對話: `correct` of `total` first-try answers (用戶選擇題 + 理解題).
+  function recordDialogue(state, id, correct, total) {
+    const prev = state.dialogue.stats[id] || { plays: 0, perfect: 0, best: 0, last: null };
+    const pct = total ? Math.round((correct / total) * 100) : 100;
+    const stats = {
+      ...state.dialogue.stats,
+      [id]: { plays: prev.plays + 1, perfect: prev.perfect + (correct === total ? 1 : 0), best: Math.max(prev.best, pct), last: new Date().toISOString() },
+    };
+    return { ...state, dialogue: { ...state.dialogue, stats } };
+  }
+
   function toggleFlag(state, id) {
     const flags = state.flags.includes(id) ? state.flags.filter((f) => f !== id) : [...state.flags, id];
     return { ...state, flags };
@@ -207,6 +230,7 @@ window.App = window.App || {};
     toggleFlag,
     recordListenAnswer,
     recordSpeakAnswer,
+    recordDialogue,
     reviewWrong,
     reviewCorrect,
     todayLocal,

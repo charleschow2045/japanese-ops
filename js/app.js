@@ -4,7 +4,7 @@
 window.App = window.App || {};
 
 (function () {
-  const { Storage, Home, Settings, KanaModule, Phrases, Listening, Speaking, Speech } = window.App;
+  const { Storage, Home, Settings, KanaModule, Phrases, Listening, Speaking, Dialogue, Speech } = window.App;
   const { h, accentVars } = window.App.UI;
 
   const TABS = [
@@ -31,6 +31,7 @@ window.App = window.App || {};
     if (key === "phrases") Phrases.reset();
     if (key === "listening") Listening.reset();
     if (key === "speaking") Speaking.reset();
+    if (key === "dialogue") Dialogue.reset();
     render({ scrollTop: true });
   }
 
@@ -122,6 +123,25 @@ window.App = window.App || {};
               return correct && mode === "review" ? Storage.reviewCorrect(next, `k:${q.target.char}`) : next;
             }),
           onBack: () => {
+            nav.view = "home";
+            render({ scrollTop: true });
+          },
+          rerender: render,
+        })
+      );
+    } else if (nav.view === "dialogue") {
+      content = h(
+        "div",
+        { style: accentVars("dialogue") },
+        Dialogue.render({
+          state,
+          onPrefsChange: (patch) => setState((s) => ({ ...s, dialogue: { ...s.dialogue, prefs: { ...s.dialogue.prefs, ...patch } } })),
+          // First wrong pick of a turn: a sentence you should say → 口語重溫 ("s:"),
+          // a staff line you misheard → 聽力重溫 ("p:").
+          onMistake: (kind, id) => setState((s) => Storage.reviewWrong(s, `${kind === "speak" ? "s" : "p"}:${id}`)),
+          onFinish: (id, correct, total) => setState((s) => Storage.recordDialogue(s, id, correct, total)),
+          onBack: () => {
+            Dialogue.reset();
             nav.view = "home";
             render({ scrollTop: true });
           },

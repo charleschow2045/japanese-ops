@@ -43,6 +43,10 @@ window.App.Content = window.App.Content || {};
     { id: "polite-18", ja: "トイレはどこですか。", kana: "トイレはどこですか", romaji: "toire wa doko desu ka", yue: "洗手間在哪裡？", use: "任何場合都適用", who: "me" },
     { id: "polite-19", ja: "香港から来ました。", kana: "ホンコンからきました", romaji: "honkon kara kimashita", yue: "我來自香港", use: "被問到來自哪裡時回答", who: "me" },
     { id: "polite-20", ja: "どうぞ。", kana: "どうぞ", romaji: "douzo", yue: "請（請用、請進、您先請）", use: "遞東西給人、讓位時說；店員也經常說", who: "both" },
+    // stage 7a (情境對話) — new sentences
+    { id: "polite-21", ja: "ありがとうございました。", kana: "ありがとうございました", romaji: "arigatou gozaimashita", yue: "謝謝光臨", use: "店員在你離開時說，不必回應", who: "staff" },
+    { id: "polite-22", ja: "かしこまりました。", kana: "かしこまりました", romaji: "kashikomarimashita", yue: "好的，明白了（店員的客氣說法）", use: "店員表示接受你的要求時說", who: "staff" },
+    { id: "polite-23", ja: "はい、大丈夫です。", kana: "はい、だいじょうぶです", romaji: "hai, daijoubu desu", yue: "是的，可以（沒問題）", use: "店員回答「可以嗎？」時說", who: "staff" },
   ];
 
   const RESTAURANT = [
@@ -75,6 +79,20 @@ window.App.Content = window.App.Content || {};
     },
     { id: "rest-19", ja: "お会計をお願いします。", kana: "おかいけいをおねがいします", romaji: "okaikei o onegai shimasu", yue: "麻煩您結帳", use: "用餐後想付款", who: "me" },
     { id: "rest-20", ja: "ごちそうさまでした。", kana: "ごちそうさまでした", romaji: "gochisousama deshita", yue: "謝謝招待", use: "用餐後離開時對店員說", who: "me" },
+    // stage 7a — new sentences
+    { id: "rest-22", ja: "一人です。", kana: "ひとりです", romaji: "hitori desu", yue: "一位", use: "回答人數", who: "me" },
+    { id: "rest-23", ja: "ご予約はありますか。", kana: "ごよやくはありますか", romaji: "goyoyaku wa arimasu ka", yue: "請問有預約嗎？", use: "入座前或辦理入住時店員詢問", who: "staff" },
+    { id: "rest-24", ja: "予約しています。", kana: "よやくしています", romaji: "yoyaku shite imasu", yue: "我有預約（訂位）", use: "回答店員「請問有預約嗎？」", who: "me" },
+    { id: "rest-25", ja: "こちらへどうぞ。", kana: "こちらへどうぞ", romaji: "kochira e douzo", yue: "這邊請", use: "帶位時店員說", who: "staff" },
+    { id: "rest-26", ja: "ラーメンがおすすめです。", kana: "ラーメンがおすすめです", romaji: "raamen ga osusume desu", yue: "推薦拉麵", use: "被問到推薦時店員回答（「ラーメン」可換成其他菜式）", who: "staff" },
+    { id: "rest-27", ja: "はい、入っています。", kana: "はい、はいっています", romaji: "hai, haitte imasu", yue: "是的，有放", use: "被問到「有放蛋嗎？」時店員回答", who: "staff" },
+    { id: "rest-28", ja: "いいえ、入っていません。", kana: "いいえ、はいっていません", romaji: "iie, haitte imasen", yue: "沒有放", use: "被問到「有放蛋嗎？」時店員回答", who: "staff" },
+    { id: "rest-29", ja: "確認します。少々お待ちください。", kana: "かくにんします。しょうしょうおまちください", romaji: "kakunin shimasu. shoushou omachi kudasai", yue: "我確認一下，請稍等", use: "食物過敏等需要向廚房確認時店員說", who: "staff" },
+    { id: "rest-30", ja: "全部で1,200円です。", kana: "ぜんぶでせんにひゃくえんです", romaji: "zenbu de sen nihyaku en desu", yue: "一共 1,200 日圓", use: "結帳時店員說（金額會變）", who: "staff" },
+    { id: "rest-31", ja: "ご注文をどうぞ。", kana: "ごちゅうもんをどうぞ", romaji: "gochuumon o douzo", yue: "請點餐", use: "快餐店店員說", who: "staff" },
+    { id: "rest-32", ja: "お飲み物はいかがですか。", kana: "おのみものはいかがですか", romaji: "onomimono wa ikaga desu ka", yue: "請問需要飲料嗎？", use: "快餐店店員詢問", who: "staff" },
+    { id: "rest-33", ja: "コーヒーをください。", kana: "コーヒーをください", romaji: "koohii o kudasai", yue: "請給我咖啡", use: "點飲料（「コーヒー」可換成其他飲料）", who: "me" },
+    { id: "rest-34", ja: "以上でよろしいですか。", kana: "いじょうでよろしいですか", romaji: "ijou de yoroshii desu ka", yue: "請問這樣就可以了嗎？", use: "點餐完畢時店員確認", who: "staff" },
   ];
 
   const SHOPPING = [
@@ -119,6 +137,11 @@ window.App.Content = window.App.Content || {};
       ],
     },
     { id: "shop-20", ja: "レシートをください。", kana: "レシートをください", romaji: "reshiito o kudasai", yue: "麻煩請給我收據", use: "需要收據時說", who: "me" },
+    // stage 7a — new sentences
+    { id: "shop-23", ja: "カードでお願いします。", kana: "カードでおねがいします", romaji: "kaado de onegai shimasu", yue: "我用信用卡付款", use: "回答「請問如何付款？」", who: "me" },
+    { id: "shop-24", ja: "あちらです。", kana: "あちらです", romaji: "achira desu", yue: "在那邊", use: "被問到商品或地點位置時店員回答", who: "staff" },
+    { id: "shop-25", ja: "はい、できます。", kana: "はい、できます", romaji: "hai, dekimasu", yue: "是的，可以辦理", use: "被問到「可以免稅嗎？」時店員回答", who: "staff" },
+    { id: "shop-26", ja: "すみません、免税はできません。", kana: "すみません、めんぜいはできません", romaji: "sumimasen, menzei wa dekimasen", yue: "不好意思，無法辦理免稅", use: "店員回答（不辦理免稅）", who: "staff" },
   ];
 
   // ── stage 4 (2026-10-03, checked by the user) ──
@@ -147,6 +170,18 @@ window.App.Content = window.App.Content || {};
     { id: "trans-17", ja: "空港まで、いくらぐらいかかりますか。", kana: "くうこうまで、いくらぐらいかかりますか", romaji: "kuukou made, ikura gurai kakarimasu ka", yue: "到機場大約要多少錢？", use: "上的士前詢問車費", who: "me" },
     { id: "trans-18", ja: "トランクを開けてください。", kana: "トランクをあけてください", romaji: "toranku o akete kudasai", yue: "麻煩您打開尾箱", use: "有行李時說", who: "me" },
     { id: "trans-19", ja: "ここで止めてください。", kana: "ここでとめてください", romaji: "koko de tomete kudasai", yue: "請在這裡停車", use: "的士下車時", who: "me" },
+    // stage 7a — new sentences
+    { id: "trans-20", ja: "あちらの券売機です。", kana: "あちらのけんばいきです", romaji: "achira no kenbaiki desu", yue: "在那邊的售票機", use: "被問到哪裡買票時回答", who: "staff" },
+    { id: "trans-21", ja: "片道ですか、往復ですか。", kana: "かたみちですか、おうふくですか", romaji: "katamichi desu ka, oufuku desu ka", yue: "單程還是來回？", use: "買票時店員詢問", who: "staff" },
+    { id: "trans-22", ja: "片道でお願いします。", kana: "かたみちでおねがいします", romaji: "katamichi de onegai shimasu", yue: "麻煩您，單程", use: "回答「單程還是來回？」", who: "me" },
+    { id: "trans-23", ja: "往復でお願いします。", kana: "おうふくでおねがいします", romaji: "oufuku de onegai shimasu", yue: "麻煩您，來回", use: "回答「單程還是來回？」", who: "me" },
+    { id: "trans-24", ja: "3番線です。", kana: "さんばんせんです", romaji: "sanbansen desu", yue: "三號月台", use: "被問到月台時回答（數字會變）", who: "staff" },
+    { id: "trans-25", ja: "5番線です。", kana: "ごばんせんです", romaji: "gobansen desu", yue: "五號月台", use: "被問到月台時回答（數字會變）", who: "staff" },
+    { id: "trans-26", ja: "渋谷駅までお願いします。", kana: "しぶやえきまでおねがいします", romaji: "shibuya eki made onegai shimasu", yue: "麻煩您載我到澀谷站", use: "對的士司機說目的地（地名可替換）", who: "me" },
+    { id: "trans-27", ja: "10分ぐらいです。", kana: "じゅっぷんぐらいです", romaji: "juppun gurai desu", yue: "大約十分鐘", use: "司機回答車程（數字會變）", who: "staff" },
+    { id: "trans-28", ja: "20分ぐらいです。", kana: "にじゅっぷんぐらいです", romaji: "nijuppun gurai desu", yue: "大約二十分鐘", use: "司機回答車程（數字會變）", who: "staff" },
+    { id: "trans-29", ja: "すみません、現金のみです。", kana: "すみません、げんきんのみです", romaji: "sumimasen, genkin nomi desu", yue: "不好意思，只收現金", use: "司機回答「可以用卡付款嗎？」", who: "staff" },
+    { id: "trans-30", ja: "1,800円です。", kana: "せんはっぴゃくえんです", romaji: "sen happyaku en desu", yue: "1,800 日圓", use: "的士下車時司機說（金額會變）", who: "staff" },
   ];
 
   const HOTEL = [
@@ -178,6 +213,13 @@ window.App.Content = window.App.Content || {};
     { id: "hotel-18", ja: "タクシーを呼んでもらえますか。", kana: "タクシーをよんでもらえますか", romaji: "takushii o yonde moraemasu ka", yue: "可以幫我叫一輛的士嗎？", use: "請櫃位協助", who: "me" },
     { id: "hotel-19", ja: "チェックアウトをお願いします。", kana: "チェックアウトをおねがいします", romaji: "chekkuauto o onegai shimasu", yue: "我想退房", use: "退房時說", who: "me" },
     { id: "hotel-20", ja: "ごゆっくりどうぞ。", kana: "ごゆっくりどうぞ", romaji: "goyukkuri douzo", yue: "請慢慢享受（好好休息）", use: "職員的客氣話，不必回應", who: "staff" },
+    // stage 7a — new sentences
+    { id: "hotel-21", ja: "こちらにご記入をお願いします。", kana: "こちらにごきにゅうをおねがいします", romaji: "kochira ni gokinyuu o onegai shimasu", yue: "麻煩您在這裡填寫", use: "辦理入住時職員說", who: "staff" },
+    { id: "hotel-22", ja: "11時です。", kana: "じゅういちじです", romaji: "juuichiji desu", yue: "十一點", use: "被問到退房時間時職員回答（時間會變）", who: "staff" },
+    { id: "hotel-23", ja: "10時です。", kana: "じゅうじです", romaji: "juuji desu", yue: "十點", use: "被問到退房時間時職員回答（時間會變）", who: "staff" },
+    { id: "hotel-24", ja: "7時からです。", kana: "しちじからです", romaji: "shichiji kara desu", yue: "從七點開始", use: "被問到早餐時間時職員回答（時間會變）", who: "staff" },
+    { id: "hotel-25", ja: "8時からです。", kana: "はちじからです", romaji: "hachiji kara desu", yue: "從八點開始", use: "被問到早餐時間時職員回答（時間會變）", who: "staff" },
+    { id: "hotel-26", ja: "すみません、満室です。", kana: "すみません、まんしつです", romaji: "sumimasen, manshitsu desu", yue: "不好意思，客滿了", use: "沒有訂房而酒店已滿時職員回答", who: "staff" },
   ];
 
   const DIRECTIONS = [
@@ -239,6 +281,18 @@ window.App.Content = window.App.Content || {};
     { id: "emer-19", ja: "携帯電話を電車に忘れました。", kana: "けいたいでんわをでんしゃにわすれました", romaji: "keitai denwa o densha ni wasuremashita", yue: "我把手機遺留在火車上", use: "遺失物品（向車站職員說明）", who: "me" },
     { id: "emer-20", ja: "財布を盗まれました。", kana: "さいふをぬすまれました", romaji: "saifu o nusumaremashita", yue: "我的銀包被偷了", use: "報警時說", who: "me" },
     { id: "emer-21", ja: "英語を話せる人はいますか。", kana: "えいごをはなせるひとはいますか", romaji: "eigo o hanaseru hito wa imasu ka", yue: "有沒有會說英文的人？", use: "無法溝通時說", who: "me" },
+    // stage 7a — new sentences
+    { id: "emer-22", ja: "病院に行きますか。", kana: "びょういんにいきますか", romaji: "byouin ni ikimasu ka", yue: "要去醫院嗎？", use: "對方詢問你是否要就醫", who: "staff" },
+    { id: "emer-23", ja: "救急車を呼びましょうか。", kana: "きゅうきゅうしゃをよびましょうか", romaji: "kyuukyuusha o yobimashou ka", yue: "要不要幫您叫救護車？", use: "對方主動提出幫忙叫救護車", who: "staff" },
+    { id: "emer-24", ja: "お大事に。", kana: "おだいじに", romaji: "odaiji ni", yue: "請多保重", use: "對生病或受傷的人說", who: "staff" },
+    { id: "emer-25", ja: "どこでなくしましたか。", kana: "どこでなくしましたか", romaji: "doko de nakushimashita ka", yue: "在哪裡弄丟的？", use: "報失物品時警察或職員詢問", who: "staff" },
+    { id: "emer-26", ja: "駅の近くだと思います。", kana: "えきのちかくだとおもいます", romaji: "eki no chikaku da to omoimasu", yue: "我想是在車站附近", use: "回答遺失地點（「駅」可替換）", who: "me" },
+    { id: "emer-27", ja: "わかりません。", kana: "わかりません", romaji: "wakarimasen", yue: "我不知道", use: "不清楚或聽不懂時說", who: "me" },
+    { id: "emer-28", ja: "財布の色を教えてください。", kana: "さいふのいろをおしえてください", romaji: "saifu no iro o oshiete kudasai", yue: "請告訴我銀包的顏色", use: "報失銀包時警察詢問", who: "staff" },
+    { id: "emer-29", ja: "黒です。", kana: "くろです", romaji: "kuro desu", yue: "是黑色的", use: "回答顏色（「黒」可換成其他顏色）", who: "me" },
+    { id: "emer-30", ja: "茶色です。", kana: "ちゃいろです", romaji: "chairo desu", yue: "是棕色的", use: "回答顏色", who: "me" },
+    { id: "emer-31", ja: "ここに名前と連絡先を書いてください。", kana: "ここになまえとれんらくさきをかいてください", romaji: "koko ni namae to renrakusaki o kaite kudasai", yue: "請在這裡寫下姓名與聯絡方式", use: "報失物品時警察要求填寫", who: "staff" },
+    { id: "emer-32", ja: "見つかったら連絡します。", kana: "みつかったられんらくします", romaji: "mitsukattara renraku shimasu", yue: "找到後會與您聯絡", use: "報失物品後警察說明後續", who: "staff" },
   ];
 
   // Emergency numbers card shown at the top of 緊急情況 (user-supplied).

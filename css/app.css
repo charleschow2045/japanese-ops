@@ -595,3 +595,31 @@ p, h1, h2 { margin: 0; }
 .mode-title { display: block; font-weight: 800; }
 .mode-badge { margin-left: 8px; padding: 1px 8px; border-radius: 999px; font-size: 0.7rem; background: var(--stamp-tint); color: var(--stamp-dark); }
 .mode-desc { display: block; font-size: 0.8rem; font-weight: 700; color: var(--muted); margin-top: 2px; }
+
+/* ── 情境對話 (js/dialogue.js) ── */
+.dlg-intro { font-size: 0.9rem; font-weight: 700; color: var(--muted); margin-bottom: 12px; }
+.dlg-log { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
+.bubble { max-width: 92%; padding: 10px 12px; border-radius: 18px; border: 1.5px solid var(--a-border); }
+.bubble.staff { align-self: flex-start; background: var(--paper-card); border-bottom-left-radius: 6px; }
+.bubble.me { align-self: flex-end; background: var(--a-tint); border-bottom-right-radius: 6px; }
+.dlg-line + .dlg-line { margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--a-border); }
+.dlg-ja { display: block; font-size: 1.15rem; font-weight: 700; line-height: 1.4; }
+.dlg-zh { display: block; font-size: 0.9rem; font-weight: 700; color: var(--muted); }
+.dlg-hidden { font-size: 0.95rem; font-weight: 700; color: var(--muted); margin: 6px 0 0; }
+.dlg-note { font-size: 0.8rem; font-weight: 700; color: var(--muted); text-align: center; margin: 2px 0; }
+.dlg-opt {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: left;
+  min-height: 56px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: var(--paper-card);
+  color: var(--ink);
+  border: 2px solid var(--a-border);
+}
+.dlg-opt:active { transform: translateY(2px); }
+.dlg-opt.wrong { background: var(--stamp-tint); border-color: var(--stamp); opacity: 0.6; }
+.pending { scroll-margin-bottom: calc(var(--tabbar-h) + 24px + var(--safe-b)); }
