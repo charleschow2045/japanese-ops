@@ -375,6 +375,7 @@ p, h1, h2 { margin: 0; }
 .ex-word { display: block; font-size: 1.5rem; font-weight: 700; }
 .ex-rom { display: block; font-size: 0.875rem; font-weight: 700; color: var(--a-dark); }
 .ex-mean { font-weight: 700; text-align: right; }
+.ex-kana { display: block; font-size: 1.0625rem; font-weight: 700; color: var(--ink); }
 
 /* ── confirm box ── */
 .confirm { border-radius: 16px; padding: 12px; background: var(--stamp-tint); border: 1.5px solid var(--stamp-tint-border); }

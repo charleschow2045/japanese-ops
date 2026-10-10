@@ -20,7 +20,7 @@ window.App = window.App || {};
   const REVIEW_MAX = 10;
   const WHO = { me: "🗣️ 你說", staff: "👂 店員說", both: "🗣️👂 你與店員都會說" };
 
-  // view: "menu" | "quiz"; quiz: { mode, questions, index, picked, results }
+  // view: "menu" | "quiz" | "numbers"; quiz: { mode, questions, index, picked, results }
   const ui = { view: "menu", quiz: null, scrollFeedback: false, taskId: null };
   function reset() {
     ui.view = "menu";
@@ -385,6 +385,18 @@ window.App = window.App || {};
         inkButton("開始重溫", () => start(ctx, "review"), { disabled: due.length === 0 || !tts, class: "w-full mt-3" })
       ),
 
+      // 數字・價錢・時間讀音表 (read-only reference, stage 8 step 2-A)
+      h(
+        "div",
+        { class: "card accent mb-4" },
+        h("p", { class: "h-heading accent-text" }, "🔢 數字・價錢・時間讀音表"),
+        h("p", { class: "xs muted" }, "價錢、月台、時間的讀法，按一下就能聽。"),
+        inkButton("查看讀音表", () => {
+          ui.view = "numbers";
+          ctx.rerender({ scrollTop: true });
+        }, { accent: true, class: "w-full mt-3" })
+      ),
+
       // 聽力練習 settings
       h(
         "div",
@@ -426,6 +438,12 @@ window.App = window.App || {};
     }
     if (ctx.task && !ui.quiz) return emptyTask(ctx);
     if (ui.view === "quiz" && ui.quiz) return quizScreen(ctx);
+    if (ui.view === "numbers") {
+      return window.App.Numbers.render({ settings: ctx.state.settings }, () => {
+        ui.view = "menu";
+        ctx.rerender({ scrollTop: true });
+      });
+    }
     ui.view = "menu";
     return menu(ctx);
   }

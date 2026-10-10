@@ -88,7 +88,7 @@ window.App.Content = window.App.Content || {};
     { id: "rest-27", ja: "はい、入っています。", kana: "はい、はいっています", romaji: "hai, haitte imasu", yue: "是的，有放", use: "被問到「有放蛋嗎？」時店員回答", who: "staff" },
     { id: "rest-28", ja: "いいえ、入っていません。", kana: "いいえ、はいっていません", romaji: "iie, haitte imasen", yue: "沒有放", use: "被問到「有放蛋嗎？」時店員回答", who: "staff" },
     { id: "rest-29", ja: "確認します。少々お待ちください。", kana: "かくにんします。しょうしょうおまちください", romaji: "kakunin shimasu. shoushou omachi kudasai", yue: "我確認一下，請稍等", use: "食物過敏等需要向廚房確認時店員說", who: "staff" },
-    { id: "rest-30", ja: "全部で1,200円です。", kana: "ぜんぶでせんにひゃくえんです", romaji: "zenbu de sen nihyaku en desu", yue: "一共 1,200 日圓", use: "結帳時店員說（金額會變）", who: "staff" },
+    { id: "rest-30", ja: "全部で1,200円です。", kana: "ぜんぶでせんにひゃくえんです", romaji: "zenbu de sen nihyaku en desu", yue: "一共 1,200 日圓", use: "結帳時店員說（金額會變）", who: "staff", say: "全部でせんにひゃく円です。" },
     { id: "rest-31", ja: "ご注文をどうぞ。", kana: "ごちゅうもんをどうぞ", romaji: "gochuumon o douzo", yue: "請點餐", use: "快餐店店員說", who: "staff" },
     { id: "rest-32", ja: "お飲み物はいかがですか。", kana: "おのみものはいかがですか", romaji: "onomimono wa ikaga desu ka", yue: "請問需要飲料嗎？", use: "快餐店店員詢問", who: "staff" },
     { id: "rest-33", ja: "コーヒーをください。", kana: "コーヒーをください", romaji: "koohii o kudasai", yue: "請給我咖啡", use: "點飲料（「コーヒー」可換成其他飲料）", who: "me" },
@@ -175,13 +175,13 @@ window.App.Content = window.App.Content || {};
     { id: "trans-21", ja: "片道ですか、往復ですか。", kana: "かたみちですか、おうふくですか", romaji: "katamichi desu ka, oufuku desu ka", yue: "單程還是來回？", use: "買票時店員詢問", who: "staff" },
     { id: "trans-22", ja: "片道でお願いします。", kana: "かたみちでおねがいします", romaji: "katamichi de onegai shimasu", yue: "麻煩您，單程", use: "回答「單程還是來回？」", who: "me" },
     { id: "trans-23", ja: "往復でお願いします。", kana: "おうふくでおねがいします", romaji: "oufuku de onegai shimasu", yue: "麻煩您，來回", use: "回答「單程還是來回？」", who: "me" },
-    { id: "trans-24", ja: "3番線です。", kana: "さんばんせんです", romaji: "sanbansen desu", yue: "三號月台", use: "被問到月台時回答（數字會變）", who: "staff" },
-    { id: "trans-25", ja: "5番線です。", kana: "ごばんせんです", romaji: "gobansen desu", yue: "五號月台", use: "被問到月台時回答（數字會變）", who: "staff" },
+    { id: "trans-24", ja: "3番線です。", kana: "さんばんせんです", romaji: "sanbansen desu", yue: "三號月台", use: "被問到月台時回答（數字會變）", who: "staff", say: "さん番線です。" },
+    { id: "trans-25", ja: "5番線です。", kana: "ごばんせんです", romaji: "gobansen desu", yue: "五號月台", use: "被問到月台時回答（數字會變）", who: "staff", say: "ご番線です。" },
     { id: "trans-26", ja: "渋谷駅までお願いします。", kana: "しぶやえきまでおねがいします", romaji: "shibuya eki made onegai shimasu", yue: "麻煩您載我到澀谷站", use: "對的士司機說目的地（地名可替換）", who: "me" },
-    { id: "trans-27", ja: "10分ぐらいです。", kana: "じゅっぷんぐらいです", romaji: "juppun gurai desu", yue: "大約十分鐘", use: "司機回答車程（數字會變）", who: "staff" },
-    { id: "trans-28", ja: "20分ぐらいです。", kana: "にじゅっぷんぐらいです", romaji: "nijuppun gurai desu", yue: "大約二十分鐘", use: "司機回答車程（數字會變）", who: "staff" },
+    { id: "trans-27", ja: "10分ぐらいです。", kana: "じゅっぷんぐらいです", romaji: "juppun gurai desu", yue: "大約十分鐘", use: "司機回答車程（數字會變）", who: "staff", say: "じゅっぷんぐらいです。" },
+    { id: "trans-28", ja: "20分ぐらいです。", kana: "にじゅっぷんぐらいです", romaji: "nijuppun gurai desu", yue: "大約二十分鐘", use: "司機回答車程（數字會變）", who: "staff", say: "にじゅっぷんぐらいです。" },
     { id: "trans-29", ja: "すみません、現金のみです。", kana: "すみません、げんきんのみです", romaji: "sumimasen, genkin nomi desu", yue: "不好意思，只收現金", use: "司機回答「可以用卡付款嗎？」", who: "staff" },
-    { id: "trans-30", ja: "1,800円です。", kana: "せんはっぴゃくえんです", romaji: "sen happyaku en desu", yue: "1,800 日圓", use: "的士下車時司機說（金額會變）", who: "staff" },
+    { id: "trans-30", ja: "1,800円です。", kana: "せんはっぴゃくえんです", romaji: "sen happyaku en desu", yue: "1,800 日圓", use: "的士下車時司機說（金額會變）", who: "staff", say: "せんはっぴゃく円です。" },
   ];
 
   const HOTEL = [
@@ -215,10 +215,10 @@ window.App.Content = window.App.Content || {};
     { id: "hotel-20", ja: "ごゆっくりどうぞ。", kana: "ごゆっくりどうぞ", romaji: "goyukkuri douzo", yue: "請慢慢享受（好好休息）", use: "職員的客氣話，不必回應", who: "staff" },
     // stage 7a — new sentences
     { id: "hotel-21", ja: "こちらにご記入をお願いします。", kana: "こちらにごきにゅうをおねがいします", romaji: "kochira ni gokinyuu o onegai shimasu", yue: "麻煩您在這裡填寫", use: "辦理入住時職員說", who: "staff" },
-    { id: "hotel-22", ja: "11時です。", kana: "じゅういちじです", romaji: "juuichiji desu", yue: "十一點", use: "被問到退房時間時職員回答（時間會變）", who: "staff" },
-    { id: "hotel-23", ja: "10時です。", kana: "じゅうじです", romaji: "juuji desu", yue: "十點", use: "被問到退房時間時職員回答（時間會變）", who: "staff" },
-    { id: "hotel-24", ja: "7時からです。", kana: "しちじからです", romaji: "shichiji kara desu", yue: "從七點開始", use: "被問到早餐時間時職員回答（時間會變）", who: "staff" },
-    { id: "hotel-25", ja: "8時からです。", kana: "はちじからです", romaji: "hachiji kara desu", yue: "從八點開始", use: "被問到早餐時間時職員回答（時間會變）", who: "staff" },
+    { id: "hotel-22", ja: "11時です。", kana: "じゅういちじです", romaji: "juuichiji desu", yue: "十一點", use: "被問到退房時間時職員回答（時間會變）", who: "staff", say: "じゅういち時です。" },
+    { id: "hotel-23", ja: "10時です。", kana: "じゅうじです", romaji: "juuji desu", yue: "十點", use: "被問到退房時間時職員回答（時間會變）", who: "staff", say: "じゅう時です。" },
+    { id: "hotel-24", ja: "7時からです。", kana: "しちじからです", romaji: "shichiji kara desu", yue: "從七點開始", use: "被問到早餐時間時職員回答（時間會變）", who: "staff", say: "しち時からです。" },
+    { id: "hotel-25", ja: "8時からです。", kana: "はちじからです", romaji: "hachiji kara desu", yue: "從八點開始", use: "被問到早餐時間時職員回答（時間會變）", who: "staff", say: "はち時からです。" },
     { id: "hotel-26", ja: "すみません、満室です。", kana: "すみません、まんしつです", romaji: "sumimasen, manshitsu desu", yue: "不好意思，客滿了", use: "沒有訂房而酒店已滿時職員回答", who: "staff" },
   ];
 
@@ -235,7 +235,7 @@ window.App.Content = window.App.Content || {};
     {
       id: "dir-06", ja: "歩いて行けますか。", kana: "あるいていけますか", romaji: "aruite ikemasu ka", yue: "走得到嗎？", use: "詢問距離", who: "me",
       replies: [
-        { id: "dir-07", ja: "歩いて5分くらいです。", kana: "あるいてごふんくらいです", romaji: "aruite gofun kurai desu", yue: "走路大約五分鐘", use: "回答「走得到嗎？」", who: "staff" },
+        { id: "dir-07", ja: "歩いて5分くらいです。", kana: "あるいてごふんくらいです", romaji: "aruite gofun kurai desu", yue: "走路大約五分鐘", use: "回答「走得到嗎？」", who: "staff", say: "歩いてごふんくらいです。" },
       ],
     },
     { id: "dir-08", ja: "ここから遠いですか。", kana: "ここからとおいですか", romaji: "koko kara tooi desu ka", yue: "從這裡過去遠不遠？", use: "詢問距離", who: "me" },
