@@ -688,3 +688,61 @@ p, h1, h2 { margin: 0; }
   resize: vertical;
 }
 .paste-box:focus { outline: none; border-color: var(--a-solid); }
+
+/* ── 指給店員看 (js/show.js) ── */
+.show-row { min-height: 64px; }
+.show-row.disabled { opacity: 0.55; }
+.show-row-ja { display: block; font-size: 1.125rem; font-weight: 700; line-height: 1.35; }
+.show-preview { display: block; font-size: 1.0625rem; font-weight: 700; line-height: 1.4; }
+.show-field { display: block; margin-bottom: 12px; }
+.show-input {
+  display: block;
+  width: 100%;
+  margin-top: 4px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1.5px solid var(--a-border);
+  background: var(--paper-card);
+  color: var(--ink);
+  font: inherit;
+  font-size: 16px; /* 16px+ stops iOS zooming into the field */
+  line-height: 1.4;
+  resize: vertical;
+}
+/* full-screen card: plain high-contrast page so it reads at arm's length */
+.show-viewer {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  background: #fffdf6;
+  color: #161616;
+  overflow: hidden;
+  touch-action: manipulation;
+  padding-top: env(safe-area-inset-top, 0px);
+}
+.show-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 12px; }
+.show-count { font-size: 0.8125rem; font-weight: 700; color: var(--muted); text-align: center; }
+.show-arrow { min-width: 52px; font-size: 1.5rem; line-height: 1; }
+.show-stage { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.show-text {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 12px 20px;
+  text-align: center;
+  font-weight: 700;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+  word-break: auto-phrase; /* break lines between phrases where the browser supports it */
+  text-wrap: balance;
+  font-family: var(--font-jp, inherit);
+}
+.show-lead { font-size: 0.5em; font-weight: 700; margin-bottom: 0.4em; color: #3a3a3a; }
+.show-foot { padding: 10px 16px calc(12px + var(--safe-b)); border-top: 1.5px solid #d8cfba; background: var(--paper); }
+.show-yue { font-size: 1rem; font-weight: 700; }
+.show-en { font-size: 0.9375rem; color: #444; margin-top: 2px; }
+.show-reading { font-size: 0.875rem; margin-top: 2px; color: #333; }
+.show-rom { display: block; color: var(--a-dark); font-weight: 700; }
+.show-tools { flex-wrap: wrap; margin-top: 10px; }
+.show-say { flex: 1 1 100%; }

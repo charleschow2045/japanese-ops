@@ -37,7 +37,7 @@ window.App = window.App || {};
 
   // Same colours as english-ops' MODULE_ACCENTS, two families:
   //   mapBlue     — core skills: 五十音, 聽力, 口語
-  //   forestGreen — real-life use: 句子庫, 看得明, 對話, 每日任務
+  //   forestGreen — real-life use: 句子庫, 看得明, 對話, 指給店員看, 每日任務
   const MODULE_ACCENTS = {
     kana: { solid: "#2F6B7A", dark: "#1D4750", tint: "#E3EDEF", border: "#C3D9DD" },
     listening: { solid: "#3A7D8C", dark: "#24525C", tint: "#E5EEF0", border: "#C6DBDE" },
@@ -45,6 +45,7 @@ window.App = window.App || {};
     phrases: { solid: "#3F6B4A", dark: "#294736", tint: "#E6ECE3", border: "#C9D8C0" },
     reading: { solid: "#4F8259", dark: "#36573B", tint: "#E9EEE5", border: "#CFDCC7" },
     dialogue: { solid: "#2E5238", dark: "#1D3524", tint: "#E2E8DE", border: "#C0D0B7" },
+    show: { solid: "#3F6B58", dark: "#294A3B", tint: "#E5ECE6", border: "#C6D8C9" },
     daily: { solid: "#4A7A56", dark: "#315240", tint: "#E8EDE4", border: "#CCDAC3" },
   };
 

@@ -14,6 +14,7 @@ window.App = window.App || {};
     { key: "speaking", label: "口語練習", sub: "看意思讀日文・語音辨識／鍵盤聽寫", emoji: "🎤", implemented: true },
     { key: "reading", label: "看得懂", sub: "餐牌、商品、車站", emoji: "🪧", implemented: false },
     { key: "dialogue", label: "情境對話", sub: "9 個情境・與店員一問一答", emoji: "🛎️", implemented: true },
+    { key: "show", label: "指給店員看", sub: "過敏、地址、免稅…全螢幕大字日文", emoji: "📱", implemented: true },
   ];
 
   function defaultSettings() {
@@ -62,6 +63,15 @@ window.App = window.App || {};
     return { prefs: { showText: true, showMeaning: true }, stats: {} };
   }
 
+  // show (stage 8 item 3 指給店員看): what the user typed or ticked for the cards.
+  //   saved:     { hotelName, hotelAddress, hotelTel } (text, ≤ 300 chars each; hotel details
+  //              for the taxi cards)
+  //   allergens: ticked 過敏卡 item ids; avoid: ticked 不吃卡 item ids (js/content/showcards.js)
+  //   prefs:     small lines under a card in the viewer: yue (中文), en (English), reading (讀音)
+  function defaultShow() {
+    return { saved: { hotelName: "", hotelAddress: "", hotelTel: "" }, allergens: [], avoid: [], prefs: { yue: true, en: false, reading: false } };
+  }
+
   // numbers (stage 8 步驟 2-B 數字聽力): randomly generated questions, so no per-question
   //   stats — only per category kind.
   //   prefs: cats (price / time / things / num), level 1–3 (入門／一般／進階), count (5/10/20)
@@ -91,7 +101,7 @@ window.App = window.App || {};
   //   box = correct review answers in a row (0–4); due = local date
   //   "YYYY-MM-DD" when it is next asked. See REVIEW_INTERVALS.
   function defaultState() {
-    return { settings: defaultSettings(), kana: defaultKana(), flags: [], listen: defaultListen(), speak: defaultSpeak(), dialogue: defaultDialogue(), numbers: defaultNumbers(), daily: defaultDaily(), review: { items: {}, graduated: 0 }, backup: { lastExportAt: null } };
+    return { settings: defaultSettings(), kana: defaultKana(), flags: [], listen: defaultListen(), speak: defaultSpeak(), dialogue: defaultDialogue(), numbers: defaultNumbers(), show: defaultShow(), daily: defaultDaily(), review: { items: {}, graduated: 0 }, backup: { lastExportAt: null } };
   }
 
   // ── local dates (phone's own calendar day — never UTC) ──
@@ -164,6 +174,14 @@ window.App = window.App || {};
     if (![1, 2, 3].includes(numbers.prefs.level)) numbers.prefs.level = 1;
     if (![5, 10, 20].includes(numbers.prefs.count)) numbers.prefs.count = 10;
     if (!numbers.stats || typeof numbers.stats !== "object" || Array.isArray(numbers.stats)) numbers.stats = {};
+    const show = { ...base.show, ...(parsed.show || {}) };
+    show.saved = { ...base.show.saved, ...(parsed.show && typeof parsed.show.saved === "object" && parsed.show.saved ? parsed.show.saved : {}) };
+    Object.keys(show.saved).forEach((k) => {
+      if (typeof show.saved[k] !== "string") show.saved[k] = "";
+    });
+    show.prefs = { ...base.show.prefs, ...((parsed.show && typeof parsed.show.prefs === "object" && parsed.show.prefs) || {}) };
+    if (!Array.isArray(show.allergens)) show.allergens = [];
+    if (!Array.isArray(show.avoid)) show.avoid = [];
     let review = parsed.review &&parsed.review.items && typeof parsed.review.items === "object" ? parsed.review : null;
     if (!review) {
       // First load with stage 5: existing 五十音 red-dot characters
@@ -193,6 +211,7 @@ window.App = window.App || {};
       speak,
       dialogue,
       numbers,
+      show,
       daily,
       review,
       backup,
@@ -375,7 +394,7 @@ window.App = window.App || {};
   // (→ "invalid").  The result still goes through normalizeState.
   function sanitizeState(raw) {
     if (!isObj(raw)) throw new TypeError("state");
-    ["settings", "kana", "listen", "speak", "dialogue", "numbers", "daily", "review"].forEach((k) => {
+    ["settings", "kana", "listen", "speak", "dialogue", "numbers", "show", "daily", "review"].forEach((k) => {
       if (raw[k] !== undefined && !isObj(raw[k])) throw new TypeError(k);
     });
     if (raw.flags !== undefined && !Array.isArray(raw.flags)) throw new TypeError("flags");
@@ -430,6 +449,18 @@ window.App = window.App || {};
     put(out.numbers.prefs, "cats", Array.isArray(np.cats) ? np.cats.filter((c) => ["yen", "time", "things", "num"].includes(c)).slice(0, 4) : null);
     put(out.numbers.prefs, "level", [1, 2, 3].includes(np.level) ? np.level : undefined);
     put(out.numbers.prefs, "count", [5, 10, 20].includes(np.count) ? np.count : undefined);
+
+    const sh = raw.show || {};
+    const ss = isObj(sh.saved) ? sh.saved : {};
+    const cleanText = (x) => (typeof x === "string" ? x.replace(/[\u0000-\u0008\u000b-\u001f\u007f]/g, "").slice(0, 300) : "");
+    const sp = isObj(sh.prefs) ? sh.prefs : {};
+    out.show = {
+      saved: { hotelName: cleanText(ss.hotelName), hotelAddress: cleanText(ss.hotelAddress), hotelTel: cleanText(ss.hotelTel) },
+      allergens: strList(sh.allergens, 30, 20) || [],
+      avoid: strList(sh.avoid, 30, 20) || [],
+      prefs: {},
+    };
+    ["yue", "en", "reading"].forEach((k) => put(out.show.prefs, k, bool(sp[k])));
 
     const dl = raw.daily || {};
     out.daily = {

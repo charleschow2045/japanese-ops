@@ -4,7 +4,7 @@
 window.App = window.App || {};
 
 (function () {
-  const { Storage, Home, Settings, KanaModule, Phrases, Listening, Speaking, Dialogue, Speech, Daily, Progress } = window.App;
+  const { Storage, Home, Settings, KanaModule, Phrases, Listening, Speaking, Dialogue, Speech, Daily, Progress, Show } = window.App;
   const { h, accentVars } = window.App.UI;
 
   const TABS = [
@@ -63,6 +63,7 @@ window.App = window.App || {};
     Listening.reset();
     Speaking.reset();
     Dialogue.reset();
+    Show.reset();
     nav.view = "home";
     render({ scrollTop: true });
   }
@@ -76,6 +77,7 @@ window.App = window.App || {};
     if (key === "listening") Listening.reset();
     if (key === "speaking") Speaking.reset();
     if (key === "dialogue") Dialogue.reset();
+    if (key === "show") Show.reset();
     render({ scrollTop: true });
   }
 
@@ -110,6 +112,7 @@ window.App = window.App || {};
   function selectTab(key) {
     nav.tab = key;
     nav.task = null;
+    Show.reset(); // closes a held-up card (and lets the screen sleep again)
     if (key === "home") nav.view = "home"; // tapping 主頁 always returns to the module list
     Settings.reset();
     render({ scrollTop: true });
@@ -239,6 +242,22 @@ window.App = window.App || {};
           rerender: render,
         })
       );
+    } else if (nav.view === "show") {
+      const out = Show.render({
+        state,
+        settings: state.settings,
+        onUpdate: (fn) => setState(fn),
+        getState: () => state,
+        onSilentUpdate: (fn) => {
+          state = fn(state);
+          Storage.saveState(state);
+          return state;
+        },
+        onBack: goHome,
+        rerender: render,
+      });
+      content = h("div", { style: accentVars("show") }, out.main);
+      overlay = out.overlay && h("div", { style: accentVars("show") }, out.overlay);
     } else if (nav.view === "speaking") {
       content = h(
         "div",
