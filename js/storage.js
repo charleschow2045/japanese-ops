@@ -62,6 +62,15 @@ window.App = window.App || {};
     return { prefs: { showText: true, showMeaning: true }, stats: {} };
   }
 
+  // numbers (stage 8 步驟 2-B 數字聽力): randomly generated questions, so no per-question
+  //   stats — only per category kind.
+  //   prefs: cats (price / time / things / num), level 1–3 (入門／一般／進階), count (5/10/20)
+  //   stats: { [kind: yen|time|ban|nin|fun|num]: { c, w, last } }
+  //   A wrong answer enters 錯題重溫 as "n:<kind>:<value>" (see js/numquiz.js).
+  function defaultNumbers() {
+    return { prefs: { cats: ["yen", "time", "things", "num"], level: 1, count: 10 }, stats: {} };
+  }
+
   // daily (stage 7b 每日任務):
   //   learned:  { [sentence id]: "YYYY-MM-DD" } 每日任務「今日新句子」學過的句子
   //   days:     { [date]: { newIds, speakIds, dialogueId, due0: { l, s }, done: { reviewL, reviewS, new, speak, dialogue, kana } } }
@@ -77,12 +86,12 @@ window.App = window.App || {};
   // flags: 句子庫 sentence ids the user marked 🚩 讀錯 (pronunciation is
   // wrong on their phone) — listed in 設定 so they can copy and send them.
   // review (stage 5 錯題重溫, spaced repetition): items keyed
-  //   "p:<sentence id>" (聽力), "s:<sentence id>" (口語, stage 6) or
-  //   "k:<kana char>" → { box, due }
+  //   "p:<sentence id>" (聽力), "s:<sentence id>" (口語, stage 6),
+  //   "k:<kana char>" or "n:<kind>:<value>" (數字聽力, e.g. "n:yen:1800") → { box, due }
   //   box = correct review answers in a row (0–4); due = local date
   //   "YYYY-MM-DD" when it is next asked. See REVIEW_INTERVALS.
   function defaultState() {
-    return { settings: defaultSettings(), kana: defaultKana(), flags: [], listen: defaultListen(), speak: defaultSpeak(), dialogue: defaultDialogue(), daily: defaultDaily(), review: { items: {}, graduated: 0 }, backup: { lastExportAt: null } };
+    return { settings: defaultSettings(), kana: defaultKana(), flags: [], listen: defaultListen(), speak: defaultSpeak(), dialogue: defaultDialogue(), numbers: defaultNumbers(), daily: defaultDaily(), review: { items: {}, graduated: 0 }, backup: { lastExportAt: null } };
   }
 
   // ── local dates (phone's own calendar day — never UTC) ──
@@ -149,6 +158,12 @@ window.App = window.App || {};
     const dialogue = { ...base.dialogue, ...(parsed.dialogue || {}) };
     dialogue.prefs = { ...base.dialogue.prefs, ...((parsed.dialogue && parsed.dialogue.prefs) || {}) };
     if (!dialogue.stats || typeof dialogue.stats !== "object") dialogue.stats = {};
+    const numbers = { ...base.numbers, ...(parsed.numbers || {}) };
+    numbers.prefs = { ...base.numbers.prefs, ...((parsed.numbers && parsed.numbers.prefs) || {}) };
+    if (!Array.isArray(numbers.prefs.cats)) numbers.prefs.cats = base.numbers.prefs.cats;
+    if (![1, 2, 3].includes(numbers.prefs.level)) numbers.prefs.level = 1;
+    if (![5, 10, 20].includes(numbers.prefs.count)) numbers.prefs.count = 10;
+    if (!numbers.stats || typeof numbers.stats !== "object" || Array.isArray(numbers.stats)) numbers.stats = {};
     let review = parsed.review &&parsed.review.items && typeof parsed.review.items === "object" ? parsed.review : null;
     if (!review) {
       // First load with stage 5: existing 五十音 red-dot characters
@@ -177,6 +192,7 @@ window.App = window.App || {};
       listen,
       speak,
       dialogue,
+      numbers,
       daily,
       review,
       backup,
@@ -260,6 +276,18 @@ window.App = window.App || {};
     };
     const next = bumpActivity({ ...state, speak: { ...state.speak, stats } }, correct);
     return correct ? next : reviewWrong(next, `s:${id}`);
+  }
+
+  // 數字聽力／重溫 answer. `kind` = yen | time | ban | nin | fun | num, `key` = the
+  // 錯題重溫 key ("n:<kind>:<value>"); a wrong one (re)enters 錯題重溫.
+  function recordNumberAnswer(state, kind, key, correct) {
+    const prev = state.numbers.stats[kind] || { c: 0, w: 0, last: null };
+    const stats = {
+      ...state.numbers.stats,
+      [kind]: { c: prev.c + (correct ? 1 : 0), w: prev.w + (correct ? 0 : 1), last: new Date().toISOString() },
+    };
+    const next = bumpActivity({ ...state, numbers: { ...state.numbers, stats } }, correct);
+    return correct ? next : reviewWrong(next, key);
   }
 
   // A finished 情境對話: `correct` of `total` first-try answers (用戶選擇題 + 理解題).
@@ -347,7 +375,7 @@ window.App = window.App || {};
   // (→ "invalid").  The result still goes through normalizeState.
   function sanitizeState(raw) {
     if (!isObj(raw)) throw new TypeError("state");
-    ["settings", "kana", "listen", "speak", "dialogue", "daily", "review"].forEach((k) => {
+    ["settings", "kana", "listen", "speak", "dialogue", "numbers", "daily", "review"].forEach((k) => {
       if (raw[k] !== undefined && !isObj(raw[k])) throw new TypeError(k);
     });
     if (raw.flags !== undefined && !Array.isArray(raw.flags)) throw new TypeError("flags");
@@ -393,6 +421,16 @@ window.App = window.App || {};
     put(out.dialogue.prefs, "showText", bool(dp.showText));
     put(out.dialogue.prefs, "showMeaning", bool(dp.showMeaning));
 
+    const nm = raw.numbers || {};
+    const np = isObj(nm.prefs) ? nm.prefs : {};
+    out.numbers = {
+      stats: cleanMap(nm.stats, cleanStat, (key) => ["yen", "time", "ban", "nin", "fun", "num"].includes(key)),
+      prefs: {},
+    };
+    put(out.numbers.prefs, "cats", Array.isArray(np.cats) ? np.cats.filter((c) => ["yen", "time", "things", "num"].includes(c)).slice(0, 4) : null);
+    put(out.numbers.prefs, "level", [1, 2, 3].includes(np.level) ? np.level : undefined);
+    put(out.numbers.prefs, "count", [5, 10, 20].includes(np.count) ? np.count : undefined);
+
     const dl = raw.daily || {};
     out.daily = {
       learned: cleanMap(dl.learned, (v) => (isDate(v) ? v : undefined)),
@@ -406,7 +444,7 @@ window.App = window.App || {};
       items: cleanMap(
         rv.items,
         (v) => (isObj(v) && isInt(v.box, 0, 4) && isDate(v.due) ? { box: v.box, due: v.due } : undefined),
-        (key) => /^[psk]:.{1,30}$/.test(key)
+        (key) => /^[psk]:.{1,30}$/.test(key) || /^n:(yen|time|ban|nin|fun|num):[0-9:]{1,8}$/.test(key)
       ),
       graduated: isInt(rv.graduated, 0, 1e7) ? rv.graduated : 0,
     };
@@ -493,6 +531,7 @@ window.App = window.App || {};
     recordListenAnswer,
     recordSpeakAnswer,
     recordDialogue,
+    recordNumberAnswer,
     runOf,
     bumpActivity,
     reviewWrong,

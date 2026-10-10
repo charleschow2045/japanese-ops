@@ -111,7 +111,9 @@ window.App = window.App || {};
       .filter(([key, it]) => it.due <= today)
       .filter(([key]) => {
         if (key.startsWith("p:")) return !!phraseById(key.slice(2)) && !state.flags.includes(key.slice(2));
-        return !!kanaInfo(key.slice(2));
+        if (key.startsWith("n:")) return !!window.App.NumberQuiz.fromKey(key);
+        if (key.startsWith("k:")) return !!kanaInfo(key.slice(2));
+        return false;
       })
       .sort((a, b) => (a[1].due < b[1].due ? -1 : a[1].due > b[1].due ? 1 : 0));
   }
@@ -119,12 +121,15 @@ window.App = window.App || {};
   function buildReview(state) {
     const { shuffle } = kanaHelpers();
     const picked = dueItems(state).slice(0, REVIEW_MAX); // earliest due first
-    return shuffle(picked).map(([key]) => (key.startsWith("p:") ? phraseQuestion(phraseById(key.slice(2))) : kanaQuestion(key.slice(2))));
+    return shuffle(picked).map(([key]) =>
+      key.startsWith("p:") ? phraseQuestion(phraseById(key.slice(2))) : key.startsWith("n:") ? window.App.NumberQuiz.fromKey(key) : kanaQuestion(key.slice(2))
+    );
   }
 
   const playQ = (q, settings, rate) => {
     const s = rate ? { ...settings, rate } : settings;
     if (q.type === "phrase") speak(sayText(q.target.p), s);
+    else if (q.type === "number") speak(q.kana, s);
     else speak(q.target.char, s);
   };
 
@@ -132,10 +137,16 @@ window.App = window.App || {};
 
   // Built inside the start tap so the first sound plays within the user
   // gesture (iOS requirement).
+  // mode: "review" | "practice" (聽句子) | "numbers" (數字聽力, a kind of practice)
   function start(ctx, mode) {
-    const questions = mode === "review" ? buildReview(ctx.state) : buildPractice(ctx.state.listen.prefs, ctx.state.flags);
+    const questions =
+      mode === "review"
+        ? buildReview(ctx.state)
+        : mode === "numbers"
+          ? window.App.NumberQuiz.buildPractice(ctx.state.numbers.prefs)
+          : buildPractice(ctx.state.listen.prefs, ctx.state.flags);
     if (!questions.length) return;
-    ui.quiz = { mode, questions, index: 0, picked: null, results: [] };
+    ui.quiz = { mode: mode === "review" ? "review" : "practice", source: mode, questions, index: 0, picked: null, results: [] };
     ui.view = "quiz";
     playQ(questions[0], ctx.state.settings);
     ctx.rerender({ scrollTop: true });
@@ -162,7 +173,7 @@ window.App = window.App || {};
     playQ(questions[0], ctx.state.settings);
   }
 
-  const isRight = (q, opt) => (q.type === "phrase" ? opt.p.id === q.target.p.id : opt.char === q.target.char);
+  const isRight = (q, opt) => (q.type === "phrase" ? opt.p.id === q.target.p.id : q.type === "number" ? opt.vs === q.vs : opt.char === q.target.char);
 
   function feedbackBody(q, settings) {
     const { romajiText, yueLine } = kanaHelpers();
@@ -171,6 +182,14 @@ window.App = window.App || {};
       return [
         h("div", { class: "row mt-1" }, jp(t.char, "fb-kana"), settings.showRomaji && h("p", { class: "big-rom", style: { fontSize: "1.25rem" } }, romajiText(t.id))),
         yueLine(t.id, settings, "mt-2"),
+      ];
+    }
+    if (q.type === "number") {
+      return [
+        h("p", { class: "caption mt-1" }, `🔢 ${window.App.NumberQuiz.KIND_LABEL[q.kind]}`),
+        h("p", { lang: "ja", class: "jp phrase-ja mt-1" }, q.display),
+        h("p", { lang: "ja", class: "jp phrase-kana" }, q.kana),
+        settings.showRomaji && h("p", { class: "phrase-rom" }, q.romaji),
       ];
     }
     const p = q.target.p;
@@ -189,7 +208,7 @@ window.App = window.App || {};
     const settings = ctx.state.settings;
     const quiz = ui.quiz;
     const total = quiz.questions.length;
-    const title = ctx.task && ctx.task.title ? ctx.task.title : quiz.mode === "review" ? "錯題重溫" : "聽力練習";
+    const title = ctx.task && ctx.task.title ? ctx.task.title : quiz.mode === "review" ? "錯題重溫" : quiz.source === "numbers" ? "數字聽力" : "聽力練習";
     const back = () => {
       if (ctx.task) return ctx.onBack();
       ui.view = "menu";
@@ -221,7 +240,7 @@ window.App = window.App || {};
 
     const options = h(
       "div",
-      { class: q.type === "kana" ? "opt-grid" : "stack-sm" },
+      { class: q.type === "kana" || q.type === "number" ? "opt-grid" : "stack-sm" },
       q.options.map((opt, i) => {
         let state = "";
         if (answered && isRight(q, opt)) state = "correct";
@@ -230,7 +249,7 @@ window.App = window.App || {};
         return h(
           "button",
           { class: `opt ${q.type === "phrase" ? "opt-text" : ""} ${state}`.trim(), disabled: answered, onclick: () => pick(i) },
-          q.type === "phrase" ? opt.p.yue : jp(opt.char)
+          q.type === "phrase" ? opt.p.yue : q.type === "number" ? jp(opt.display, "num-opt") : jp(opt.char)
         );
       })
     );
@@ -269,7 +288,7 @@ window.App = window.App || {};
       h(
         "div",
         { class: "card accent center mb-4" },
-        h("p", { class: "muted mb-3", style: { fontWeight: 700 } }, q.type === "phrase" ? "聽聽看這句是什麼意思？" : "聽聽看是哪一個字？（五十音）"),
+        h("p", { class: "muted mb-3", style: { fontWeight: 700 } }, q.type === "phrase" ? "聽聽看這句是什麼意思？" : q.type === "number" ? "聽聽看是多少？" : "聽聽看是哪一個字？（五十音）"),
         h("button", { class: "hear-btn", onclick: () => playQ(q, settings), "aria-label": "再聽一次" }, "🔊"),
         h(
           "div",
@@ -323,7 +342,9 @@ window.App = window.App || {};
                   { class: "ex-card", onclick: () => playQ(q, settings) },
                   q.type === "phrase"
                     ? [h("span", { class: "grow" }, h("span", { lang: "ja", class: "jp ex-word", style: { fontSize: "1.1rem" } }, q.target.p.ja), h("span", { class: "small" }, q.target.p.yue)), h("span", null, "🔊")]
-                    : [h("span", { class: "grow" }, jp(q.target.char, "ex-word")), h("span", null, "🔊")]
+                    : q.type === "number"
+                      ? [h("span", { class: "grow" }, jp(q.display, "ex-word"), jp(q.kana, "ex-kana")), h("span", null, "🔊")]
+                      : [h("span", { class: "grow" }, jp(q.target.char, "ex-word")), h("span", null, "🔊")]
                 )
               )
             )
@@ -331,7 +352,7 @@ window.App = window.App || {};
         h(
           "div",
           { class: "stack mt-4" },
-          !review && !ctx.task && inkButton("再來一輪", () => start(ctx, "practice"), { class: "w-full" }),
+          !review && !ctx.task && inkButton("再來一輪", () => start(ctx, quiz.source || "practice"), { class: "w-full" }),
           inkButton(ctx.task ? "返回今日任務" : "返回聽力練習", back, { accent: true, class: "w-full" })
         )
       )
@@ -346,13 +367,38 @@ window.App = window.App || {};
     return future[0] || null;
   }
 
+  function numbersCard(ctx, tts) {
+    const { NumberQuiz } = window.App;
+    const np = ctx.state.numbers.prefs;
+    const toggleCat = (key) => ctx.onNumberPrefsChange({ cats: np.cats.includes(key) ? np.cats.filter((k) => k !== key) : [...np.cats, key] });
+    const level = NumberQuiz.LEVELS.find((l) => l.key === np.level);
+    const enough = np.cats.length > 0;
+    return h(
+      "div",
+      { class: "card accent mb-4" },
+      h("p", { class: "h-heading accent-text" }, "🔢 數字聽力"),
+      h("p", { class: "xs muted mb-3" }, "聽價錢、時間、月台號碼，從 4 個寫法中選出聽到的。答錯的數字會加入「錯題重溫」。"),
+      h("p", { class: "small mb-1" }, "內容"),
+      h("div", { class: "wrap mb-3" }, NumberQuiz.CATEGORIES.map((c) => chip(c.label, np.cats.includes(c.key), () => toggleCat(c.key)))),
+      h("p", { class: "small mb-1" }, "難度"),
+      h("div", { class: "chips-fill" }, NumberQuiz.LEVELS.map((l) => chip(l.label, np.level === l.key, () => ctx.onNumberPrefsChange({ level: l.key })))),
+      h("p", { class: "xs muted mt-1" }, level.hint),
+      h("p", { class: "small mb-1 mt-2" }, "題數"),
+      h("div", { class: "chips-fill" }, COUNTS.map((n) => chip(`${n} 題`, np.count === n, () => ctx.onNumberPrefsChange({ count: n })))),
+      !enough && h("p", { class: "xs mt-3", style: { color: "var(--stamp)" } }, "請至少選擇一項內容"),
+      inkButton("🔢 開始數字聽力", () => start(ctx, "numbers"), { accent: true, disabled: !enough || !tts, class: "w-full mt-3" }),
+      !tts && h("p", { class: "xs muted mt-2" }, "此瀏覽器沒有發音功能，因此無法使用數字聽力")
+    );
+  }
+
   function menu(ctx) {
     const { state } = ctx;
     const prefs = state.listen.prefs;
     const tts = isTTSSupported();
     const due = dueItems(state);
     const dueP = due.filter(([k]) => k.startsWith("p:")).length;
-    const dueK = due.length - dueP;
+    const dueN = due.filter(([k]) => k.startsWith("n:")).length;
+    const dueK = due.length - dueP - dueN;
     const waitingFlagged = Object.entries(state.review.items).filter(
       ([k, it]) => k.startsWith("p:") && it.due <= Storage.todayLocal() && state.flags.includes(k.slice(2))
     ).length;
@@ -378,7 +424,7 @@ window.App = window.App || {};
         due.length > 0
           ? h("p", { class: "review-count" }, `今天需重溫 ${due.length} 句`)
           : h("p", { class: "small muted mt-1" }, "今天沒有需要重溫的內容 🎉"),
-        due.length > 0 && h("p", { class: "xs muted" }, `句子 ${dueP}・五十音 ${dueK}${due.length > REVIEW_MAX ? `（每次最多 ${REVIEW_MAX} 題）` : ""}`),
+        due.length > 0 && h("p", { class: "xs muted" }, `句子 ${dueP}・五十音 ${dueK}・數字 ${dueN}${due.length > REVIEW_MAX ? `（每次最多 ${REVIEW_MAX} 題）` : ""}`),
         waitingFlagged > 0 && h("p", { class: "xs muted mt-1" }, `另有 ${waitingFlagged} 句已標記 🚩 讀錯，修正前不會出題`),
         later && h("p", { class: "xs muted mt-1" }, `下一批重溫：${later}`),
         h("p", { class: "xs muted mt-1" }, "答錯 → 今天再出現；重溫答對 → 隔 1、3、7、14 天再出現，第 5 次答對即畢業。"),
@@ -396,6 +442,9 @@ window.App = window.App || {};
           ctx.rerender({ scrollTop: true });
         }, { accent: true, class: "w-full mt-3" })
       ),
+
+      // 數字聽力 (stage 8 step 2-B)
+      numbersCard(ctx, tts),
 
       // 聽力練習 settings
       h(

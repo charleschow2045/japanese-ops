@@ -199,10 +199,15 @@ window.App = window.App || {};
           task: nav.task,
           onTaskDone: taskDone,
           onPrefsChange: (patch) => setState((s) => ({ ...s, listen: { ...s.listen, prefs: { ...s.listen.prefs, ...patch } } })),
+          onNumberPrefsChange: (patch) => setState((s) => ({ ...s, numbers: { ...s.numbers, prefs: { ...s.numbers.prefs, ...patch } } })),
           // Wrong answers (re)enter 錯題重溫 inside record*Answer; only a
           // correct answer DURING 重溫 moves an item to its next interval.
           onAnswer: (q, correct, mode) =>
             setState((s) => {
+              if (q.type === "number") {
+                const next = Storage.recordNumberAnswer(s, q.kind, q.key, correct);
+                return correct && mode === "review" ? Storage.reviewCorrect(next, q.key) : next;
+              }
               if (q.type === "phrase") {
                 const next = Storage.recordListenAnswer(s, q.target.p.id, correct);
                 return correct && mode === "review" ? Storage.reviewCorrect(next, `p:${q.target.p.id}`) : next;

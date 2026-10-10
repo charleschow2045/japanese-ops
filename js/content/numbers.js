@@ -71,9 +71,10 @@ window.App.Content = window.App.Content || {};
     {
       key: "yen",
       title: "價錢（円）",
-      intro: ["「円」讀「えん」。只有 4 円是「よえん」，其餘照數字讀。", "價錢由大到小逐段讀：1,200 円 ＝ せん・にひゃく・えん。"],
+      intro: ["「円」讀「えん」。個位數是 4 時讀「よ」：4 円＝よえん、14 円＝じゅうよえん；其餘照數字讀。", "價錢由大到小逐段讀：1,200 円 ＝ せん・にひゃく・えん。"],
       rows: [
         { show: "4円", kana: "よえん", romaji: "yoen", note: "不是「よんえん」" },
+        { show: "14円", kana: "じゅうよえん", romaji: "juuyoen", note: "個位 4 讀「よ」" },
         { show: "120円", kana: "ひゃくにじゅうえん", romaji: "hyaku nijuu en" },
         { show: "480円", kana: "よんひゃくはちじゅうえん", romaji: "yonhyaku hachijuu en" },
         { show: "1,200円", kana: "せんにひゃくえん", romaji: "sen nihyaku en" },

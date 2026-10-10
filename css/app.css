@@ -354,6 +354,7 @@ p, h1, h2 { margin: 0; }
 .opt-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .opt { min-height: 72px; border-radius: 16px; font-weight: 800; font-size: 1.5rem; background: var(--paper-card); color: var(--ink); border: 2px solid var(--a-border); }
 .opt .jp { font-size: 2.25rem; }
+.opt .jp.num-opt { font-size: 1.5rem; }
 .opt:active { transform: translateY(2px); }
 .opt.correct { background: var(--good-tint); color: var(--good); border-color: var(--good-solid); }
 .opt.wrong { background: var(--stamp-tint); color: var(--stamp-dark); border-color: var(--stamp); }

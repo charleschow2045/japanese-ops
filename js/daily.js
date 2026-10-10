@@ -355,7 +355,7 @@ window.App = window.App || {};
         : inkButton(label || "開始", () => launch(key), { accent: true, class: opts.class || "w-full", disabled: opts.disabled });
 
     const reviewSub = (done) =>
-      done ? "已完成" : dueL + dueS > 0 ? `今天待重溫：聽力 ${dueL}（含五十音）・口語 ${dueS}` : "今天沒有需要重溫的內容";
+      done ? "已完成" : dueL + dueS > 0 ? `今天待重溫：聽力 ${dueL}（含五十音、數字）・口語 ${dueS}` : "今天沒有需要重溫的內容";
     // one half of ①: nothing due → greyed ✓; due → button (soft once already done today)
     const part = (key, doneKey, label, due) => {
       if (due === 0) return h("button", { class: "btn-soft grow", disabled: true }, `${label} ✓`);
