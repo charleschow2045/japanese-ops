@@ -746,3 +746,19 @@ p, h1, h2 { margin: 0; }
 .show-rom { display: block; color: var(--a-dark); font-weight: 700; }
 .show-tools { flex-wrap: wrap; margin-top: 10px; }
 .show-say { flex: 1 1 100%; }
+
+/* ── 說明卡 (js/help.js) + 字表標示 ── */
+.help-card { background: var(--paper-card); border: 1.5px solid var(--a-border); border-left: 5px solid var(--a-solid); border-radius: 16px; overflow: hidden; }
+.help-head { width: 100%; display: flex; align-items: center; gap: 8px; min-height: 52px; padding: 10px 14px; font-weight: 800; text-align: left; }
+.help-toggle { font-size: 0.875rem; font-weight: 700; color: var(--a-dark); flex-shrink: 0; }
+.help-body { padding: 0 14px 12px; }
+.help-body p { margin: 0 0 8px; font-size: 0.95rem; line-height: 1.6; }
+.help-body p:last-child { margin-bottom: 0; }
+.help-body b { color: var(--a-dark); }
+.kana-head { margin-bottom: 4px; }
+.kana-colhead { display: flex; flex-direction: column; align-items: center; line-height: 1.2; }
+.kana-colhead .rom { font-size: 0.875rem; font-weight: 800; color: var(--a-dark); }
+.kana-colhead .jp { font-size: 0.875rem; color: var(--muted); }
+.kana-rowhead { align-self: stretch; display: flex; align-items: center; justify-content: center; border-radius: 10px; background: var(--a-solid); color: var(--a-on); font-weight: 800; font-size: 0.95rem; }
+.kana-cell.exc::before { content: ""; position: absolute; top: 4px; left: 4px; width: 9px; height: 9px; border-radius: 50%; background: #b5710f; }
+.ex-en { display: block; font-size: 0.875rem; font-weight: 600; color: var(--muted); font-style: italic; }

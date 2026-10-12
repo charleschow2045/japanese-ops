@@ -231,6 +231,29 @@ window.App = window.App || {};
 
   // ── chart ────────────────────────────────────────────────────────────
 
+  // Row labels (the consonant) and the characters whose reading breaks the "consonant + vowel" rule.
+  const ROW_CONSONANT = {
+    ka: "k", sa: "s", ta: "t", na: "n", ha: "h", ma: "m", ya: "y", ra: "r", wa: "w",
+    ga: "g", za: "z", da: "d", ba: "b", pa: "p",
+    kya: "ky", sha: "sh", cha: "ch", nya: "ny", hya: "hy", mya: "my", rya: "ry", gya: "gy", ja: "j", bya: "by", pya: "py",
+  };
+  const EXCEPTION_HIRA = "しちつふじぢづを";
+  const VOWELS = ["a", "i", "u", "e", "o"];
+  const VOWEL_KANA = { hira: ["あ", "い", "う", "え", "お"], kata: ["ア", "イ", "ウ", "エ", "オ"] };
+  const YOON_COLS = [["ya", "ゃ", "ャ"], ["yu", "ゅ", "ュ"], ["yo", "ょ", "ョ"]];
+
+  // Column header row (a i u e o / ya yu yo) — none for 外來語組合, whose columns have no common vowel.
+  function chartHead(g, script) {
+    if (g.key === "gairaigo") return null;
+    const cols = g.key === "yoon" ? YOON_COLS.map(([r, hi, ka]) => [r, script === "kata" ? ka : hi]) : VOWELS.map((v, i) => [v, VOWEL_KANA[script][i]]);
+    return h(
+      "div",
+      { class: "kana-grid kana-head", style: { gridTemplateColumns: `34px repeat(${cols.length}, 1fr)` } },
+      h("div"),
+      cols.map(([r, k]) => h("div", { class: "kana-colhead" }, h("span", { class: "rom" }, r), jp(k)))
+    );
+  }
+
   function kanaChart(ctx) {
     const { settings, kana } = ctx;
     const script = ui.chartScript;
@@ -251,24 +274,29 @@ window.App = window.App || {};
           })
         )
       ),
-      h("p", { class: "xs muted mb-3" }, "按一個字：聽發音、看讀音與提示。紅點 = 曾經答錯"),
+      window.App.Help.card("table"),
+      h("p", { class: "xs muted mb-3" }, "按一個字：聽發音、看讀音與提示。琥珀色點 ● = 讀音例外；紅點 = 曾經答錯"),
       KANA_GROUPS.filter((g) => !(g.kataOnly && script === "hira")).map((g) =>
         h(
           "div",
           { class: "card accent mb-4" },
           h("p", { class: "h-heading accent-text" }, g.label),
           h("p", { class: "xs muted mb-3" }, g.note),
-          KANA_ROWS.filter((r) => r.group === g.key).map((r) =>
-            h(
+          chartHead(g, script),
+          KANA_ROWS.filter((r) => r.group === g.key).map((r) => {
+            const labelled = g.key !== "gairaigo";
+            const cols = g.cols || 5;
+            return h(
               "div",
-              { class: "kana-grid", style: g.cols ? { gridTemplateColumns: `repeat(${g.cols}, 1fr)` } : null },
+              { class: "kana-grid", style: { gridTemplateColumns: `${labelled ? "34px " : ""}repeat(${cols}, 1fr)` } },
+              labelled && h("div", { class: "kana-rowhead" }, ROW_CONSONANT[r.key] || ""),
               r.cells.map((id) => {
                 if (!id) return h("div");
                 const char = KANA[id][script];
                 return h(
                   "button",
                   {
-                    class: "kana-cell",
+                    class: `kana-cell${EXCEPTION_HIRA.includes(KANA[id].hira || "") ? " exc" : ""}`,
                     "aria-label": `${char} ${KANA[id].romaji}`,
                     onclick: () => {
                       speak(char, settings);
@@ -281,8 +309,8 @@ window.App = window.App || {};
                   kana.mistakes.includes(char) && h("span", { class: "dot" })
                 );
               })
-            )
-          ),
+            );
+          }),
           // 聽對比 pairs for the group (e.g. びょういん／びよういん under 拗音)
           g.contrast && h("div", { class: "mt-4" }, window.App.Sounds.pairList(g.contrast, settings))
         )
@@ -471,6 +499,7 @@ window.App = window.App || {};
         ui.view = "menu";
         ctx.rerender({ scrollTop: true });
       }),
+      window.App.Help.card("kata"),
       h(
         "p",
         { class: "small muted mb-4" },
@@ -492,7 +521,8 @@ window.App = window.App || {};
                   "span",
                   { class: "grow" },
                   h("span", { lang: "ja", class: "jp ex-word" }, ex.word),
-                  settings.showRomaji && h("span", { class: "ex-rom" }, ex.romaji)
+                  settings.showRomaji && h("span", { class: "ex-rom" }, ex.romaji),
+                  ex.en && h("span", { class: "ex-en", lang: "en" }, ex.en)
                 ),
                 h("span", { class: "row-sm", style: { flexShrink: 0 } }, h("span", { class: "ex-mean" }, ex.meaning), tts && h("span", { style: { fontSize: "1.25rem" } }, "🔊"))
               )

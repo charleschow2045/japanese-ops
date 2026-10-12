@@ -69,6 +69,12 @@ window.App = window.App || {};
     return { prefs: { showText: true, showMeaning: true }, stats: {} };
   }
 
+  // help (「怎樣用」說明卡, js/help.js): { [table|kata|contrast]: "seen" } — a page whose card has
+  // been shown once starts collapsed from then on.
+  function defaultHelp() {
+    return {};
+  }
+
   // show (stage 8 item 3 指給店員看): what the user typed or ticked for the cards.
   //   saved:     { hotelName, hotelAddress, hotelTel } (text, ≤ 300 chars each; hotel details
   //              for the taxi cards)
@@ -107,7 +113,7 @@ window.App = window.App || {};
   //   box = correct review answers in a row (0–4); due = local date
   //   "YYYY-MM-DD" when it is next asked. See REVIEW_INTERVALS.
   function defaultState() {
-    return { settings: defaultSettings(), kana: defaultKana(), flags: [], listen: defaultListen(), speak: defaultSpeak(), dialogue: defaultDialogue(), numbers: defaultNumbers(), show: defaultShow(), daily: defaultDaily(), review: { items: {}, graduated: 0 }, backup: { lastExportAt: null } };
+    return { settings: defaultSettings(), kana: defaultKana(), flags: [], listen: defaultListen(), speak: defaultSpeak(), dialogue: defaultDialogue(), numbers: defaultNumbers(), show: defaultShow(), help: defaultHelp(), daily: defaultDaily(), review: { items: {}, graduated: 0 }, backup: { lastExportAt: null } };
   }
 
   // ── local dates (phone's own calendar day — never UTC) ──
@@ -195,6 +201,10 @@ window.App = window.App || {};
     show.prefs = { ...base.show.prefs, ...((parsed.show && typeof parsed.show.prefs === "object" && parsed.show.prefs) || {}) };
     if (!Array.isArray(show.allergens)) show.allergens = [];
     if (!Array.isArray(show.avoid)) show.avoid = [];
+    const help = {};
+    if (parsed.help && typeof parsed.help === "object" && !Array.isArray(parsed.help)) {
+      ["table", "kata", "contrast"].forEach((k) => parsed.help[k] === "seen" && (help[k] = "seen"));
+    }
     let review = parsed.review &&parsed.review.items && typeof parsed.review.items === "object" ? parsed.review : null;
     if (!review) {
       // First load with stage 5: existing 五十音 red-dot characters
@@ -225,6 +235,7 @@ window.App = window.App || {};
       dialogue,
       numbers,
       show,
+      help,
       daily,
       review,
       backup,
@@ -475,6 +486,9 @@ window.App = window.App || {};
       prefs: {},
     };
     ["yue", "en", "reading"].forEach((k) => put(out.show.prefs, k, bool(sp[k])));
+
+    out.help = {};
+    if (isObj(raw.help)) ["table", "kata", "contrast"].forEach((k) => raw.help[k] === "seen" && (out.help[k] = "seen"));
 
     const dl = raw.daily || {};
     out.daily = {

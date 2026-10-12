@@ -312,6 +312,7 @@ window.App = window.App || {};
       null,
       modHeader(inQuiz ? "分辨練習" : "清濁對比", inQuiz ? () => ((ui.view = "table"), (ui.quiz = null), ctx.rerender({ scrollTop: true })) : back),
       !inQuiz && notice && h("div", { class: "mb-4" }, notice),
+      !inQuiz && window.App.Help.card("contrast"),
       inQuiz ? contrastQuiz(ctx, back) : contrastTable(ctx)
     );
   }

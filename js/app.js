@@ -310,6 +310,13 @@ window.App = window.App || {};
   }
 
   App.render = render;
+  // 「怎樣用」說明卡 (js/help.js): has this page's card been shown before? Marking it
+  // seen is saved without a redraw.
+  App.helpSeen = (key) => state.help[key] === "seen";
+  App.helpMarkSeen = (key) => {
+    state = { ...state, help: { ...state.help, [key]: "seen" } };
+    Storage.saveState(state);
+  };
   // Read-only view of current settings for js/speech.js's notice (which
   // voice is chosen matters when offline).
   App.currentSettings = () => state.settings;
