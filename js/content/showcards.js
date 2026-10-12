@@ -21,7 +21,7 @@ window.App.Content = window.App.Content || {};
       cards: [
         { id: "show-gen-01", ja: "私は日本語が話せません。", kana: "わたしはにほんごがはなせません", romaji: "watashi wa nihongo ga hanasemasen", yue: "我不會說日文", en: "I can't speak Japanese." },
         { id: "show-gen-02", ja: "ここに書いてください。", kana: "ここにかいてください", romaji: "koko ni kaite kudasai", yue: "請寫在這裡", en: "Please write it here." },
-        { id: "show-gen-03", ja: "翻訳アプリを使ってもいいですか。", kana: "ほんやくアプリをつかってもいいですか", romaji: "honyaku apuri o tsukatte mo ii desu ka", yue: "可以使用翻譯 App 嗎？", en: "May I use a translation app?" },
+        { id: "show-gen-03", ja: "翻訳アプリを使ってもいいですか。", kana: "ほんやくアプリをつかってもいいですか", romaji: "hon’yaku apuri o tsukatte mo ii desu ka", yue: "可以使用翻譯 App 嗎？", en: "May I use a translation app?" },
         { id: "show-gen-04", ja: "写真を撮ってもいいですか。", kana: "しゃしんをとってもいいですか", romaji: "shashin o totte mo ii desu ka", yue: "可以拍照嗎？", en: "May I take a photo?" },
         { id: "show-gen-05", ja: "トイレをお借りできますか。", kana: "トイレをおかりできますか", romaji: "toire o okari dekimasu ka", yue: "請問可以借用洗手間嗎？", en: "May I use the restroom?" },
         { id: "show-gen-06", ref: "polite-15", en: "Please speak more slowly." },

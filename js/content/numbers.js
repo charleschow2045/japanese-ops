@@ -153,7 +153,7 @@ window.App.Content = window.App.Content || {};
         { show: "七つ", kana: "ななつ", romaji: "nanatsu" },
         { show: "八つ", kana: "やっつ", romaji: "yattsu" },
         { show: "九つ", kana: "ここのつ", romaji: "kokonotsu" },
-        { show: "十", kana: "とお", romaji: "too", note: "「十個」的讀法" },
+        { show: "十", kana: "とお", romaji: "too", note: "數東西時（ひとつ…とお）的第十個" },
         { show: "一枚", kana: "いちまい", romaji: "ichimai", note: "車票、毛巾" },
         { show: "二枚", kana: "にまい", romaji: "nimai" },
         { show: "三枚", kana: "さんまい", romaji: "sanmai" },
