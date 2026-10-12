@@ -9,7 +9,7 @@ window.App = window.App || {};
   // `accent` keys into MODULE_ACCENTS in theme.jsx.
   const MODULES = [
     { key: "kana", label: "五十音", sub: "平假名・片假名", emoji: "あ", implemented: true },
-    { key: "phrases", label: "情境句子庫", sub: "8 個旅行情境：餐廳、交通、機場入境…", emoji: "💬", implemented: true },
+    { key: "phrases", label: "情境句子庫", sub: "11 個旅行情境：餐廳、交通、溫泉、預約電話…", emoji: "💬", implemented: true },
     { key: "listening", label: "聽力練習", sub: "聽句子選意思・錯題重溫", emoji: "🎧", implemented: true },
     { key: "speaking", label: "口語練習", sub: "看意思讀日文・語音辨識／鍵盤聽寫", emoji: "🎤", implemented: true },
     { key: "reading", label: "看得懂", sub: "餐牌、商品、車站", emoji: "🪧", implemented: false },
@@ -38,15 +38,18 @@ window.App = window.App || {};
   // listen (stage 5 聽力練習):
   //   prefs: scenes picked, staffOnly (只練店員講), count (5/10/20)
   //   stats: { [sentence id]: { c, w, last } }
-  // sv = which set of 情境 the saved 聽力／口語 情境 choice knew about. 2 = 機場入境 exists.
-  // An older save (no sv) that had ALL seven old 情境 ticked gets 機場入境 added once; after
-  // that sv = 2, so un-ticking 機場入境 later is respected (see normalizeState).
-  const SCENE_SET = 2;
+  // sv = which set of 情境 the saved 聽力／口語 情境 choice knew about. 2 = 機場入境 exists,
+  // 3 = 觀光景點／溫泉／預約與電話 exist.
+  // An older save (no sv) that had ALL seven old 情境 ticked gets 機場入境 added once; a save
+  // before sv 3 that had all eight ticked gets the three new 情境 added once. After that
+  // sv = 3, so un-ticking a 情境 later is respected (see normalizeState).
+  const SCENE_SET = 3;
+  const NEW_SCENES_V3 = ["sight", "onsen", "call"];
   const OLD_SCENES = ["polite", "restaurant", "shopping", "transport", "hotel", "directions", "emergency"];
 
   function defaultListen() {
     return {
-      prefs: { scenes: ["polite", "restaurant", "shopping", "transport", "hotel", "directions", "emergency", "airport"], sv: SCENE_SET, staffOnly: false, count: 10 },
+      prefs: { scenes: ["polite", "restaurant", "shopping", "transport", "hotel", "directions", "emergency", "airport", "sight", "onsen", "call"], sv: SCENE_SET, staffOnly: false, count: 10 },
       stats: {},
     };
   }
@@ -56,7 +59,7 @@ window.App = window.App || {};
   //   stats: { [sentence id]: { c, w, last } } — first attempt per question only
   function defaultSpeak() {
     return {
-      prefs: { scenes: ["polite", "restaurant", "shopping", "transport", "hotel", "directions", "emergency", "airport"], sv: SCENE_SET, count: 10, mode: "voice" },
+      prefs: { scenes: ["polite", "restaurant", "shopping", "transport", "hotel", "directions", "emergency", "airport", "sight", "onsen", "call"], sv: SCENE_SET, count: 10, mode: "voice" },
       stats: {},
     };
   }
@@ -179,8 +182,11 @@ window.App = window.App || {};
     if (!speak.stats || typeof speak.stats !== "object") speak.stats = {};
     [[listen, parsed.listen], [speak, parsed.speak]].forEach(([block, saved]) => {
       const savedSv = saved && saved.prefs && saved.prefs.sv;
-      if (savedSv !== SCENE_SET && OLD_SCENES.every((k) => block.prefs.scenes.includes(k)) && !block.prefs.scenes.includes("airport")) {
+      if (!(savedSv >= 2) && OLD_SCENES.every((k) => block.prefs.scenes.includes(k)) && !block.prefs.scenes.includes("airport")) {
         block.prefs.scenes = [...block.prefs.scenes, "airport"];
+      }
+      if (!(savedSv >= 3) && [...OLD_SCENES, "airport"].every((k) => block.prefs.scenes.includes(k))) {
+        block.prefs.scenes = [...block.prefs.scenes, ...NEW_SCENES_V3.filter((k) => !block.prefs.scenes.includes(k))];
       }
       block.prefs.sv = SCENE_SET;
     });
@@ -456,7 +462,7 @@ window.App = window.App || {};
       out[name] = { stats: cleanMap(b.stats, cleanStat), prefs: {} };
       put(out[name].prefs, "scenes", strList(p.scenes, 20, 20));
       put(out[name].prefs, "count", [5, 10, 20].includes(p.count) ? p.count : undefined);
-      put(out[name].prefs, "sv", p.sv === SCENE_SET ? p.sv : undefined);
+      put(out[name].prefs, "sv", Number.isInteger(p.sv) && p.sv >= 1 && p.sv <= SCENE_SET ? p.sv : undefined);
       if (name === "listen") put(out[name].prefs, "staffOnly", bool(p.staffOnly));
       else put(out[name].prefs, "mode", ["voice", "dictation", "self"].includes(p.mode) ? p.mode : undefined);
     });
