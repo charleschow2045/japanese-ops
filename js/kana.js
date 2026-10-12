@@ -520,7 +520,7 @@ window.App = window.App || {};
                 h(
                   "span",
                   { class: "grow" },
-                  h("span", { lang: "ja", class: "jp ex-word" }, ex.word),
+                  h("span", { lang: "ja", class: `jp ex-word${ex.word.length >= 7 ? " long" : ""}` }, ex.word),
                   settings.showRomaji && h("span", { class: "ex-rom" }, ex.romaji),
                   ex.en && h("span", { class: "ex-en", lang: "en" }, ex.en)
                 ),

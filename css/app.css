@@ -508,8 +508,11 @@ p, h1, h2 { margin: 0; }
 .ex-card { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 64px; padding: 12px 16px; border-radius: 16px; text-align: left; background: var(--paper-card); border: 1.5px solid var(--a-border); }
 .ex-card:active { transform: translateY(2px); }
 .ex-word { display: block; font-size: 1.5rem; font-weight: 700; }
+.ex-word.long { font-size: 1.2rem; }
+.ex-card > .row-sm { min-width: 0; }
+.ex-word { white-space: nowrap; }
 .ex-rom { display: block; font-size: 0.875rem; font-weight: 700; color: var(--a-dark); }
-.ex-mean { font-weight: 700; text-align: right; }
+.ex-mean { font-weight: 700; text-align: right; min-width: 0; }
 .ex-kana { display: block; font-size: 1.0625rem; font-weight: 700; color: var(--ink); }
 
 /* ── confirm box ── */
