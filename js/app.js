@@ -31,7 +31,7 @@ window.App = window.App || {};
   // 撤銷; this phone's own voice choice is kept (voices differ per device).
   function restoreBackup(imported) {
     if (!Storage.saveUndo(state)) return false;
-    state = { ...imported, settings: { ...imported.settings, voiceURI: state.settings.voiceURI } };
+    state = { ...imported, settings: { ...imported.settings, voiceURI: state.settings.voiceURI, theme: state.settings.theme } };
     Storage.saveState(state);
     nav.task = null;
     Daily.reset();
@@ -136,7 +136,27 @@ window.App = window.App || {};
     );
   }
 
+  // 外觀: "auto" follows the phone (CSS prefers-color-scheme); light/dark force one via
+  // html[data-theme]. The <meta name="theme-color"> follows the paper colour.
+  const THEME_COLOR = { light: "#F3ECDC", dark: "#1A1713" };
+  function applyTheme() {
+    const t = state.settings.theme;
+    const root = document.documentElement;
+    if (t === "light" || t === "dark") root.setAttribute("data-theme", t);
+    else root.removeAttribute("data-theme");
+    const dark = t === "dark" || (t !== "light" && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute("content", dark ? THEME_COLOR.dark : THEME_COLOR.light);
+  }
+  if (window.matchMedia) {
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    const onChange = () => applyTheme();
+    if (mq.addEventListener) mq.addEventListener("change", onChange);
+    else if (mq.addListener) mq.addListener(onChange);
+  }
+
   function render(opts = {}) {
+    applyTheme();
     let content = null;
     let overlay = null;
 

@@ -1,19 +1,25 @@
-// Home screen: 今日任務 card (stage 7b) + the module list.
+// Home screen: 今日任務 card (stage 7b) + the module tiles in two groups.
 window.App = window.App || {};
 
 (function () {
   const { h, accentVars, inkButton } = window.App.UI;
 
-  function moduleRow(mod, onOpen) {
+  // Two-column tile for one module. Unfinished modules (看得懂) show as a plain, non-button
+  // 「規劃中」 tile.
+  function moduleTile(mod, onOpen) {
     const isKana = mod.key === "kana";
-    return h(
-      "button",
-      { class: `mod-row ${mod.implemented ? "live" : ""}`, style: accentVars(mod.key), disabled: !mod.implemented, onclick: mod.implemented ? onOpen : null },
-      h("span", { class: `mod-icon ${mod.implemented ? "solid" : ""} ${isKana ? "jp" : ""}`, lang: isKana ? "ja" : null, style: isKana ? { fontWeight: 700 } : null }, mod.emoji),
-      h("span", { class: "grow" }, h("span", { class: "mod-title" }, mod.label), h("span", { class: "mod-sub" }, mod.implemented ? mod.sub : "即將推出")),
-      mod.implemented && h("span", { class: "chev" }, "›")
-    );
+    const icon = h("span", { class: `tile-icon ${mod.implemented ? "solid" : ""} ${isKana ? "jp" : ""}`, lang: isKana ? "ja" : null }, mod.emoji);
+    const body = [icon, h("span", { class: "tile-title" }, mod.label), h("span", { class: "tile-sub" }, mod.implemented ? mod.sub : "規劃中")];
+    return mod.implemented
+      ? h("button", { class: "tile live", style: accentVars(mod.key), onclick: onOpen }, ...body)
+      : h("div", { class: "tile planned", style: accentVars(mod.key) }, ...body);
   }
+
+  // Home groups (2026-10-12): learning the language vs. using it while travelling.
+  const GROUPS = [
+    { title: "學日文", keys: ["kana", "listening", "speaking"] },
+    { title: "旅行時用", keys: ["phrases", "dialogue", "show", "reading"] },
+  ];
 
   // 今日任務 card: progress, streak, countdown and the one button that
   // opens the daily task page.
@@ -40,15 +46,22 @@ window.App = window.App || {};
       "div",
       { class: "stack-lg" },
       todayCard(state, () => onOpenModule("daily")),
-      h(
-        "div",
-        { class: "stack-sm" },
-        window.App.Storage.MODULES.map((m) => {
-          // 聽力練習 row shows today's 錯題重溫 count when there is any.
-          const due =
-            m.key === "listening" ? window.App.Listening.dueCount(state) : m.key === "speaking" ? window.App.Speaking.dueCount(state) : 0;
-          return moduleRow(due > 0 ? { ...m, sub: `📝 今天需重溫 ${due} 句` } : m, () => onOpenModule(m.key));
-        })
+      GROUPS.map((g) =>
+        h(
+          "section",
+          { class: "home-group" },
+          h("h2", { class: "group-title" }, g.title),
+          h(
+            "div",
+            { class: "tile-grid" },
+            g.keys.map((key) => {
+              const m = window.App.Storage.MODULES.find((x) => x.key === key);
+              // 聽力／口語 tiles show today's 錯題重溫 count when there is any.
+              const due = key === "listening" ? window.App.Listening.dueCount(state) : key === "speaking" ? window.App.Speaking.dueCount(state) : 0;
+              return moduleTile(due > 0 ? { ...m, sub: `📝 今天需重溫 ${due} 句` } : m, () => onOpenModule(key));
+            })
+          )
+        )
       )
     );
   }

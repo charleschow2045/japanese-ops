@@ -11,6 +11,12 @@ window.App = window.App || {};
     { label: "快", rate: 1.0 },
   ];
 
+  const THEMES = [
+    { key: "auto", label: "跟隨手機" },
+    { key: "light", label: "☀️ 淺色" },
+    { key: "dark", label: "🌙 深色" },
+  ];
+
   let confirmReset = false; // screen-local: two-step reset
   let view = "main"; // "main" | "backup" (進度備份 sub-screen)
 
@@ -54,6 +60,16 @@ window.App = window.App || {};
         "顯示",
         toggle("顯示羅馬拼音", "熟悉之後可以關閉，逐步改為憑假名閱讀", settings.showRomaji, (v) => ctx.onChange({ showRomaji: v })),
         toggle("顯示廣東話近似讀音", "僅為近似，請以發音為準", settings.showYue, (v) => ctx.onChange({ showYue: v }))
+      ),
+
+      section(
+        "外觀",
+        h("p", { class: "small muted mb-2" }, "「跟隨手機」會依手機的深色／淺色模式自動切換。在昏暗的地方或夜間使用，深色模式比較不刺眼。"),
+        h(
+          "div",
+          { class: "chips-fill" },
+          THEMES.map((t) => chip(t.label, settings.theme === t.key, () => ctx.onChange({ theme: t.key })))
+        )
       ),
 
       section(

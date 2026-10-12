@@ -42,7 +42,8 @@
 - 口語練習：Web Speech API（SpeechRecognition，lang = "ja-JP"）
 - 若瀏覽器不支援語音功能，要顯示清楚提示，其他功能照常運作
 - 與 English Ops / Chinese Ops 保持相近的設計風格和操作方式
-- **顏色和字體跟 english-ops 一致**（「探險護照」系統）：
+- **顏色和字體（2026-10-12 起改為「和紙護照（改良）」，見進度記錄「階段 9（D）」，下面 english-ops 色值只作歷史參考）**：
+  - 舊：顏色和字體跟 english-ops 一致（「探險護照」系統）：
   - 顏色（`css/app.css` 頂部 CSS 變數）：`--paper` #EFE6D3（牛皮紙底色）、`--ink` #233142（字）、
     `--stamp` #A83A3A（印章紅，主要按鈕／重點）、`--gold` #B8923A（成就／分數）；
     模組顏色分兩個色系：`mapBlue`（#2F6B7A 系）和 `forestGreen`（#3F6B4A 系），
@@ -505,6 +506,21 @@
   - **清濁對比**：對比表頁頂部「清濁對比怎樣用」卡（分辨練習畫面唔顯示）
   - 已測試（電腦）：三頁第一次自動展開並記 `seen`、撳可收起／展開、重新載入後收起、字表行列標示（平假名 5 欄 a i u e o、片假名拗音 ya yu yo、4 組有標示頭／外來語組合冇）、8 個例外字有 ●、片假名實例 58 行都有英文、備份往返＋竄改（壞值、`__proto__`、缺 `help`）、375px 冇橫向捲動、說明卡掣 ≥ 44px；機場對話、指給店員看、數字聽力、備份原有測試冇受影響；`sw.js` FILES 比對冇輸出
   - **未能喺電腦測試、要用戶手機確認**：三張說明卡文字係咪易明；字表行列標示同圓點喺手機上係咪清楚
+
+- **階段 9（D）設計方向一「和紙護照（改良）」＋深色模式 — 完成（2026-10-12，版本 `2026-10-12d`）**：用戶揀方向一。次序 A → D → B → C，每項各自一個版本
+  - **顏色**：`css/app.css` 頂部 token（淺色預設）：`--paper` #F3ECDC、`--paper-card` #FFFCF5、`--ink` #1B2733、`--muted` #4F4738、`--stamp` #A32E2E；
+    **三個色系**（`--acc-blue-*`／`--acc-green-*`／`--acc-amber-*`，各有 solid／dark／edge／tint／border／on）：藍＝學日文（五十音、聽力、口語）、
+    綠＝旅行時用（句子庫、看得懂、對話、指給店員看）、琥珀＝工具（每日任務／進度）。`js/ui.js` 嘅 `MODULE_ACCENTS`／`accentVars()` 回傳 `var(--acc-…)`（新增 `--a-edge`）。
+    所有顏色都來自 token（唔再有寫死 hex，唯一例外係 `.show-viewer`）；全部 token 配對對比度 ≥ 4.5:1，已用 Playwright 逐元素審計（淺色＋深色、主頁／五十音／聽力／進度／設定／指給店員看列表）
+  - **深色模式**：`@media (prefers-color-scheme: dark)` 配 `:root:not([data-theme="light"])`，加 `:root[data-theme="dark"]`；設定頁「外觀」三選一（跟隨手機／☀️ 淺色／🌙 深色），
+    存喺 `settings.theme`（`auto`／`light`／`dark`，storage 預設＋normalize＋備份 sanitize 都有）；`app.js` 嘅 `applyTheme()` 每次 render 設 `html[data-theme]` 同 `<meta name="theme-color">`，並監聽手機模式轉變。
+    **還原備份時保留呢部機自己嘅 theme**（同語音選擇一樣）。`manifest` 嘅 `background_color`／`theme_color` 改 #F3ECDC
+  - **指給店員看**全螢幕畫面：`.show-viewer` 喺 CSS 內強制用淺色高對比 token（深色模式都係），因為係拿給店員看
+  - **改動**：基本字體 17px（`html { font-size: 106.25% }`）、細字最少 0.83rem、底部分頁列 72px、移除背景色塊同表情裝飾（`.bg`）、陰影變扁平、停用按鈕用 `--dis-bg`／`--dis-fg`；
+    主頁改為「學日文」／「旅行時用」兩組、兩欄 `.tile` 磚（看得懂＝虛線「規劃中」非按鈕磚）；五十音選單等內頁仍用 `.mod-row`
+  - 已測試（電腦）：淺色／深色各主要畫面對比度審計（只剩已修正嘅 `.mod-icon`）、主頁 7 磚、設定三種外觀切換同儲存、`meta theme-color`、冇橫向捲動、指給店員看全螢幕喺深色模式仍然淺色；
+    原有功能回歸（說明卡、數字聽力、每日任務、備份、機場對話、指給店員看）冇受影響
+  - **未能喺電腦測試、要用戶手機確認**：深色模式喺真機嘅觀感（OLED 夜間）；iPhone 主畫面版嘅狀態列顏色；17px 字體喺細手機嘅斷行；主頁兩欄磚按起來手感
 
 ## 待確認內容
 - **濁音（が／ざ／だ／ば 行）嘅廣東話近似讀音**：暫時全部顯示「冇對應」。可以用廣東話不送氣音做近似

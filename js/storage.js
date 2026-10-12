@@ -18,7 +18,7 @@ window.App = window.App || {};
   ];
 
   function defaultSettings() {
-    return { showRomaji: true, showYue: true, voiceURI: null, rate: 0.8, travelDate: null, dailyNew: 5 };
+    return { showRomaji: true, showYue: true, voiceURI: null, rate: 0.8, travelDate: null, dailyNew: 5, theme: "auto" };
   }
 
   // kana.stats is keyed by the character itself (あ and ア tracked
@@ -215,6 +215,7 @@ window.App = window.App || {};
     review = { ...review, graduated: Number(review.graduated) > 0 ? Math.floor(Number(review.graduated)) : 0 };
     const settings = { ...base.settings, ...(parsed.settings || {}) };
     if (![3, 5, 8].includes(settings.dailyNew)) settings.dailyNew = 5;
+    if (!["auto", "light", "dark"].includes(settings.theme)) settings.theme = "auto";
     if (typeof settings.travelDate !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(settings.travelDate)) settings.travelDate = null;
     const daily = { ...base.daily, ...(parsed.daily || {}) };
     ["learned", "days", "activity"].forEach((k) => {
@@ -435,6 +436,7 @@ window.App = window.App || {};
     put(out.settings, "rate", typeof st.rate === "number" && st.rate >= 0.3 && st.rate <= 2 ? st.rate : undefined);
     put(out.settings, "travelDate", isDate(st.travelDate) ? st.travelDate : undefined);
     put(out.settings, "dailyNew", [3, 5, 8].includes(st.dailyNew) ? st.dailyNew : undefined);
+    put(out.settings, "theme", ["auto", "light", "dark"].includes(st.theme) ? st.theme : undefined);
     // voiceURI is deliberately not taken from a file (device-specific)
 
     const k = raw.kana || {};
