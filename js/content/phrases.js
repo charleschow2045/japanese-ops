@@ -1,6 +1,6 @@
 // 情境句子庫 content. Stage 2: 基本禮貌 20、餐廳 21、購物 22 = 63 句
 // (checked 2026-10-01). Stage 4: 交通 19、酒店 20、問路 18、緊急情況 21
-// = 78 句 (checked 2026-10-03). Total 141.
+// = 78 句 (checked 2026-10-03). Stage 7a +48 = 189. Stage 8 item 4: 機場入境 26 = 215.
 //
 // Fields per sentence:
 //   id      stable id (for stage 4 聽力／錯題重溫) — never renumber
@@ -295,6 +295,65 @@ window.App.Content = window.App.Content || {};
     { id: "emer-32", ja: "見つかったら連絡します。", kana: "みつかったられんらくします", romaji: "mitsukattara renraku shimasu", yue: "找到後會與您聯絡", use: "報失物品後警察說明後續", who: "staff" },
   ];
 
+  // 機場入境 (stage 8 item 4, 26 句). 免稅 follows the new refund system from 2026-11-01 only in
+  // wording that stays valid (where to do the procedure); the shop-side 免稅 sentences are unchanged.
+  const AIRPORT = [
+    {
+      id: "air-01", ja: "入国の目的は何ですか。", kana: "にゅうこくのもくてきはなんですか", romaji: "nyuukoku no mokuteki wa nan desu ka", yue: "請問入境的目的是什麼？", use: "入境審查時審查官詢問", who: "staff",
+      replies: [
+        { id: "air-02", ja: "観光です。", kana: "かんこうです", romaji: "kankou desu", yue: "觀光", use: "回答入境目的", who: "me" },
+      ],
+    },
+    {
+      id: "air-03", ja: "何日間滞在しますか。", kana: "なんにちかんたいざいしますか", romaji: "nannichikan taizai shimasu ka", yue: "請問會停留幾天？", use: "入境審查時詢問", who: "staff",
+      replies: [
+        { id: "air-04", ja: "五日間です。", kana: "いつかかんです", romaji: "itsukakan desu", yue: "五天", use: "回答停留天數（天數會變）", who: "me" },
+      ],
+    },
+    {
+      id: "air-05", ja: "どこに泊まりますか。", kana: "どこにとまりますか", romaji: "doko ni tomarimasu ka", yue: "請問住在哪裡？", use: "入境審查時詢問", who: "staff",
+      replies: [
+        { id: "air-06", ja: "ホテルに泊まります。", kana: "ホテルにとまります", romaji: "hoteru ni tomarimasu", yue: "我住酒店", use: "回答住宿地點", who: "me" },
+      ],
+    },
+    { id: "air-07", ja: "両手の人差し指をここに置いてください。", kana: "りょうてのひとさしゆびをここにおいてください", romaji: "ryoute no hitosashiyubi o koko ni oite kudasai", yue: "請將雙手食指放在這裡", use: "錄取指紋時", who: "staff" },
+    { id: "air-08", ja: "カメラを見てください。", kana: "カメラをみてください", romaji: "kamera o mite kudasai", yue: "請看鏡頭", use: "拍攝面部照片時", who: "staff" },
+    {
+      id: "air-09", ja: "申告するものはありますか。", kana: "しんこくするものはありますか", romaji: "shinkoku suru mono wa arimasu ka", yue: "請問有需要申報的物品嗎？", use: "海關詢問", who: "staff",
+      replies: [
+        { id: "air-10", ja: "申告するものはありません。", kana: "しんこくするものはありません", romaji: "shinkoku suru mono wa arimasen", yue: "我沒有需要申報的物品", use: "回答海關", who: "me" },
+      ],
+    },
+    { id: "air-11", ja: "荷物の中を見せてください。", kana: "にもつのなかをみせてください", romaji: "nimotsu no naka o misete kudasai", yue: "請讓我看一下行李裡面", use: "海關抽查行李時", who: "staff" },
+    {
+      id: "air-12", ja: "これは何ですか。", kana: "これはなんですか", romaji: "kore wa nan desu ka", yue: "這是什麼？", use: "海關檢查物品時詢問", who: "staff",
+      replies: [
+        { id: "air-13", ja: "お土産です。", kana: "おみやげです", romaji: "omiyage desu", yue: "這是手信", use: "回答海關（送人的禮物）", who: "me" },
+        { id: "air-14", ja: "自分用です。", kana: "じぶんようです", romaji: "jibun’you desu", yue: "自用的", use: "回答海關（自用）", who: "me" },
+      ],
+    },
+    { id: "air-15", ja: "荷物が出てきません。", kana: "にもつがでてきません", romaji: "nimotsu ga detekimasen", yue: "我的行李還沒有出來", use: "在行李轉盤等不到行李時", who: "me" },
+    {
+      id: "air-16", ja: "ホテルに届けてもらえますか。", kana: "ホテルにとどけてもらえますか", romaji: "hoteru ni todokete moraemasu ka", yue: "可以送到酒店嗎？", use: "行李延誤或損壞，請對方找到後送來時", who: "me",
+      replies: [
+        { id: "air-17", ja: "はい、見つかりしだい、お届けします。", kana: "はい、みつかりしだい、おとどけします", romaji: "hai, mitsukari shidai, otodoke shimasu", yue: "好的，找到後會馬上送到", use: "職員回答", who: "staff" },
+      ],
+    },
+    { id: "air-18", ja: "バス乗り場はどこですか。", kana: "バスのりばはどこですか", romaji: "basu noriba wa doko desu ka", yue: "巴士站在哪裡？", use: "想搭機場巴士時", who: "me" },
+    { id: "air-19", ja: "タクシー乗り場はどこですか。", kana: "タクシーのりばはどこですか", romaji: "takushii noriba wa doko desu ka", yue: "的士站在哪裡？", use: "想搭的士時", who: "me" },
+    { id: "air-20", ja: "ICカードはどこで買えますか。", kana: "アイシーカードはどこでかえますか", romaji: "aishii kaado wa doko de kaemasu ka", yue: "請問在哪裡可以買到 IC 卡？", use: "想買 Suica 等交通卡（類似八達通）時", who: "me" },
+    { id: "air-21", ja: "一番安い行き方を教えてください。", kana: "いちばんやすいいきかたをおしえてください", romaji: "ichiban yasui ikikata o oshiete kudasai", yue: "請告訴我最便宜的去法", use: "詢問前往市區的方法", who: "me" },
+    { id: "air-22", ja: "両替をお願いします。", kana: "りょうがえをおねがいします", romaji: "ryougae o onegai shimasu", yue: "麻煩您，我想換錢", use: "到兌換處時", who: "me" },
+    { id: "air-23", ja: "香港ドルを日本円に換えたいです。", kana: "ホンコンドルをにほんえんにかえたいです", romaji: "honkon doru o nihon en ni kaetai desu", yue: "我想把港幣換成日圓", use: "說明要換的貨幣", who: "me" },
+    {
+      id: "air-24", ja: "いくら両替しますか。", kana: "いくらりょうがえしますか", romaji: "ikura ryougae shimasu ka", yue: "請問要換多少？", use: "兌換處職員詢問", who: "staff",
+      replies: [
+        { id: "air-25", ja: "一万円分お願いします。", kana: "いちまんえんぶんおねがいします", romaji: "ichiman en bun onegai shimasu", yue: "麻煩換一萬日圓（金額會變）", use: "回答要換的金額", who: "me" },
+      ],
+    },
+    { id: "air-26", ja: "免税手続きはどこでできますか。", kana: "めんぜいてつづきはどこでできますか", romaji: "menzei tetsuzuki wa doko de dekimasu ka", yue: "請問在哪裡辦理免稅手續？", use: "出境時詢問在哪裡辦理免稅（退稅）手續", who: "me" },
+  ];
+
   // Emergency numbers card shown at the top of 緊急情況 (user-supplied).
   // `tel` is the dialable form (tel: link); `show` is what's displayed.
   const EMERGENCY_INFO = {
@@ -315,5 +374,6 @@ window.App.Content = window.App.Content || {};
     { key: "hotel", label: "酒店", emoji: "🏨", phrases: HOTEL },
     { key: "directions", label: "問路", emoji: "🗺️", phrases: DIRECTIONS },
     { key: "emergency", label: "緊急情況", emoji: "🚑", phrases: EMERGENCY, info: EMERGENCY_INFO },
+    { key: "airport", label: "機場入境", emoji: "✈️", phrases: AIRPORT },
   ];
 })();
