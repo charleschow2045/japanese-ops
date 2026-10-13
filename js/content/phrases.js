@@ -444,7 +444,7 @@ window.App.Content = window.App.Content || {};
         { id: "call-03", ja: "何時がよろしいですか。", kana: "なんじがよろしいですか", romaji: "nanji ga yoroshii desu ka", yue: "請問幾點方便？", use: "店員詢問時間", who: "staff" },
       ],
     },
-    { id: "call-04", ja: "七時でお願いします。", kana: "しちじでおねがいします", romaji: "shichiji de onegai shimasu", yue: "麻煩您，七點", use: "回答預約時間（時間會變）", who: "me", say: "しち時でお願いします。",
+    { id: "call-04", ja: "七時でお願いします。", kana: "しちじでおねがいします", romaji: "shichiji de onegai shimasu", yue: "麻煩您，七點", use: "回答預約時間（時間會變）", who: "me", say: "しちじでお願いします。",
       replies: [
         { id: "call-05", ja: "お名前をお願いします。", kana: "おなまえをおねがいします", romaji: "onamae o onegai shimasu", yue: "請告訴我您的姓名", use: "店員詢問預約姓名", who: "staff" },
       ],
