@@ -74,7 +74,7 @@ window.App = window.App || {};
     if (key === "daily") Daily.reset();
     if (key === "kana") KanaModule.reset();
     if (key === "phrases") Phrases.reset();
-    if (key === "listening") Listening.reset();
+    if (key === "listening" || key === "numbers") Listening.reset();
     if (key === "speaking") Speaking.reset();
     if (key === "dialogue") Dialogue.reset();
     if (key === "show") Show.reset();
@@ -138,7 +138,7 @@ window.App = window.App || {};
 
   // 外觀: "auto" follows the phone (CSS prefers-color-scheme); light/dark force one via
   // html[data-theme]. The <meta name="theme-color"> follows the paper colour.
-  const THEME_COLOR = { light: "#F3ECDC", dark: "#1A1713" };
+  const THEME_COLOR = { light: "#E8F3FF", dark: "#0F1830" };
   function applyTheme() {
     const t = state.settings.theme;
     const root = document.documentElement;
@@ -213,12 +213,13 @@ window.App = window.App || {};
           rerender: render,
         })
       );
-    } else if (nav.view === "listening") {
+    } else if (nav.view === "listening" || nav.view === "numbers") {
       content = h(
         "div",
-        { style: accentVars("listening") },
+        { style: accentVars(nav.view) },
         Listening.render({
           state,
+          section: nav.view === "numbers" ? "numbers" : null, // 數字・價錢 tile: only the number cards
           task: nav.task,
           onTaskDone: taskDone,
           onPrefsChange: (patch) => setState((s) => ({ ...s, listen: { ...s.listen, prefs: { ...s.listen.prefs, ...patch } } })),

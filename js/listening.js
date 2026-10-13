@@ -431,17 +431,7 @@ window.App = window.App || {};
         inkButton("開始重溫", () => start(ctx, "review"), { disabled: due.length === 0 || !tts, class: "w-full mt-3" })
       ),
 
-      // 數字・價錢・時間讀音表 (read-only reference, stage 8 step 2-A)
-      h(
-        "div",
-        { class: "card accent mb-4" },
-        h("p", { class: "h-heading accent-text" }, "🔢 數字・價錢・時間讀音表"),
-        h("p", { class: "xs muted" }, "價錢、月台、時間的讀法，按一下就能聽。"),
-        inkButton("查看讀音表", () => {
-          ui.view = "numbers";
-          ctx.rerender({ scrollTop: true });
-        }, { accent: true, class: "w-full mt-3" })
-      ),
+      numbersTableCard(ctx),
 
       // 數字聽力 (stage 8 step 2-B)
       numbersCard(ctx, tts),
@@ -470,6 +460,26 @@ window.App = window.App || {};
     );
   }
 
+  // 數字・價錢・時間讀音表 (read-only reference, stage 8 step 2-A)
+  function numbersTableCard(ctx) {
+    return h(
+      "div",
+      { class: "card accent mb-4" },
+      h("p", { class: "h-heading accent-text" }, "🔢 數字・價錢・時間讀音表"),
+      h("p", { class: "xs muted" }, "價錢、月台、時間的讀法，按一下就能聽。"),
+      inkButton("查看讀音表", () => {
+        ui.view = "numbers";
+        ctx.rerender({ scrollTop: true });
+      }, { accent: true, class: "w-full mt-3" })
+    );
+  }
+
+  // 主頁「數字・價錢」tile: the two number cards on their own (same features as inside 聽力練習).
+  function numbersHub(ctx) {
+    const tts = window.App.Speech.isTTSSupported();
+    return h("div", null, modHeader("數字・價錢", ctx.onBack), numbersTableCard(ctx), numbersCard(ctx, tts));
+  }
+
   // ctx: { state, task, onPrefsChange, onAnswer(q, correct, mode), onTaskDone, onBack, rerender }
   function emptyTask(ctx) {
     return h(
@@ -494,7 +504,7 @@ window.App = window.App || {};
       });
     }
     ui.view = "menu";
-    return menu(ctx);
+    return ctx.section === "numbers" ? numbersHub(ctx) : menu(ctx);
   }
 
   // For the 主頁 row: how many review items can be done today.

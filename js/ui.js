@@ -35,30 +35,29 @@ window.App = window.App || {};
     });
   }
 
-  // Three colour families (tokens in css/app.css, light + dark):
-  //   blue  — 學日文: 五十音, 聽力, 口語
-  //   green — 旅行時用: 句子庫, 看得懂, 對話, 指給店員看
-  //   amber — 工具: 每日任務／進度
-  const MODULE_FAMILY = {
-    kana: "blue",
-    listening: "blue",
-    speaking: "blue",
-    phrases: "green",
-    reading: "green",
-    dialogue: "green",
-    show: "green",
-    daily: "amber",
+  // One colour per module (tokens --mod-<key>-* in css/app.css, light + dark). `dark` is the
+  // text colour on the module's tint/card (the deep main colour in light mode, a light one in dark).
+  const MODULE_COLOR = {
+    kana: "kana",
+    phrases: "phrases",
+    listening: "listening",
+    speaking: "speaking",
+    dialogue: "dialogue",
+    numbers: "numbers",
+    show: "show",
+    daily: "daily",
+    reading: "phrases", // 規劃中 (not built yet)
   };
   const MODULE_ACCENTS = {};
-  Object.keys(MODULE_FAMILY).forEach((k) => {
-    const f = MODULE_FAMILY[k];
+  Object.keys(MODULE_COLOR).forEach((k) => {
+    const c = MODULE_COLOR[k];
     MODULE_ACCENTS[k] = {
-      solid: `var(--acc-${f}-solid)`,
-      dark: `var(--acc-${f}-dark)`,
-      edge: `var(--acc-${f}-edge)`,
-      tint: `var(--acc-${f}-tint)`,
-      border: `var(--acc-${f}-border)`,
-      on: `var(--acc-${f}-on)`,
+      solid: `var(--mod-${c}-main)`,
+      dark: `var(--mod-${c}-main)`,
+      edge: `var(--mod-${c}-edge)`,
+      tint: `var(--mod-${c}-tint)`,
+      border: `var(--mod-${c}-border)`,
+      on: `var(--mod-${c}-on)`,
     };
   });
 
