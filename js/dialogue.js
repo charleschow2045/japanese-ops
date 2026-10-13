@@ -246,7 +246,7 @@ window.App = window.App || {};
             h("button", { class: `dlg-opt ${p.wrong[t] ? "wrong" : ""}`.trim(), disabled: !!p.wrong[t], onclick: () => chooseCheck(ctx, t) }, h("span", { class: "dlg-zh" }, t))
           )
         ),
-        p.firstWrong && h("p", { class: "xs mt-2", style: { color: "var(--stamp)" } }, "不是這個，請再聽一次對方的話（🔊 再聽）後再選。")
+        p.firstWrong && window.App.Feedback.note("不是這個，請再聽一次對方的話（🔊 再聽）後再選。")
       );
     }
     // user turn
@@ -268,7 +268,7 @@ window.App = window.App || {};
           );
         })
       ),
-      p.why && h("p", { class: "small mt-2", style: { color: "var(--stamp)" } }, `❌ ${p.why}`)
+      p.why && window.App.Feedback.note(p.why)
     );
   }
 
@@ -279,7 +279,7 @@ window.App = window.App || {};
     return h(
       "div",
       { class: "card accent center pending", "data-autoscroll": ui.scroll ? "end" : null },
-      h("p", { style: { fontSize: "3rem", marginBottom: "8px" } }, perfect ? "🎉" : rate >= 70 ? "👍" : "💪"),
+      window.App.Feedback.hero(ui.correct, ui.total),
       h("p", { class: "score" }, `${ui.correct} / ${ui.total}`),
       h("p", { class: "muted mt-1", style: { fontWeight: 700 } }, perfect ? "一次過全對！" : "第一次答對的題數。答錯的已加入重溫。"),
       ui.mistakes.length > 0 &&

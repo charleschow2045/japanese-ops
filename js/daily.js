@@ -393,7 +393,7 @@ window.App = window.App || {};
       ),
 
       count === TASK_KEYS.length &&
-        h("div", { class: "card center", style: { background: "var(--good-tint)", borderColor: "var(--good-solid)" } }, h("p", { style: { fontSize: "2rem" } }, "🎉"), h("p", { class: "h-heading" }, "今天的任務全部完成！"), h("p", { class: "small muted mt-1" }, "明天再來。想多練習的話，也可以隨時重做任何一項。")),
+        h("div", { class: "card center", style: { background: "var(--good-tint)", borderColor: "var(--good-solid)" } }, window.App.Feedback.hero(1, 1), h("p", { class: "h-heading" }, "今天的任務全部完成！"), h("p", { class: "small muted mt-1" }, "明天再來。想多練習的話，也可以隨時重做任何一項。")),
 
       // ① review
       taskCard(

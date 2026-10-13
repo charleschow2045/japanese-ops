@@ -85,7 +85,7 @@ window.App = window.App || {};
     return { sim, grade: sim >= GOOD ? "good" : sim >= NEAR ? "near" : "bad", best };
   }
 
-  const GRADE_TEXT = { good: "✅ 正確！", near: "🟡 差一點", bad: "❌ 不正確" };
+  const GRADE_TEXT = { good: "正確！", near: "差一點", bad: "不正確" };
 
   // ── what this phone can do ───────────────────────────────────────────
 
@@ -517,11 +517,10 @@ window.App = window.App || {};
       body = h(
         "div",
         { class: "card feedback", "data-autoscroll": autoscroll ? "end" : null },
-        h(
-          "p",
-          { class: `fb-title ${(first ? result && result.correct : q.grade === "good") ? "ok" : "no"}` },
-          overridden ? "✅ 已視為答對" : first ? GRADE_TEXT[q.grade] : `${GRADE_TEXT[q.grade]}（再試，不計分）`
-        ),
+        window.App.Feedback.banner((first ? result && result.correct : q.grade === "good") ? true : false, {
+          title: overridden ? "已視為答對" : first ? GRADE_TEXT[q.grade] : `${GRADE_TEXT[q.grade]}（再試，不計分）`,
+          sub: q.grade === "near" ? "很接近了，再聽一次正確讀音" : undefined,
+        }),
         !selfMode && h("p", { class: "small muted mt-1" }, `聽到／輸入：`, jp(q.heard || "（無）"), `　相似度 ${Math.round(q.sim * 100)}%`),
         h("p", { class: "caption mt-2" }, "正確答案"),
         answerBlock(p, settings),
@@ -573,7 +572,7 @@ window.App = window.App || {};
       h(
         "div",
         { class: "card accent center" },
-        h("p", { style: { fontSize: "3rem", marginBottom: "8px" } }, score_ === total ? "🎉" : score_ >= total * 0.7 ? "👍" : "💪"),
+        window.App.Feedback.hero(score_, total),
         h("p", { class: "score" }, `${score_} / ${total}`),
         h(
           "p",

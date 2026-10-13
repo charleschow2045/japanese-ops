@@ -406,7 +406,8 @@ window.App = window.App || {};
       feedback = h(
         "div",
         { class: "card mt-4 feedback", "data-autoscroll": autoscroll ? "end" : null },
-        h("p", { class: `fb-title ${gotIt ? "ok" : "no"}` }, gotIt ? "✅ 答對了！" : "❌ 答錯了，答案是："),
+        window.App.Feedback.banner(gotIt),
+        !gotIt && h("p", { class: "caption fb-lead" }, "答案是："),
         h(
           "div",
           { class: "row mt-1" },
@@ -461,7 +462,7 @@ window.App = window.App || {};
       h(
         "div",
         { class: "card accent center" },
-        h("p", { style: { fontSize: "3rem", marginBottom: "8px" } }, score === QUIZ_LENGTH ? "🎉" : score >= 7 ? "👍" : "💪"),
+        window.App.Feedback.hero(score, QUIZ_LENGTH),
         h("p", { class: "score" }, `${score} / ${QUIZ_LENGTH}`),
         h(
           "p",

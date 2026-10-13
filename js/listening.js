@@ -261,7 +261,8 @@ window.App = window.App || {};
       feedback = h(
         "div",
         { class: "card mt-4 feedback", "data-autoscroll": autoscroll ? "end" : null },
-        h("p", { class: `fb-title ${gotIt ? "ok" : "no"}` }, gotIt ? "✅ 答對了！" : "❌ 答錯了，正確答案是："),
+        window.App.Feedback.banner(gotIt),
+        !gotIt && h("p", { class: "caption fb-lead" }, "正確答案是："),
         feedbackBody(q, settings),
         isTTSSupported() &&
           h(
@@ -315,7 +316,7 @@ window.App = window.App || {};
       h(
         "div",
         { class: "card accent center" },
-        h("p", { style: { fontSize: "3rem", marginBottom: "8px" } }, score === total ? "🎉" : score >= total * 0.7 ? "👍" : "💪"),
+        window.App.Feedback.hero(score, total),
         h("p", { class: "score" }, `${score} / ${total}`),
         h(
           "p",

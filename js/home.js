@@ -65,7 +65,7 @@ window.App = window.App || {};
         "div",
         { class: "hello" },
         window.App.Mascot.node(all ? "cheer" : "hello", "hello-mascot"),
-        h("div", { class: "bubble" }, h("b", { class: "jp", lang: "ja" }, g.ja), h("span", null, g.line))
+        h("div", { class: "hello-bubble" }, h("b", { class: "jp", lang: "ja" }, g.ja), h("span", null, g.line))
       ),
       h(
         "div",

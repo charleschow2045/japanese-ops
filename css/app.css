@@ -486,10 +486,10 @@ body::before {
 .hello { display: flex; align-items: flex-end; gap: 8px; }
 .hello-mascot { width: 92px; flex: none; display: block; }
 .mascot svg { display: block; width: 100%; height: auto; }
-.bubble { position: relative; flex: 1; min-width: 0; display: flex; flex-direction: column; margin-bottom: 14px; padding: 10px 14px; border-radius: 20px; background: var(--paper-card); box-shadow: 0 3px 0 var(--edge-soft); }
-.bubble b { font-family: var(--font-stamp); font-size: 1.25rem; font-weight: 800; line-height: 1.3; }
-.bubble span { font-size: 0.875rem; font-weight: 700; color: var(--muted); }
-.bubble::after { content: ""; position: absolute; left: -7px; bottom: 14px; width: 14px; height: 14px; background: var(--paper-card); transform: rotate(45deg); border-radius: 3px; }
+.hello-bubble { position: relative; flex: 1; min-width: 0; display: flex; flex-direction: column; margin-bottom: 14px; padding: 10px 14px; border-radius: 20px; background: var(--paper-card); box-shadow: 0 3px 0 var(--edge-soft); }
+.hello-bubble b { font-family: var(--font-stamp); font-size: 1.25rem; font-weight: 800; line-height: 1.3; }
+.hello-bubble span { font-size: 0.875rem; font-weight: 700; color: var(--muted); }
+.hello-bubble::after { content: ""; position: absolute; left: -7px; bottom: 14px; width: 14px; height: 14px; background: var(--paper-card); transform: rotate(45deg); border-radius: 3px; }
 .card.today { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 14px 12px; }
 .ring { position: relative; width: 78px; height: 78px; }
 .ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
@@ -618,6 +618,62 @@ body::before {
 .ex-rom { display: block; font-size: 0.875rem; font-weight: 700; color: var(--a-dark); }
 .ex-mean { font-weight: 700; text-align: right; min-width: 0; }
 .ex-kana { display: block; font-size: 1.0625rem; font-weight: 700; color: var(--ink); }
+
+/* ── answer feedback + result hero (版本二; js/feedback.js) ── */
+.fb-banner { position: relative; display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-radius: 20px; overflow: hidden; }
+.fb-banner.ok { background: var(--good-tint); }
+.fb-banner.no { background: var(--stamp-tint); }
+.fb-mascot { position: relative; z-index: 1; width: 92px; flex: none; }
+.fb-text { position: relative; z-index: 1; min-width: 0; flex: 1; }
+.fb-big { display: flex; align-items: center; gap: 10px; }
+.fb-mark { width: 48px; height: 48px; flex: none; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: var(--font-stamp); font-size: 1.75rem; font-weight: 800; line-height: 1; }
+.fb-banner.ok .fb-mark { background: var(--good-solid); color: var(--on-good); }
+.fb-banner.no .fb-mark { background: var(--stamp); color: var(--on-stamp); }
+.fb-banner .fb-title { font-family: var(--font-stamp); font-size: 1.75rem; font-weight: 800; line-height: 1.15; }
+.fb-banner .fb-title.ok { color: var(--good); }
+.fb-banner .fb-title.no { color: var(--stamp-dark); }
+.fb-sub { margin-top: 2px; font-size: 0.875rem; font-weight: 700; }
+.fb-banner.ok .fb-sub { color: var(--good); }
+.fb-banner.no .fb-sub { color: var(--stamp-dark); }
+.fb-banner { margin-bottom: 12px; }
+.result-hero { position: relative; display: flex; justify-content: center; overflow: hidden; border-radius: 20px; padding: 4px 0; margin-bottom: 8px; }
+.result-hero.perfect { background: var(--good-tint); }
+.hero-mascot { position: relative; z-index: 1; width: 132px; display: block; }
+.confetti { position: absolute; inset: 0; pointer-events: none; }
+.confetti i { position: absolute; width: 9px; height: 14px; border-radius: 2px; }
+.confetti i:nth-child(3n) { width: 11px; height: 11px; border-radius: 50%; }
+.confetti i:nth-child(1) { left: 6%; top: 10%; background: var(--mod-kana-main); transform: rotate(20deg); }
+.confetti i:nth-child(2) { left: 20%; top: 4%; background: var(--mod-phrases-main); transform: rotate(-30deg); }
+.confetti i:nth-child(3) { left: 34%; top: 12%; background: var(--mod-listening-main); transform: rotate(60deg); }
+.confetti i:nth-child(4) { left: 50%; top: 5%; background: var(--mod-speaking-main); transform: rotate(10deg); }
+.confetti i:nth-child(5) { left: 64%; top: 9%; background: var(--mod-dialogue-main); transform: rotate(-50deg); }
+.confetti i:nth-child(6) { left: 78%; top: 4%; background: var(--mod-numbers-main); transform: rotate(35deg); }
+.confetti i:nth-child(7) { left: 92%; top: 12%; background: var(--mod-show-main); transform: rotate(-20deg); }
+.confetti i:nth-child(8) { left: 10%; top: 50%; background: var(--mod-daily-main); transform: rotate(45deg); }
+.confetti i:nth-child(9) { left: 30%; top: 86%; background: var(--mod-kana-main); transform: rotate(-40deg); }
+.confetti i:nth-child(10) { left: 46%; top: 88%; background: var(--mod-phrases-main); transform: rotate(15deg); }
+.confetti i:nth-child(11) { left: 62%; top: 84%; background: var(--mod-listening-main); transform: rotate(-60deg); }
+.confetti i:nth-child(12) { left: 80%; top: 88%; background: var(--mod-speaking-main); transform: rotate(70deg); }
+.confetti i:nth-child(13) { left: 94%; top: 82%; background: var(--mod-dialogue-main); transform: rotate(-15deg); }
+.confetti i:nth-child(14) { left: 4%; top: 80%; background: var(--mod-numbers-main); transform: rotate(25deg); }
+.fb-note { display: flex; align-items: center; gap: 8px; margin-top: 8px; padding: 6px 10px 6px 6px; border-radius: 16px; background: var(--stamp-tint); }
+.fb-note p { font-size: 0.875rem; font-weight: 700; color: var(--stamp-dark); min-width: 0; }
+.note-mascot { width: 52px; flex: none; }
+
+/* motion only when the system allows it (「減少動態效果」 off) */
+@media (prefers-reduced-motion: no-preference) {
+  .fb-mark { animation: fb-pop 0.5s cubic-bezier(0.3, 1.6, 0.5, 1) both; }
+  .fb-banner .fb-title { animation: fb-rise 0.4s 0.08s ease-out both; }
+  .fb-banner.ok .fb-mascot, .result-hero .hero-mascot { animation: fb-bounce 0.9s ease-in-out 2; }
+  .fb-banner.no .fb-mascot { animation: fb-nod 0.7s ease-in-out 1; transform-origin: 50% 90%; }
+  .confetti i { animation: fb-drift 1.8s ease-in-out 4 alternate both; }
+  .confetti i:nth-child(even) { animation-duration: 2.3s; }
+}
+@keyframes fb-pop { 0% { transform: scale(0.3); } 100% { transform: scale(1); } }
+@keyframes fb-rise { from { opacity: 0.2; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes fb-bounce { 0%, 100% { transform: translateY(0); } 35% { transform: translateY(-12px); } 65% { transform: translateY(0); } 80% { transform: translateY(-4px); } }
+@keyframes fb-nod { 0%, 100% { transform: rotate(0); } 30% { transform: rotate(-5deg); } 65% { transform: rotate(4deg); } }
+@keyframes fb-drift { from { translate: 0 -5px; } to { translate: 0 8px; } }
 
 /* ── confirm box ── */
 .confirm { border-radius: 16px; padding: 12px; background: var(--stamp-tint); border: 1.5px solid var(--stamp-tint-border); }
