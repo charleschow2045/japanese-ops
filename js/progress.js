@@ -10,17 +10,19 @@
 window.App = window.App || {};
 
 (function () {
-  const { h, jp } = window.App.UI;
+  const { h, jp, accentVars } = window.App.UI;
   const { Storage, Daily } = window.App;
 
   const WEEKDAY = ["日", "一", "二", "三", "四", "五", "六"];
   const BAR_MAX_H = 72; // px
 
-  function section(title, ...children) {
-    return h("div", { class: "card accent" }, h("p", { class: "h-heading mb-2" }, title), ...children);
+  // Each section has its own module colour (accent key), like the module pages themselves.
+  function section(title, accent, ...children) {
+    return h("div", { class: "card accent", style: accentVars(accent) }, h("p", { class: "h-heading accent-text mb-3" }, title), ...children);
   }
 
-  const stat = (value, label) => h("div", { class: "stat" }, h("span", { class: "stat-n" }, value), h("span", { class: "stat-l" }, label));
+  // Big number tile (版本三) in its own colour.
+  const stat = (value, label, accent) => h("div", { class: "stat", style: accentVars(accent) }, h("span", { class: "stat-n" }, value), h("span", { class: "stat-l" }, label));
 
   // ── numbers ──────────────────────────────────────────────────────────
 
@@ -78,8 +80,16 @@ window.App = window.App || {};
     const seen = sc.total.mastered + sc.total.learning;
     const perDay = state.settings.dailyNew;
     return section(
-      "概覽",
-      h("div", { class: "stat-grid" }, stat(`🔥 ${streak.current}`, "連續天數"), stat(`🏅 ${streak.best}`, "最長紀錄"), stat(`${streak.todayCount} / ${Daily.TASK_KEYS.length}`, "今日任務"), stat(String(totalAnswers(state)), "累計答題")),
+      "📊 概覽",
+      "daily",
+      h(
+        "div",
+        { class: "stat-grid" },
+        stat(String(streak.current), "🔥 連續天數", "daily"),
+        stat(String(streak.best), "🏅 最長紀錄", "show"),
+        stat(`${streak.todayCount}/${Daily.TASK_KEYS.length}`, "⭐ 今日任務", "dialogue"),
+        stat(String(totalAnswers(state)), "✏️ 累計答題", "numbers")
+      ),
       countdown && h("p", { class: "small mt-3" }, countdown),
       left !== null &&
         left > 0 &&
@@ -100,7 +110,8 @@ window.App = window.App || {};
     const act = (d) => (state.daily.activity[d] || { a: 0 }).a;
     const max = Math.max(10, ...days.map(act));
     return section(
-      "最近 7 天",
+      "📅 最近 7 天",
+      "daily",
       h(
         "div",
         { class: "week" },
@@ -127,12 +138,14 @@ window.App = window.App || {};
     const row = (label, c) =>
       h(
         "div",
-        { class: "mb-2" },
-        h("div", { class: "row-between xs muted mb-1" }, h("span", null, label), h("span", { style: { color: "var(--a-solid)" } }, `${c.done} / ${c.total}`)),
+        { class: "mb-3" },
+        h("div", { class: "big-count" }, String(c.done), h("small", null, `/ ${c.total}`)),
+        h("div", { class: "xs muted mb-1" }, label),
         h("div", { class: "bar accent" }, h("div", { style: { width: `${c.total ? (c.done / c.total) * 100 : 0}%` } }))
       );
     return section(
-      "五十音",
+      "あ 五十音",
+      "kana",
       row("平假名掌握（含濁音、拗音）", k.hira),
       row("片假名掌握（含濁音、拗音、外來語音）", k.kata),
       h("p", { class: "xs muted" }, "「掌握」= 答對 2 次或以上，而且目前不在錯題清單。"),
@@ -163,8 +176,10 @@ window.App = window.App || {};
   function phraseSection(state) {
     const { rows, total } = sentenceCounts(state);
     return section(
-      "句子庫",
-      h("p", { class: "small mb-2" }, `共 ${total.all} 句：`, h("span", { style: { color: "var(--good)" } }, `熟練 ${total.mastered}`), `・學習中 ${total.learning}・未學 ${total.new}`),
+      "💬 句子庫",
+      "phrases",
+      h("p", { class: "small mb-2" }, `共 ${total.all} 句`),
+      h("div", { class: "stat-grid three mb-3" }, stat(String(total.mastered), "熟練", "dialogue"), stat(String(total.learning), "學習中", "show"), stat(String(total.new), "未學", "phrases")),
       segBar(total),
       h(
         "div",
@@ -188,8 +203,9 @@ window.App = window.App || {};
     const played = list.filter((d) => stats[d.id] && stats[d.id].plays > 0).length;
     const perfect = list.filter((d) => stats[d.id] && stats[d.id].perfect > 0).length;
     return section(
-      "情境對話",
-      h("p", { class: "small mb-2" }, `已玩 ${played} / ${list.length} 個・一次過全對 ${perfect} / ${list.length} 個`),
+      "🛎️ 情境對話",
+      "dialogue",
+      h("div", { class: "stat-grid mb-3" }, stat(`${played}/${list.length}`, "已玩", "dialogue"), stat(`${perfect}/${list.length}`, "一次過全對 ⭐", "show")),
       h(
         "div",
         { class: "stack-sm" },
@@ -210,9 +226,10 @@ window.App = window.App || {};
     const r = reviewCounts(state);
     const dueTotal = r.due.p + r.due.s + r.due.k + r.due.n;
     return section(
-      "錯題重溫",
-      h("p", { class: "small" }, dueTotal > 0 ? `今天待重溫 ${dueTotal}（聽力 ${r.due.p}・口語 ${r.due.s}・五十音 ${r.due.k}・數字 ${r.due.n}）` : "今天沒有需要重溫的內容 🎉"),
-      h("div", { class: "stat-grid mt-3" }, stat(String(r.active), "重溫中"), stat(String(r.graduated), "已畢業")),
+      "📝 錯題重溫",
+      "listening",
+      h("div", { class: "stat-grid three" }, stat(String(dueTotal), "今天待重溫", "speaking"), stat(String(r.active), "重溫中", "listening"), stat(String(r.graduated), "已畢業", "dialogue")),
+      h("p", { class: "small mt-3" }, dueTotal > 0 ? `今天待重溫 ${dueTotal}（聽力 ${r.due.p}・口語 ${r.due.s}・五十音 ${r.due.k}・數字 ${r.due.n}）` : "今天沒有需要重溫的內容 🎉"),
       h("p", { class: "xs muted mt-2" }, "「已畢業」只計算由階段 7b 開始畢業的項目。")
     );
   }

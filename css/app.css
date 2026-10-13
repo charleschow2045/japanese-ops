@@ -697,7 +697,7 @@ body::before {
 .pair-item { display: flex; flex-direction: column; align-items: center; min-width: 40px; }
 .pair-item .jp { font-size: 1.875rem; line-height: 1.1; }
 .pair-item .rom { font-size: 0.83rem; font-weight: 700; color: var(--muted); }
-.pair-sep { font-size: 1.25rem; color: var(--a-border); }
+.pair-sep { font-size: 1.25rem; color: var(--muted); }
 .pair-play { font-size: 1.25rem; }
 .opt-grid.three { grid-template-columns: repeat(3, 1fr); }
 .opt-cat { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: 88px; }
@@ -1065,3 +1065,36 @@ body::before {
 .kana-rowhead { align-self: stretch; display: flex; align-items: center; justify-content: center; border-radius: 10px; background: var(--a-solid); color: var(--a-on); font-weight: 800; font-size: 0.95rem; }
 .kana-cell.exc::before { content: ""; position: absolute; top: 4px; left: 4px; width: 9px; height: 9px; border-radius: 50%; background: var(--gold); }
 .ex-en { display: block; font-size: 0.875rem; font-weight: 600; color: var(--muted); font-style: italic; }
+
+/* ── 版本三: module pages in the 糖果方塊 style + bigger progress numbers ── */
+.mod-header { padding: 8px 14px 8px 8px; border-radius: 24px; background: var(--a-tint); box-shadow: 0 4px 0 var(--a-border); }
+.mod-header h2 { font-weight: 800; }
+.kana-cell { background: var(--a-tint); border: 0; border-radius: 16px; box-shadow: 0 3px 0 var(--a-border); }
+.kana-cell:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--a-border); }
+.ex-card { border: 0; border-radius: 20px; box-shadow: 0 4px 0 var(--a-border); }
+.ex-card:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--a-border); }
+.ex-row { border-radius: 14px; background: var(--a-tint); }
+.pair-card { border: 0; border-radius: 20px; background: var(--a-tint); box-shadow: 0 3px 0 var(--a-border); }
+.pair-btn { border: 0; border-radius: 18px; background: var(--paper-card); box-shadow: 0 3px 0 var(--a-border); }
+.word-btn { border: 0; border-radius: 18px; box-shadow: 0 3px 0 var(--a-border); }
+.mode-opt { border: 2px solid transparent; border-radius: 18px; box-shadow: 0 4px 0 var(--a-border); }
+.mode-opt.active { border-color: var(--a-solid); }
+.dlg-opt { border: 0; border-radius: 20px; background: var(--a-tint); box-shadow: 0 4px 0 var(--a-border); }
+.dlg-opt:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--a-border); }
+.bubble { border: 0; box-shadow: 0 3px 0 var(--a-border); }
+.btn-soft { border: 0; border-radius: 18px; box-shadow: 0 3px 0 var(--a-border); }
+.btn-soft:active { box-shadow: 0 1px 0 var(--a-border); }
+.help-card { border: 0; border-left: 6px solid var(--a-solid); border-radius: 20px; box-shadow: 0 3px 0 var(--a-border); }
+.h-heading.accent-text { font-size: 1.25rem; font-weight: 800; }
+
+/* progress page: big, colourful numbers */
+.stat-grid { gap: 10px; }
+.stat-grid.three { grid-template-columns: repeat(3, 1fr); }
+.stat { padding: 14px 6px 10px; border-radius: 20px; border-bottom: 5px solid var(--a-border); }
+.stat-n { font-size: 2.75rem; font-weight: 800; line-height: 1.05; letter-spacing: -0.01em; }
+.stat-grid.three .stat-n { font-size: 2.25rem; }
+.stat-l { font-size: 0.9rem; text-align: center; }
+.big-count { display: flex; align-items: baseline; gap: 6px; font-family: var(--font-stamp); font-weight: 800; font-size: 2.5rem; line-height: 1.1; color: var(--a-dark); }
+.big-count small { font-size: 1rem; font-weight: 700; color: var(--muted); }
+.bar.accent { height: 14px; }
+.week-n { font-size: 1.0625rem; font-weight: 800; color: var(--a-dark); }
