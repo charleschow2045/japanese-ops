@@ -249,7 +249,7 @@ window.App.Content = window.App.Content || {};
     { id: "hotel-21", ja: "こちらにご記入をお願いします。", kana: "こちらにごきにゅうをおねがいします", romaji: "kochira ni gokinyuu o onegai shimasu", yue: "麻煩您在這裡填寫", use: "辦理入住時職員說", who: "staff" },
     { id: "hotel-22", ja: "11時です。", kana: "じゅういちじです", romaji: "juuichiji desu", yue: "十一點", use: "被問到退房時間時職員回答（時間會變）", who: "staff", say: "じゅういち時です。" },
     { id: "hotel-23", ja: "10時です。", kana: "じゅうじです", romaji: "juuji desu", yue: "十點", use: "被問到退房時間時職員回答（時間會變）", who: "staff", say: "じゅう時です。" },
-    { id: "hotel-24", ja: "7時からです。", kana: "しちじからです", romaji: "shichiji kara desu", yue: "從七點開始", use: "被問到早餐時間時職員回答（時間會變）", who: "staff", say: "しち時からです。" },
+    { id: "hotel-24", ja: "7時からです。", kana: "しちじからです", romaji: "shichiji kara desu", yue: "從七點開始", use: "被問到早餐時間時職員回答（時間會變）", who: "staff", say: "しちじからです。" },
     { id: "hotel-25", ja: "8時からです。", kana: "はちじからです", romaji: "hachiji kara desu", yue: "從八點開始", use: "被問到早餐時間時職員回答（時間會變）", who: "staff", say: "はち時からです。" },
     { id: "hotel-26", ja: "すみません、満室です。", kana: "すみません、まんしつです", romaji: "sumimasen, manshitsu desu", yue: "不好意思，客滿了", use: "沒有訂房而酒店已滿時職員回答", who: "staff" },
     { id: "hotel-27", ja: "部屋の鍵が使えません。", kana: "へやのかぎがつかえません", romaji: "heya no kagi ga tsukaemasen", yue: "房間的鎖匙（房卡）打不開", use: "房卡失效時", who: "me" },
