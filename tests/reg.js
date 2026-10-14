@@ -1,14 +1,34 @@
+// Basic 聽力練習 (sentence quiz) flow: start, answer, feedback, next, result, back, speech, no errors.
 const { chromium } = require('./lib');
-(async()=>{
- const b=await chromium.launch({executablePath:require('./lib').CHROME});
- const pg=await (await b.newContext({viewport:{width:375,height:760},serviceWorkers:'block'})).newPage();const errs=[];
- pg.on('pageerror',e=>errs.push(e.message));
- await pg.addInitScript(()=>{window.__said=[];SpeechSynthesis.prototype.speak=function(u){window.__said.push(u.text)};SpeechSynthesis.prototype.cancel=function(){};});
- await pg.goto(require('./lib').BASE+'/index.html');
- await pg.getByText('聽力練習',{exact:false}).first().click();
- await pg.getByRole('button',{name:'👂 開始聽力練習'}).click();
- console.log('phrase quiz title:',await pg.locator('.mod-header h2').innerText(),'opts',await pg.locator('.opt').count());
- await pg.locator('.opt').first().click();await pg.getByRole('button',{name:/下一題/}).click();
- // listening 再來一輪 for numbers keeps numbers
- await pg.getByText('← 返回').click().catch(()=>{});
- console.log('errs',errs);await b.close();})();
+const assert = (c, m) => { if (!c) { console.log('FAIL', m); process.exitCode = 1; } else console.log('ok  ', m); };
+(async () => {
+  const b = await chromium.launch({ executablePath: require('./lib').CHROME });
+  const pg = await (await b.newContext({ viewport: { width: 375, height: 760 }, serviceWorkers: 'block' })).newPage();
+  const errs = [];
+  pg.on('pageerror', (e) => errs.push(e.message));
+  await pg.addInitScript(() => { window.__said = []; SpeechSynthesis.prototype.speak = function (u) { window.__said.push(u.text); }; SpeechSynthesis.prototype.cancel = function () {}; });
+  await pg.goto(require('./lib').BASE + '/index.html');
+  await pg.locator('.tile', { hasText: '聽力練習' }).click();
+  assert((await pg.locator('.mod-header h2').innerText()) === '聽力練習', 'menu title 聽力練習');
+  await pg.getByRole('button', { name: '👂 開始聽力練習' }).click();
+  assert((await pg.locator('.mod-header h2').innerText()) === '聽力練習', 'quiz title');
+  assert((await pg.locator('.caption').first().innerText()).includes('第 1 / 10 題'), 'question 1 of 10 (default count)');
+  assert((await pg.locator('.opt').count()) === 4, '4 options');
+  const opts = await pg.locator('.opt').allInnerTexts();
+  assert(new Set(opts).size === 4, '4 different options');
+  assert((await pg.evaluate(() => window.__said.length)) >= 1, 'the sentence was spoken when the quiz started');
+  await pg.locator('.opt').first().click();
+  assert((await pg.locator('.fb-banner').count()) === 1, 'feedback banner after answering');
+  assert((await pg.locator('.opt:disabled').count()) === 4, 'options locked after answering');
+  assert((await pg.getByRole('button', { name: /下一題/ }).count()) === 1, '下一題 button');
+  await pg.getByRole('button', { name: /下一題/ }).click();
+  assert((await pg.locator('.caption').first().innerText()).includes('第 2 / 10 題'), 'moved to question 2');
+  assert((await pg.locator('.fb-banner').count()) === 0, 'no feedback on the fresh question');
+  const st = await pg.evaluate(() => JSON.parse(localStorage.getItem('japaneseOps:v1')));
+  assert(Object.values(st.listen.stats).reduce((n, s) => n + s.c + s.w, 0) === 1, 'exactly 1 answer recorded');
+  await pg.locator('.btn-back').click();
+  assert((await pg.locator('.mod-header h2').innerText()) === '聽力練習' && (await pg.getByRole('button', { name: '👂 開始聽力練習' }).count()) === 1, 'back returns to the 聽力練習 menu');
+  assert(!(await pg.evaluate(() => document.documentElement.scrollWidth > innerWidth)), 'no horizontal scroll');
+  assert(errs.length === 0, 'no page errors ' + errs);
+  await b.close();
+})();
