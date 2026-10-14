@@ -18,7 +18,8 @@
   - ⚠️ **每次發佈新版本（任何 app 檔案有改）都要改 `sw.js` 嘅 `VERSION`**（格式 `YYYY-MM-DD` + 字母，例如
     `2026-10-03a`、同日第二次 `2026-10-03b`）。唔改嘅話手機會一直用舊版
   - ⚠️ **加／刪 app 檔案要同步改 `sw.js` 嘅 `FILES`**。發佈前喺 `japanese-ops/` 跑呢句檢查，冇輸出先算啱：
-    `comm -3 <(grep -oE '"\./[^"]+"' sw.js | tr -d '"' | sed 's#^\./##' | sort -u) <(find . -type f -not -path './.git/*' | sed 's#^\./##' | grep -vE '^(CLAUDE\.md|sw\.js|fonts/.*\.txt)$' | sort -u)`
+    `comm -3 <(grep -oE '"\./[^"]+"' sw.js | tr -d '"' | sed 's#^\./##' | sort -u) <(find . -type f -not -path './.git/*' | sed 's#^\./##' | grep -vE '^(CLAUDE\.md|sw\.js|fonts/.*\.txt|tests/.*)$' | sort -u)`
+  - **`tests/` 唔係 app 檔案**：自動測試放喺 `tests/`，唔使入 `FILES`（上面嗰句檢查已經排除 `tests/`），改嗰度唔使改 `VERSION`
   - **同 English Ops／Chinese Ops 隔離**（三個 app 同一個網域 charleschow2045.github.io）：
     `sw.js` 放喺 `/japanese-ops/`，登記時 `scope: "./"`，瀏覽器限制佢只管 `/japanese-ops/`；
     Cache Storage 係成個網域共用，所以 cache 名一律 `japanese-ops-` 開頭，清舊版只刪呢個開頭嘅；
@@ -107,6 +108,8 @@
 - 每次開始前先讀本檔案，並說明計劃做甚麼，等我確認才動手
 - 每次只做一個階段或一個功能，不要一次過改動整個 App
 - 已經正常運作的部分，除非我要求，不要重寫
+- **改完 code 先跑自動測試**：`tests/run.sh`（全部 20 個，約 1 分鐘；要有 Node＋Playwright＋Chromium，細節同測試清單見 `tests/README.md`）。
+  全部通過先 commit／push；改咗內容數字（句數、詞數、磚數、情境數…）要同步更新相關測試。可以只跑部分：`tests/run.sh c2 v3test`
 - 完成後列出我要測試的項目（在手機和電腦上各應該試甚麼）
 - 完成一個階段後，更新本檔案的「進度記錄」
 - 回覆用繁體中文
@@ -598,6 +601,14 @@
     進度頁 12 個數字磚都放得下、字級 ≥ 30px、5 種區塊顏色；7 個模組頁都有顏色橫幅；375／320px；原有功能回歸冇受影響。
     **測試套件**：順手將所有自動測試整理成 20 個（舊測試已更新：情境數目 8→11、句子 215→303、片假名 58→120、主頁磚 8、theme-color），全部通過
   - **未能喺電腦測試、要用戶手機確認**：真機觀感（特別係進度頁數字大小、深色模式下各模組橫幅顏色）；不同模組之間顏色是否分得清
+
+- **自動測試放入 repo — 完成（2026-10-14，冇改 app 檔案，所以冇改 `VERSION`）**：20 個 Playwright 測試由暫存目錄搬入 `tests/`（用戶要求，之後嘅工作階段可以重用）
+  - 結構：`tests/*.js`（20 個測試）、`tests/lib.js`（`BASE`／`CHROME`／`OUT`／`ROOT`，自動搵 Playwright：本地 `node_modules` 或全域）、`tests/rom.js`（Hepburn 拼音產生器，`cdata` 用）、`tests/run.sh`（執行器）、`tests/README.md`（點執行＋每個測試做咩）
+  - **執行**：`tests/run.sh` 全部；`tests/run.sh c2 v3test` 只跑指定。`run.sh` 冇伺服器時自己用 `python3 -m http.server`（`PORT`，預設 5804）開同收返；已有就設 `BASE_URL`；`CHROMIUM` 指定瀏覽器。
+    每個測試一行 `ok=… fail=…`，失敗會列出 `FAIL …`，全部通過 exit code 0。截圖寫去 OS 暫存資料夾，唔會污染 repo
+  - **離線清單檢查已更新**（見「技術規格」）：`grep -vE` 嘅排除加咗 `tests/.*`，所以 `tests/` 入面嘅檔案唔使加入 `sw.js` 嘅 `FILES`
+  - 測試路徑全部改成相對（唔再有暫存目錄、`/home/user/...`、寫死 port）；`cdata`／`nq` 由 repo 根目錄讀 `js/content/*.js`
+  - 已驗證：由 repo 根目錄同由其他目錄執行都通過；自己開伺服器（`PORT=5811`）跑完會收返；20 個測試全部通過
 
 ## 待確認內容
 - **濁音（が／ざ／だ／ば 行）嘅廣東話近似讀音**：暫時全部顯示「冇對應」。可以用廣東話不送氣音做近似

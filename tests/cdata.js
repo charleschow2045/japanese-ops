@@ -1,0 +1,44 @@
+const fs=require('fs'),vm=require('vm');
+const win={};win.window=win;
+for(const f of ['js/content/phrases.js','js/content/dialogues.js','js/content/showcards.js']) vm.runInNewContext(fs.readFileSync(require('path').join(__dirname,'..',f),'utf8'),win);
+const C=win.App.Content;let bad=0;const fail=(...a)=>{bad++;console.log('FAIL',...a)};
+const base={あ:'a',い:'i',う:'u',え:'e',お:'o',か:'ka',き:'ki',く:'ku',け:'ke',こ:'ko',さ:'sa',し:'shi',す:'su',せ:'se',そ:'so',た:'ta',ち:'chi',つ:'tsu',て:'te',と:'to',な:'na',に:'ni',ぬ:'nu',ね:'ne',の:'no',は:'(ha|wa)',ひ:'hi',ふ:'fu',へ:'(he|e)',ほ:'ho',ま:'ma',み:'mi',む:'mu',め:'me',も:'mo',や:'ya',ゆ:'yu',よ:'yo',ら:'ra',り:'ri',る:'ru',れ:'re',ろ:'ro',わ:'wa',を:'(o|wo)',ん:"n'?",が:'ga',ぎ:'gi',ぐ:'gu',げ:'ge',ご:'go',ざ:'za',じ:'ji',ず:'zu',づ:'zu',ぜ:'ze',ぞ:'zo',だ:'da',で:'de',ど:'do',ば:'ba',び:'bi',ぶ:'bu',べ:'be',ぼ:'bo',ぱ:'pa',ぴ:'pi',ぷ:'pu',ぺ:'pe',ぽ:'po'};
+const yoon={ゃ:'a',ゅ:'u',ょ:'o'};
+const kata2hira=s=>s.replace(/[ァ-ヶ]/g,c=>String.fromCharCode(c.charCodeAt(0)-0x60));
+function rx(kana){kana=kata2hira(kana).replace(/[。、？！\s・]/g,'');let out='',dbl=false;
+ for(let i=0;i<kana.length;i++){const c=kana[i];if(c==='っ'){dbl=true;continue}
+  if(c==='ー'){const lv=out.replace(/\(.*?\)|n'\?/g,'').slice(-1);out+=lv;continue}
+  let r=base[c];if(r===undefined)throw new Error('? '+c+' in '+kana);const nx=kana[i+1];
+  if(yoon[nx]){const b=base[c];r=(b==='shi'?'sh':b==='chi'?'ch':b==='ji'?'j':b[0]+'y')+yoon[nx];i++}
+  if(dbl){r=r.startsWith('ch')?'t'+r:r[0]+r;dbl=false}
+  out+=r}
+ return new RegExp('^'+out+'$')}
+const norm=s=>s.toLowerCase().replace(/[^a-z']/g,'');
+const all=[];C.PHRASE_SCENES.forEach(s=>s.phrases.forEach(p=>{all.push({p,scene:s.key});(p.replies||[]).forEach(r=>all.push({p:r,scene:s.key}))}));
+const ids=new Set();const per={};
+all.forEach(({p,scene})=>{if(ids.has(p.id))fail('dup id',p.id);ids.add(p.id);per[scene]=(per[scene]||0)+1
+  try{if(!rx(p.kana).test(norm(p.romaji)))fail('romaji',p.id,p.kana,p.romaji)}catch(e){const T=require('./rom.js').toRomaji;const fx=x=>norm(x).replace(/wa/g,'ha').replace(/o(?=[^aiueo]|$)/g,'o');if(fx(T(p.kana))!==fx(p.romaji))fail('conv',p.id,e.message)}
+  let pos=0;const k=p.kana.replace(/[、。？！]/g,'');for(const seg of p.ja.replace(/[、。？！]/g,'').split(/[^぀-ヿー]+/).filter(Boolean)){const j=k.indexOf(seg,pos);if(j<0){fail('ja/kana',p.id,seg);break}pos=j+seg.length}
+  for(const f of ['ja','kana','romaji','yue','use','who'])if(!p[f])fail('missing',p.id,f);
+  if(!['me','staff','both'].includes(p.who))fail('who',p.id);
+  if(/[ぁ-んァ-ヶー一-龥]/.test(p.yue)&&/[唔冇喺俾嘢啲撳嚟咗嘅啱]/.test(p.yue+p.use))fail('colloquial',p.id,p.yue,p.use)});
+console.log(per);
+const want={polite:29,restaurant:43,shopping:34,transport:38,hotel:32,directions:24,emergency:37,airport:26,sight:16,onsen:12,call:12};
+for(const[k,v]of Object.entries(want))if(per[k]!==v)fail('count',k,per[k],v);
+if(all.length!==303)fail('303 total',all.length);
+const g=id=>all.find(x=>x.p.id===id).p;
+if(g('call-04').say!=='しちじでお願いします。')fail('call-04 say');
+if(all.some(x=>x.p.ja.includes('禁煙席')))fail('smoking Q&A must not exist');
+if(g('rest-35').ja!=='窓側の席をお願いします。')fail('rest-35 shifted');
+if(g('rest-43').ja!=='これはどんな料理ですか。'&&g('rest-42').ja!=='これはどんな料理ですか。')fail('rest shift end');
+if(g('rest-43').ja!=='セットにしてください。')fail('rest-43 = セット');
+if(g('rest-40').ja!=='辛くしないでください。'||g('rest-41').ja!=='お会計は別々でお願いします。')fail('rest-40/41');
+// say count: 11 old + call-04
+const says=all.filter(x=>x.p.say).map(x=>x.p.id);console.log('say ids',says.join(','));if(says.length!==12)fail('say count 12');
+// hotel-22..25 untouched
+const hs=['hotel-22','hotel-23','hotel-24','hotel-25'].map(i=>g(i).say);console.log('hotel say',hs);
+// no leftover arabic numerals in new sentences
+all.filter(x=>/^(sight|onsen|call)-/.test(x.p.id)||/^(polite-2[4-9]|rest-(3[5-9]|4[0-3])|shop-(2[7-9]|3\d)|trans-3[1-8]|hotel-(2[7-9]|3\d)|dir-(19|2\d)|emer-3[3-7])$/.test(x.p.id)).forEach(x=>{if(/[0-9]/.test(x.p.ja))console.log('  digit in',x.p.id,x.p.ja)});
+// show cards: refs exist
+const SG=win.App.Content.SHOW_GROUPS||null;
+console.log(bad?'FAILED '+bad:'data OK');process.exit(bad?1:0);
