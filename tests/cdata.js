@@ -58,4 +58,12 @@ if(refs.length!==14)fail('ref','14 ref cards expected, got '+refs.length);
 pass('ref','14 show-card refs all resolve to library ids');
 if(C.SHOW_GROUPS.flatMap(g=>g.cards).length!==37)fail('show','37 show cards');
 pass('show','37 show cards');
+// 必學 30 句: ids exist, unique, 21 you say + 9 you understand
+const must=C.MUST_HAVE||[];
+if(must.length!==30||new Set(must).size!==30)fail('must','MUST_HAVE must be 30 unique ids, got '+must.length+'/'+new Set(must).size);
+const missingMust=must.filter(i=>!ids.has(i));
+if(missingMust.length)fail('must','MUST_HAVE ids not in the library: '+missingMust);
+const mine=must.filter(i=>['me','both'].includes(g(i).who)).length;
+if(mine!==21||must.length-mine!==9)fail('must','必學 should be 21 me/both + 9 staff, got '+mine+' + '+(must.length-mine));
+pass('must','必學 30 句：30 個 id 唔重複、全部喺句子庫、21 句你說 + 9 句聽懂');
 console.log(bad?'FAILED '+bad:'data OK');process.exit(bad?1:0);

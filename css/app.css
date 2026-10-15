@@ -1098,3 +1098,25 @@ body::before {
 .big-count small { font-size: 1rem; font-weight: 700; color: var(--muted); }
 .bar.accent { height: 14px; }
 .week-n { font-size: 1.0625rem; font-weight: 800; color: var(--a-dark); }
+
+/* ── 句子庫：收藏、搜尋、必學 (stage 10, js/phrases.js) ── */
+.phrase-tags { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.phrase-tags .who-tag { margin-bottom: 0; }
+.must-tag { display: inline-block; font-size: 0.75rem; font-weight: 800; padding: 2px 10px; border-radius: 999px; background: var(--gold-tint); color: var(--gold-dark); border: 1px solid var(--gold-tint-border); }
+.fav-btn { width: 44px; height: 44px; margin: -6px -8px -6px 0; display: inline-flex; align-items: center; justify-content: center; font-size: 1.45rem; line-height: 1; border-radius: 12px; color: var(--muted); }
+.fav-btn.on { color: var(--gold); }
+.fav-btn:active { transform: scale(0.92); }
+.search-input {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 14px;
+  border-radius: 14px;
+  border: 1.5px solid var(--a-border);
+  background: var(--paper-card);
+  color: var(--ink);
+  font: inherit;
+  font-size: 16px; /* 16px: iOS does not zoom in on focus */
+  font-weight: 700;
+}
+.search-input:focus { outline: none; border-color: var(--a-solid); }
+.search-input::placeholder { color: var(--muted); opacity: 1; font-weight: 600; }

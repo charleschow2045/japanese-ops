@@ -182,6 +182,11 @@ window.App = window.App || {};
       h("div", { class: "stat-grid three mb-3" }, stat(String(total.mastered), "熟練", "dialogue"), stat(String(total.learning), "學習中", "show"), stat(String(total.new), "未學", "phrases")),
       segBar(total),
       h(
+        "p",
+        { class: "small mt-2" },
+        `📌 必學 30 句：熟練 ${window.App.Daily.mustCounts(state).mastered} / ${window.App.Daily.mustCounts(state).total}`
+      ),
+      h(
         "div",
         { class: "stack mt-3" },
         rows.map((r) =>

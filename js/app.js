@@ -204,7 +204,10 @@ window.App = window.App || {};
         { style: accentVars("phrases") },
         Phrases.render({
           settings: state.settings,
+          state,
           flags: state.flags,
+          favs: state.favs,
+          onToggleFav: (id) => setState((s) => Storage.toggleFav(s, id)),
           onToggleFlag: (id) => setState((s) => Storage.toggleFlag(s, id)),
           onBack: () => {
             nav.view = "home";
@@ -307,6 +310,8 @@ window.App = window.App || {};
           state,
           settings: state.settings,
           flags: state.flags,
+          favs: state.favs,
+          onToggleFav: (id) => setState((s) => Storage.toggleFav(s, id)),
           onToggleFlag: (id) => setState((s) => Storage.toggleFlag(s, id)),
           onUpdate: (fn) => setState(fn),
           onLaunch: launchTask,

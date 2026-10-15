@@ -109,6 +109,7 @@ window.App = window.App || {};
 
   // backup (進度備份): lastExportAt = ISO time of the last 匯出 (shown in 設定; the
   // weekly reminder on 進度頁 uses it).  Restored from a backup file as stored there.
+  // favs: 句子庫 sentence ids the user marked ⭐ 收藏 (stage 10).
   // flags: 句子庫 sentence ids the user marked 🚩 讀錯 (pronunciation is
   // wrong on their phone) — listed in 設定 so they can copy and send them.
   // review (stage 5 錯題重溫, spaced repetition): items keyed
@@ -117,7 +118,7 @@ window.App = window.App || {};
   //   box = correct review answers in a row (0–4); due = local date
   //   "YYYY-MM-DD" when it is next asked. See REVIEW_INTERVALS.
   function defaultState() {
-    return { settings: defaultSettings(), kana: defaultKana(), flags: [], listen: defaultListen(), speak: defaultSpeak(), dialogue: defaultDialogue(), numbers: defaultNumbers(), show: defaultShow(), help: defaultHelp(), daily: defaultDaily(), review: { items: {}, graduated: 0 }, backup: { lastExportAt: null } };
+    return { settings: defaultSettings(), kana: defaultKana(), flags: [], favs: [], listen: defaultListen(), speak: defaultSpeak(), dialogue: defaultDialogue(), numbers: defaultNumbers(), show: defaultShow(), help: defaultHelp(), daily: defaultDaily(), review: { items: {}, graduated: 0 }, backup: { lastExportAt: null } };
   }
 
   // ── local dates (phone's own calendar day — never UTC) ──
@@ -238,6 +239,7 @@ window.App = window.App || {};
       settings,
       kana,
       flags: Array.isArray(parsed.flags) ? parsed.flags : [],
+      favs: Array.isArray(parsed.favs) ? [...new Set(parsed.favs.filter((id) => typeof id === "string" && id.length > 0 && id.length <= 40))].slice(0, 400) : [],
       listen,
       speak,
       dialogue,
@@ -352,6 +354,11 @@ window.App = window.App || {};
     return bumpActivity({ ...state, dialogue: { ...state.dialogue, stats } }, true, total, correct);
   }
 
+  function toggleFav(state, id) {
+    const favs = state.favs.includes(id) ? state.favs.filter((f) => f !== id) : [...state.favs, id];
+    return { ...state, favs };
+  }
+
   function toggleFlag(state, id) {
     const flags = state.flags.includes(id) ? state.flags.filter((f) => f !== id) : [...state.flags, id];
     return { ...state, flags };
@@ -430,6 +437,7 @@ window.App = window.App || {};
       if (raw[k] !== undefined && !isObj(raw[k])) throw new TypeError(k);
     });
     if (raw.flags !== undefined && !Array.isArray(raw.flags)) throw new TypeError("flags");
+    if (raw.favs !== undefined && !Array.isArray(raw.favs)) throw new TypeError("favs");
     const out = {};
     const bool = (x) => (typeof x === "boolean" ? x : undefined);
     const put = (obj, key, v) => {
@@ -518,6 +526,7 @@ window.App = window.App || {};
     };
 
     out.flags = strList(raw.flags, 1000, 40) || [];
+    out.favs = strList(raw.favs, 400, 40) || [];
     out.backup = { lastExportAt: raw.backup && isShortStr(raw.backup.lastExportAt) ? raw.backup.lastExportAt : null };
     return out;
   }
@@ -596,6 +605,7 @@ window.App = window.App || {};
 
   window.App.Storage = {
     toggleFlag,
+    toggleFav,
     recordListenAnswer,
     recordSpeakAnswer,
     recordDialogue,

@@ -13,7 +13,7 @@ const OLD=["polite","restaurant","shopping","transport","hotel","directions","em
  assert(home.includes('11 個旅行情境')&&home.includes('與店員一問一答'),'home text: 11 個旅行情境 / 情境對話');
  await pg.locator('.tile,.mod-row',{hasText:'情境句子庫'}).click();
  const rows=await pg.locator('.tile,.mod-row').allInnerTexts();
- assert(rows.length===11&&rows[7].includes('機場入境')&&rows[7].includes('26 句'),'scene list: 11 scenes, 機場入境 8th with 26 句 → '+rows[7].replace(/\n/g,' '));
+ assert(rows.length===13&&rows[9].includes('機場入境')&&rows[9].includes('26 句'),'scene list: 2 cards (必學 30 句, 我的收藏) + 11 scenes, 機場入境 8th scene with 26 句 → '+rows[9].replace(/\n/g,' '));
  await pg.locator('.tile,.mod-row',{hasText:'機場入境'}).click();
  assert(await pg.locator('.phrase').count()>=10,'scene page lists cards');
  const t=await pg.locator('main').innerText();

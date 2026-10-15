@@ -483,4 +483,16 @@ window.App.Content = window.App.Content || {};
     { key: "onsen", label: "溫泉", emoji: "♨️", phrases: ONSEN },
     { key: "call", label: "預約與電話", emoji: "📞", phrases: CALL },
   ];
+  // 必學 30 句 (stage 10): the survival sentences, in scene order. 21 you say,
+  // 9 you must understand. Ids refer to PHRASE_SCENES above.
+  window.App.Content.MUST_HAVE = [
+    "polite-01", "polite-02", "polite-09", "polite-10", "polite-12", "polite-13", "polite-14", "polite-18",
+    "rest-01", "rest-02", "rest-05", "rest-08", "rest-10", "rest-12", "rest-19", "rest-21",
+    "shop-01", "shop-13", "shop-14", "shop-16",
+    "trans-01", "trans-15", "trans-21", "trans-34",
+    "hotel-01", "hotel-03",
+    "dir-01",
+    "emer-01", "emer-02", "emer-12",
+  ];
+
 })();

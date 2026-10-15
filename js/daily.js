@@ -294,6 +294,16 @@ window.App = window.App || {};
     return `${m}月${d}日（${WEEKDAY[new Date(y, m - 1, d).getDay()]}）`;
   }
 
+  // 必學 30 句 (Content.MUST_HAVE): how many are 熟練 (see statusOf).
+  function mustCounts(state) {
+    const ids = window.App.Content.MUST_HAVE || [];
+    const mastered = ids.filter((id) => {
+      const x = byId(id);
+      return x && statusOf(state, x) === "mastered";
+    }).length;
+    return { mastered, total: ids.length };
+  }
+
   // For the 主頁 card.
   function summary(state) {
     const day = state.daily.days[Storage.todayLocal()];
@@ -475,7 +485,7 @@ window.App = window.App || {};
           "div",
           { class: "card accent phrase-card" },
           h("p", { class: "caption mb-1" }, `${x.scene.emoji} ${x.scene.label}`),
-          window.App.Phrases.sentenceCard(x.p, { settings: ctx.settings, flags: ctx.flags, onToggleFlag: ctx.onToggleFlag })
+          window.App.Phrases.sentenceCard(x.p, { settings: ctx.settings, flags: ctx.flags, onToggleFlag: ctx.onToggleFlag, favs: ctx.favs, onToggleFav: ctx.onToggleFav })
         )
       ),
       inkButton(tts ? `開始小測（${items.length} 題）` : "返回", tts ? start : () => ((ui.view = "list"), ctx.rerender({ scrollTop: true })), { accent: true, class: "w-full" }),
@@ -499,6 +509,7 @@ window.App = window.App || {};
     daysUntil,
     countdownText,
     statusOf,
+    mustCounts,
     allSentences,
     kanaPool,
     STREAK_MIN,
