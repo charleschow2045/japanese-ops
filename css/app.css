@@ -1120,3 +1120,27 @@ body::before {
 }
 .search-input:focus { outline: none; border-color: var(--a-solid); }
 .search-input::placeholder { color: var(--muted); opacity: 1; font-weight: 600; }
+
+/* ── 相似字分辨 (stage 10, js/lookalike.js) ── */
+.sim-row { display: flex; gap: 10px; }
+.sim-btn {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 88px;
+  padding: 8px 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  border-radius: 18px;
+  background: var(--paper-card);
+  color: var(--ink);
+  border: 2px solid var(--a-border);
+  box-shadow: 0 3px 0 var(--a-border);
+}
+.sim-btn .jp { font-size: 2.4rem; line-height: 1.1; }
+.sim-btn .rom { font-size: 0.8rem; font-weight: 700; color: var(--muted); }
+.sim-btn:active { transform: translateY(2px); }
+.sim-btn.on { border-color: var(--a-solid); background: var(--a-tint); }
+.sim-diff { margin-top: 10px; font-size: 0.9rem; font-weight: 700; line-height: 1.55; }

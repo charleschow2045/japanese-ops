@@ -3,7 +3,7 @@
 // time a page is opened the card is expanded and the page is remembered as seen
 // (state.help[key] = "seen", saved without a redraw); after that it starts collapsed.
 // Opening or closing it by hand only lasts until the app is reloaded.
-// Text: `**x**` = bold. Keys: table, kata, contrast.
+// Text: `**x**` = bold. Keys: table, kata, contrast, lookalike.
 window.App = window.App || {};
 
 (function () {
@@ -40,6 +40,15 @@ window.App = window.App || {};
         "分辨方法：用手輕按喉嚨，發 か 時喉嚨不震，發 が 時喉嚨會震。",
         "為甚麼廣東話用家要特別練習：廣東話的 b、d、g 其實是「不送氣」的清音，p、t、k 是「送氣」音，區別在氣流；日文的清音 か、た、ぱ 和濁音 が、だ、ば，區別在喉嚨有沒有震動。兩種分法不同，所以聽 か 和 が 時，很容易覺得「差不多」。",
         "例子：かぎ（鍵，鎖匙）和 かき（柿或牡蠣）；てんき（天氣）和 でんき（電燈、電力）。",
+      ],
+    },
+    lookalike: {
+      title: "相似字分辨怎樣用",
+      lines: [
+        "有些字長得很像，初學時最容易認錯，例如 **シ／ツ**、**ソ／ン**、**ぬ／め**。",
+        "先看對照卡：每組字並排顯示，並寫出分辨重點。按字可以聽發音。",
+        "練習有兩種：**聽音選字**（聽到一個音，選出是哪個字）和**看字選音**（看到一個字，選出它的讀音）。",
+        "選項全部是同一組長得很像的字，所以要看清楚筆畫才能選對。答錯的字會加入錯題重溫，之後會再出現。",
       ],
     },
   };

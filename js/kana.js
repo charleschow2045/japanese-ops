@@ -607,6 +607,7 @@ window.App = window.App || {};
       ui.view = view;
       if (view === "chart") ui.chartScript = prefs.script === "kata" ? "kata" : "hira";
       if (view === "contrast") window.App.Contrast.reset();
+      if (view === "lookalike") window.App.Lookalike.reset();
       ctx.rerender({ scrollTop: true });
     };
 
@@ -624,6 +625,7 @@ window.App = window.App || {};
         menuCard("📋", "字表", "清音・濁音・半濁音，按字即可聽發音", () => go("chart")),
         menuCard("🪧", "片假名實例", "餐牌、商店、酒店常見的字", () => go("examples")),
         menuCard("👂", "清濁對比", "か／が 並排聆聽，練習分辨清音與濁音", () => go("contrast")),
+        menuCard("🔍", "相似字分辨", "シ／ツ、ぬ／め 等字形相近的字，並排比較再練習", () => go("lookalike")),
         menuCard("⏸️", "促音・長音", "きて／きって、おばさん／おばあさん", () => go("sounds"))
       ),
       h(
@@ -670,6 +672,11 @@ window.App = window.App || {};
       });
     else if (ui.view === "contrast")
       main = window.App.Contrast.render(ctx, () => {
+        ui.view = "menu";
+        ctx.rerender({ scrollTop: true });
+      });
+    else if (ui.view === "lookalike")
+      main = window.App.Lookalike.render(ctx, () => {
         ui.view = "menu";
         ctx.rerender({ scrollTop: true });
       });

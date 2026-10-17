@@ -32,7 +32,9 @@ window.App = window.App || {};
       stats: {},
       mistakes: [],
       // contrastRows: rows picked for 清濁對比 分辨練習 (keys of the 清音 row)
-      prefs: { script: "hira", rows: ["a", "ka", "sa", "ta", "na"], contrastRows: ["ka", "sa", "ta", "ha"] },
+      // sim*: 相似字分辨 (stage 10) — simScript hira|kata|both, simGroups = group ids (null = all of the script),
+      // simCount 5|10|20, simMode hear|see
+      prefs: { script: "hira", rows: ["a", "ka", "sa", "ta", "na"], contrastRows: ["ka", "sa", "ta", "ha"], simScript: "both", simGroups: null, simCount: 10, simMode: "hear" },
     };
   }
 
@@ -73,7 +75,7 @@ window.App = window.App || {};
     return { prefs: { showText: true, showMeaning: true }, stats: {} };
   }
 
-  // help (「怎樣用」說明卡, js/help.js): { [table|kata|contrast]: "seen" } — a page whose card has
+  // help (「怎樣用」說明卡, js/help.js): { [table|kata|contrast|lookalike]: "seen" } — a page whose card has
   // been shown once starts collapsed from then on.
   function defaultHelp() {
     return {};
@@ -171,6 +173,10 @@ window.App = window.App || {};
     if (!Array.isArray(kana.mistakes)) kana.mistakes = [];
     if (!Array.isArray(kana.prefs.rows)) kana.prefs.rows = base.kana.prefs.rows;
     if (!Array.isArray(kana.prefs.contrastRows)) kana.prefs.contrastRows = base.kana.prefs.contrastRows;
+    if (!["hira", "kata", "both"].includes(kana.prefs.simScript)) kana.prefs.simScript = "both";
+    kana.prefs.simGroups = Array.isArray(kana.prefs.simGroups) ? kana.prefs.simGroups.filter((id) => typeof id === "string" && id.length > 0 && id.length <= 12).slice(0, 60) : null;
+    if (![5, 10, 20].includes(kana.prefs.simCount)) kana.prefs.simCount = 10;
+    if (!["hear", "see"].includes(kana.prefs.simMode)) kana.prefs.simMode = "hear";
     const listen = { ...base.listen, ...(parsed.listen || {}) };
     listen.prefs = { ...base.listen.prefs, ...((parsed.listen && parsed.listen.prefs) || {}) };
     if (!Array.isArray(listen.prefs.scenes)) listen.prefs.scenes = base.listen.prefs.scenes;
@@ -211,7 +217,7 @@ window.App = window.App || {};
     if (!Array.isArray(show.avoid)) show.avoid = [];
     const help = {};
     if (parsed.help && typeof parsed.help === "object" && !Array.isArray(parsed.help)) {
-      ["table", "kata", "contrast"].forEach((k) => parsed.help[k] === "seen" && (help[k] = "seen"));
+      ["table", "kata", "contrast", "lookalike"].forEach((k) => parsed.help[k] === "seen" && (help[k] = "seen"));
     }
     let review = parsed.review &&parsed.review.items && typeof parsed.review.items === "object" ? parsed.review : null;
     if (!review) {
@@ -464,6 +470,10 @@ window.App = window.App || {};
     put(out.kana.prefs, "script", ["hira", "kata", "both"].includes(kp.script) ? kp.script : undefined);
     put(out.kana.prefs, "rows", strList(kp.rows, 60, 12));
     put(out.kana.prefs, "contrastRows", strList(kp.contrastRows, 60, 12));
+    put(out.kana.prefs, "simScript", ["hira", "kata", "both"].includes(kp.simScript) ? kp.simScript : undefined);
+    put(out.kana.prefs, "simGroups", strList(kp.simGroups, 60, 12));
+    put(out.kana.prefs, "simCount", [5, 10, 20].includes(kp.simCount) ? kp.simCount : undefined);
+    put(out.kana.prefs, "simMode", ["hear", "see"].includes(kp.simMode) ? kp.simMode : undefined);
 
     ["listen", "speak"].forEach((name) => {
       const b = raw[name] || {};
@@ -505,7 +515,7 @@ window.App = window.App || {};
     ["yue", "en", "reading"].forEach((k) => put(out.show.prefs, k, bool(sp[k])));
 
     out.help = {};
-    if (isObj(raw.help)) ["table", "kata", "contrast"].forEach((k) => raw.help[k] === "seen" && (out.help[k] = "seen"));
+    if (isObj(raw.help)) ["table", "kata", "contrast", "lookalike"].forEach((k) => raw.help[k] === "seen" && (out.help[k] = "seen"));
 
     const dl = raw.daily || {};
     out.daily = {

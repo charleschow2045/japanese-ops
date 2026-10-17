@@ -10,7 +10,7 @@
 // requests. Cache Storage, however, is shared by the whole origin, so
 // every cache name starts with CACHE_PREFIX and cleanup only ever
 // deletes caches with that prefix.
-const VERSION = "2026-10-15a";
+const VERSION = "2026-10-17a";
 const CACHE_PREFIX = "japanese-ops-";
 const CACHE = CACHE_PREFIX + VERSION;
 
@@ -30,6 +30,7 @@ const FILES = [
   "./js/help.js",
   "./js/kana.js",
   "./js/contrast.js",
+  "./js/lookalike.js",
   "./js/sounds.js",
   "./js/content/phrases.js",
   "./js/content/dialogues.js",

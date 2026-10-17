@@ -461,10 +461,47 @@ window.App.Content = window.App.Content || {};
     { word: "スタンプ", romaji: "sutanpu", meaning: "印章（蓋印）", en: "stamp", scene: "景點" },
   ];
 
+  // 相似字分辨 (stage 10, js/lookalike.js): groups of characters that look alike.
+  // `chars` are all in one script (the group's `script`); `diff` is the 分辨重點 shown
+  // on the 對照卡 and after every answer. Group ids are stored in state.kana.prefs.simGroups.
+  const KANA_LOOKALIKES = [
+    // 平假名
+    { id: "h01", script: "hira", chars: ["ぬ", "め", "の"], diff: "ぬ 末端有小圈；め 沒有小圈；の 只有一個圈、沒有交叉筆畫" },
+    { id: "h02", script: "hira", chars: ["ね", "れ", "わ"], diff: "ね 末端有小圈；れ 末端向外撇；わ 末端向內彎" },
+    { id: "h03", script: "hira", chars: ["る", "ろ"], diff: "る 末端有小圈；ろ 沒有" },
+    { id: "h04", script: "hira", chars: ["は", "ほ", "ま"], diff: "は、ほ 的豎畫在左邊，ほ 比 は 多一橫；ま 的豎畫在中間、穿過兩橫" },
+    { id: "h05", script: "hira", chars: ["さ", "ち", "き"], diff: "さ 只有一橫，き 有兩橫；さ 下方的彎向左凸，ち 向右凸（形似數字 5）" },
+    { id: "h06", script: "hira", chars: ["い", "り"], diff: "い 左筆較長、右筆較短；り 左筆較短、右筆較長並向下延伸" },
+    { id: "h07", script: "hira", chars: ["こ", "に"], diff: "に 左邊多一豎" },
+    { id: "h08", script: "hira", chars: ["あ", "お"], diff: "お 右上角多一點，あ 沒有" },
+    { id: "h09", script: "hira", chars: ["す", "む"], diff: "む 右上角多一點，す 沒有" },
+    { id: "h10", script: "hira", chars: ["た", "な"], diff: "た 右半是「こ」形；な 右半有一點和一個帶圈的結構" },
+    { id: "h11", script: "hira", chars: ["け", "は"], diff: "は 右邊豎畫底部有小圈；け 沒有" },
+    // 片假名
+    { id: "k01", script: "kata", chars: ["シ", "ツ"], diff: "シ 兩點在左邊、斜向排列，長筆由左下向右上挑；ツ 兩點在上方、橫向排列，長筆由右上向左下撇" },
+    { id: "k02", script: "kata", chars: ["ソ", "ン"], diff: "ソ 短筆在上方、幾乎垂直，長筆由右上向左下撇；ン 短筆在左上、較橫，長筆由左下向右上挑" },
+    {
+      id: "k03",
+      script: "kata",
+      chars: ["シ", "ツ", "ソ", "ン"],
+      diff: "シ 兩點在左邊、斜向排列，長筆由左下向右上挑；ツ 兩點在上方、橫向排列，長筆由右上向左下撇；ソ 短筆在上方、幾乎垂直，長筆由右上向左下撇；ン 短筆在左上、較橫，長筆由左下向右上挑",
+    },
+    { id: "k04", script: "kata", chars: ["ク", "ケ", "タ"], diff: "ク 第二筆是橫完轉彎向下（像フ）；ケ 的橫畫不轉彎，另有一撇從橫畫中間向下伸出；タ 是 ク 中間多一短筆" },
+    { id: "k05", script: "kata", chars: ["ウ", "ワ", "フ", "ラ"], diff: "ウ 頂部有一短豎；ワ 沒有頂部短豎，有兩筆；フ 只有一筆；ラ 比 フ 上面多一短橫" },
+    { id: "k06", script: "kata", chars: ["コ", "ユ", "ヨ"], diff: "コ 兩筆；ユ 底部橫畫向右伸出；ヨ 有三橫" },
+    { id: "k07", script: "kata", chars: ["チ", "テ", "ナ"], diff: "テ 有兩橫；チ 上方是一撇加一橫；ナ 只有一橫加一撇" },
+    { id: "k08", script: "kata", chars: ["ヌ", "ス"], diff: "ス 第二筆從撇的中間向右下伸出、不穿過；ヌ 第二筆斜穿過第一筆，形似「又」" },
+    { id: "k09", script: "kata", chars: ["マ", "ム", "ア"], diff: "ア 第二筆是從中間向左下的長撇；マ 第二筆是一短點；ム 像一個三角形" },
+    { id: "k10", script: "kata", chars: ["ノ", "メ", "ナ"], diff: "ノ 只有一筆；メ 兩筆交叉；ナ 是一橫加一撇" },
+    { id: "k11", script: "kata", chars: ["ル", "レ"], diff: "ル 有兩畫；レ 只有一畫" },
+    { id: "k12", script: "kata", chars: ["ミ", "ニ"], diff: "ミ 有三條斜短橫；ニ 只有兩條橫" },
+  ];
+
   window.App.Content.KANA = KANA;
   window.App.Content.KANA_TOTAL = KANA_TOTAL;
   window.App.Content.SOUND_TOPICS = SOUND_TOPICS;
   window.App.Content.KANA_ROWS = ROWS;
   window.App.Content.KANA_GROUPS = GROUPS;
   window.App.Content.KATAKANA_EXAMPLES = KATAKANA_EXAMPLES;
+  window.App.Content.KANA_LOOKALIKES = KANA_LOOKALIKES;
 })();
