@@ -109,6 +109,13 @@ window.App = window.App || {};
     return { learned: {}, days: {}, activity: {}, cursor: 0 };
   }
 
+  // path (stage 10 30 日入門路線): mode "free" | "route"; start = the route day the user began at;
+  //   doneDays = { "<day 1–30>": "YYYY-MM-DD" } route days completed (that date).  The route day of a
+  //   calendar day is fixed in daily.days[date].routeDay; one new route day unlocks per calendar day.
+  function defaultPath() {
+    return { mode: "free", start: 1, doneDays: {} };
+  }
+
   // backup (進度備份): lastExportAt = ISO time of the last 匯出 (shown in 設定; the
   // weekly reminder on 進度頁 uses it).  Restored from a backup file as stored there.
   // favs: 句子庫 sentence ids the user marked ⭐ 收藏 (stage 10).
@@ -120,7 +127,7 @@ window.App = window.App || {};
   //   box = correct review answers in a row (0–4); due = local date
   //   "YYYY-MM-DD" when it is next asked. See REVIEW_INTERVALS.
   function defaultState() {
-    return { settings: defaultSettings(), kana: defaultKana(), flags: [], favs: [], listen: defaultListen(), speak: defaultSpeak(), dialogue: defaultDialogue(), numbers: defaultNumbers(), show: defaultShow(), help: defaultHelp(), daily: defaultDaily(), review: { items: {}, graduated: 0 }, backup: { lastExportAt: null } };
+    return { settings: defaultSettings(), kana: defaultKana(), flags: [], favs: [], listen: defaultListen(), speak: defaultSpeak(), dialogue: defaultDialogue(), numbers: defaultNumbers(), show: defaultShow(), help: defaultHelp(), daily: defaultDaily(), path: defaultPath(), review: { items: {}, graduated: 0 }, backup: { lastExportAt: null } };
   }
 
   // ── local dates (phone's own calendar day — never UTC) ──
@@ -236,6 +243,15 @@ window.App = window.App || {};
       if (!daily[k] || typeof daily[k] !== "object" || Array.isArray(daily[k])) daily[k] = {};
     });
     if (!(daily.cursor >= 0)) daily.cursor = 0;
+    const path = { mode: "free", start: 1, doneDays: {} };
+    if (parsed.path && typeof parsed.path === "object" && !Array.isArray(parsed.path)) {
+      if (parsed.path.mode === "route") path.mode = "route";
+      if (Number.isInteger(parsed.path.start) && parsed.path.start >= 1 && parsed.path.start <= 30) path.start = parsed.path.start;
+      const dd = parsed.path.doneDays;
+      if (dd && typeof dd === "object" && !Array.isArray(dd)) {
+        Object.keys(dd).forEach((k) => /^([1-9]|[12]\d|30)$/.test(k) && typeof dd[k] === "string" && /^\d{4}-\d{2}-\d{2}$/.test(dd[k]) && (path.doneDays[k] = dd[k]));
+      }
+    }
     const backup = {
       lastExportAt: parsed.backup && typeof parsed.backup.lastExportAt === "string" && parsed.backup.lastExportAt.length <= 40 ? parsed.backup.lastExportAt : null,
     };
@@ -255,6 +271,7 @@ window.App = window.App || {};
       daily,
       review,
       backup,
+      path,
     };
   }
 
@@ -420,14 +437,15 @@ window.App = window.App || {};
   }
 
   function cleanDay(v) {
-    if (!isObj(v) || !isShortStr(v.dialogueId)) return undefined;
+    if (!isObj(v)) return undefined;
     const done = {};
     if (isObj(v.done)) ["reviewL", "reviewS", "new", "speak", "dialogue", "kana"].forEach((k) => v.done[k] === true && (done[k] = true));
     const due0 = isObj(v.due0) ? v.due0 : {};
     return {
       newIds: strList(v.newIds, 20, 40) || [],
       speakIds: strList(v.speakIds, 20, 40) || [],
-      dialogueId: v.dialogueId,
+      dialogueId: isShortStr(v.dialogueId) ? v.dialogueId : null,
+      ...(isInt(v.routeDay, 1, 30) ? { routeDay: v.routeDay } : {}),
       kanaChars: strList(v.kanaChars, 20, 4) || [],
       due0: { l: isInt(due0.l, 0, 1e5) ? due0.l : 0, s: isInt(due0.s, 0, 1e5) ? due0.s : 0 },
       done,
@@ -444,6 +462,7 @@ window.App = window.App || {};
     });
     if (raw.flags !== undefined && !Array.isArray(raw.flags)) throw new TypeError("flags");
     if (raw.favs !== undefined && !Array.isArray(raw.favs)) throw new TypeError("favs");
+    if (raw.path !== undefined && !isObj(raw.path)) throw new TypeError("path");
     const out = {};
     const bool = (x) => (typeof x === "boolean" ? x : undefined);
     const put = (obj, key, v) => {
@@ -537,6 +556,12 @@ window.App = window.App || {};
 
     out.flags = strList(raw.flags, 1000, 40) || [];
     out.favs = strList(raw.favs, 400, 40) || [];
+    const rp = raw.path || {};
+    out.path = {
+      mode: rp.mode === "route" ? "route" : "free",
+      start: isInt(rp.start, 1, 30) ? rp.start : 1,
+      doneDays: cleanMap(rp.doneDays, (v) => (isDate(v) ? v : undefined), (k) => /^([1-9]|[12]\d|30)$/.test(k)),
+    };
     out.backup = { lastExportAt: raw.backup && isShortStr(raw.backup.lastExportAt) ? raw.backup.lastExportAt : null };
     return out;
   }

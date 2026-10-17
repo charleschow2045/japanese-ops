@@ -75,6 +75,7 @@ window.App = window.App || {};
         h("div", { class: "streak", role: "img", "aria-label": `連續 ${sum.streak.current} 天` }, h("span", { class: "streak-fire", "aria-hidden": "true" }, "🔥"), h("b", null, String(sum.streak.current)), h("span", null, "連續天數"))
       ),
       sum.countdown && h("p", { class: "countdown" }, sum.countdown),
+      sum.routeText && h("p", { class: "countdown" }, sum.routeText),
       inkButton(all ? "今天完成了 🎉　查看" : sum.count === 0 ? "開始今日任務" : `繼續：${sum.nextTitle}`, onOpen, { accent: true, class: "w-full" })
     );
   }

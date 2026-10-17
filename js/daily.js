@@ -13,13 +13,18 @@
 // answers given on the way are saved as usual.  `done` flags never go back
 // to undone.  A day with ≥ 3 tasks done extends the streak.
 //
+// 路線模式 (stage 10, state.path, Content.ROUTE_DAYS): instead of the scene rotation, each calendar day
+// takes the next unfinished day of the 30 日入門路線 — its sentences, its dialogue and its 五十音 rows.
+// A route day is complete when 新句子、口語、五十音 are all done; the next route day unlocks the next
+// calendar day (at most one per day).  The 自由模式 above is the default and is unchanged.
+//
 // The sessions themselves are the existing 聽力／口語／對話 screens: this
 // module only decides what to ask and hands a "task" spec to app.js
 // (ctx.onLaunch), which opens the module and returns here afterwards.
 window.App = window.App || {};
 
 (function () {
-  const { h, inkButton, modHeader } = window.App.UI;
+  const { h, inkButton, modHeader, chip } = window.App.UI;
   const { Storage } = window.App;
 
   const STREAK_MIN = 3; // tasks needed for a day to count towards the streak
@@ -28,10 +33,11 @@ window.App = window.App || {};
   const KANA_COUNT = 5;
   const KEEP_DAYS = 365;
 
-  // view: "list" | "learn"
-  const ui = { view: "list" };
+  // view: "list" | "learn" | "routeStart" (choose where the 30 日入門路線 starts); pick = the day chosen there
+  const ui = { view: "list", pick: null };
   function reset() {
     ui.view = "list";
+    ui.pick = null;
   }
 
   // ── sentences ────────────────────────────────────────────────────────
@@ -75,6 +81,102 @@ window.App = window.App || {};
     return a;
   }
 
+  // ── 30 日入門路線 ────────────────────────────────────────────────────
+
+  const ROUTE_KANA_MAX = 10; // most 五十音 questions on a day with new characters
+  const routeDays = () => window.App.Content.ROUTE_DAYS || [];
+  const routeDayOf = (n) => routeDays().find((d) => d.day === n) || null;
+  const SCRIPT_NAME = { hira: "平假名", kata: "片假名" };
+
+  // Characters of the KANA_ROWS rows `rowKeys`, in table order, in one script.
+  function rowChars(script, rowKeys) {
+    const { KANA, KANA_ROWS } = window.App.Content;
+    const out = [];
+    KANA_ROWS.filter((r) => rowKeys.includes(r.key)).forEach((r) => r.cells.filter(Boolean).forEach((id) => KANA[id][script] && out.push(KANA[id][script])));
+    return out;
+  }
+  const routeNewChars = (d) => (d && d.kana ? rowChars(d.kana.script, d.kana.rows) : []);
+  // Characters taught up to route day n (days skipped by starting later count as known), optionally one script only.
+  function routeKnownChars(n, script) {
+    const out = [];
+    routeDays()
+      .filter((d) => d.day <= n && d.kana && (!script || d.kana.script === script))
+      .forEach((d) => routeNewChars(d).forEach((c) => !out.includes(c) && out.push(c)));
+    return out;
+  }
+  const routeKnownIds = (n) => new Set(routeDays().filter((d) => d.day <= n).flatMap((d) => d.sentences));
+  const routeDialogueIds = (n) => routeDays().filter((d) => d.day <= n && d.dialogue).map((d) => d.dialogue);
+
+  // First route day ≥ the start day that is not completed (null: all done).
+  function nextRouteDayFrom(path, from) {
+    for (let n = from; n <= routeDays().length; n++) if (!path.doneDays[n]) return n;
+    return null;
+  }
+  const nextRouteDay = (state) => nextRouteDayFrom(state.path, state.path.start);
+
+  // ⑤ on a route day: today's new characters (at most ROUTE_KANA_MAX); fewer than KANA_COUNT, or none
+  // (review days, day 18+): fill up with the weakest characters learnt so far.
+  function routeKanaPlan(state, n) {
+    const d = routeDayOf(n);
+    const stats = state.kana.stats;
+    const weight = (ch) => (state.kana.mistakes.includes(ch) ? -1 : (stats[ch] || { c: 0 }).c);
+    let chars = shuffle(routeNewChars(d)).slice(0, ROUTE_KANA_MAX);
+    if (chars.length < KANA_COUNT) {
+      const pool = routeKnownChars(n, d && d.review ? d.review : null).filter((c) => !chars.includes(c));
+      chars = chars.concat(shuffle(pool).sort((a, b) => weight(a) - weight(b)).slice(0, KANA_COUNT - chars.length));
+    }
+    return chars;
+  }
+
+  // ④ on a route day: the dialogue unlocked that day, else one already unlocked (least played), else none.
+  function routeDialogue(state, n, avoid) {
+    const d = routeDayOf(n);
+    if (d && d.dialogue) return d.dialogue;
+    const unlocked = routeDialogueIds(n);
+    const order = dialogueOrder(state, null).filter((id) => unlocked.includes(id));
+    return order.find((id) => id !== avoid) || order[0] || null;
+  }
+
+  function makeRoutePlan(state, today, n) {
+    const d = routeDayOf(n);
+    const yesterday = state.daily.days[Storage.addDaysLocal(today, -1)];
+    return {
+      routeDay: n,
+      newIds: d.sentences.filter((id) => !!byId(id)),
+      speakIds: pickSpeak(state, d.sentences, routeKnownIds(n)),
+      dialogueId: routeDialogue(state, n, yesterday && yesterday.dialogueId),
+      kanaChars: routeKanaPlan(state, n),
+      due0: { l: window.App.Listening.dueCount(state), s: window.App.Speaking.dueCount(state) },
+      done: {},
+    };
+  }
+
+  // A route day is complete when 新句子、口語、五十音 are all done (tasks with nothing to do count as done).
+  // Records the date in state.path.doneDays; the next route day then unlocks on the next calendar day.
+  function syncRoute(state, date) {
+    const day = state.daily.days[date];
+    if (!day || !day.routeDay || state.path.doneDays[day.routeDay]) return state;
+    const f = doneFlags(day);
+    if (!(f.new && f.speak && f.kana)) return state;
+    return { ...state, path: { ...state.path, doneDays: { ...state.path.doneDays, [day.routeDay]: date } } };
+  }
+
+  // Switch mode / change the start day. Today's plan is rebuilt at once unless something was already
+  // answered today (then the change applies from tomorrow, so today's progress and streak are kept).
+  function applyPath(state, patch) {
+    const path = { ...state.path, ...patch };
+    const today = Storage.todayLocal();
+    let daily = state.daily;
+    const answered = ((daily.activity[today] || {}).a || 0) > 0;
+    if (!answered && daily.days[today]) {
+      const days = { ...daily.days };
+      delete days[today];
+      daily = { ...daily, days };
+    }
+    return { ...state, path, daily };
+  }
+  const answeredToday = (state) => ((state.daily.activity[Storage.todayLocal()] || {}).a || 0) > 0;
+
   // ── building a day's plan ────────────────────────────────────────────
 
   // 今日新句子: scene rotation — today's scene is the next one (from the
@@ -109,8 +211,8 @@ window.App = window.App || {};
 
   // ③ 口語: sentences you say that you have heard (listening answered or
   // learnt) but never said correctly; then today's new ones; then the weakest.
-  function pickSpeak(state, newIds) {
-    const mine = allSentences().filter((x) => x.mine && !state.flags.includes(x.p.id));
+  function pickSpeak(state, newIds, allowed) {
+    const mine = allSentences().filter((x) => x.mine && !state.flags.includes(x.p.id) && (!allowed || allowed.has(x.p.id)));
     const said = (x) => !!(state.speak.stats[x.p.id] && state.speak.stats[x.p.id].c > 0);
     const heard = (x) => !!(state.listen.stats[x.p.id] || state.daily.learned[x.p.id]);
     const when = (x) => (state.daily.learned[x.p.id] || "") + ((state.listen.stats[x.p.id] || {}).last || "");
@@ -157,6 +259,8 @@ window.App = window.App || {};
   }
 
   function makePlan(state, today) {
+    const rn = state.path.mode === "route" ? nextRouteDay(state) : null;
+    if (rn) return { cursor: state.daily.cursor, plan: makeRoutePlan(state, today, rn) };
     const n = state.settings.dailyNew;
     const nw = pickNew(state, n);
     const yesterday = state.daily.days[Storage.addDaysLocal(today, -1)];
@@ -198,11 +302,12 @@ window.App = window.App || {};
     tick("new", day.newIds.length === 0);
     tick("speak", day.speakIds.length === 0);
     tick("kana", day.kanaChars.length === 0);
+    tick("dialogue", !day.dialogueId);
     if (Object.keys(done).length !== Object.keys(day.done).length) {
       daily = { ...daily, days: { ...daily.days, [today]: { ...day, done } } };
       changed = true;
     }
-    return changed ? { ...state, daily } : state;
+    return syncRoute(changed ? { ...state, daily } : state, today);
   }
 
   // ── state changes ────────────────────────────────────────────────────
@@ -210,7 +315,7 @@ window.App = window.App || {};
   function markDone(state, date, key) {
     const day = state.daily.days[date];
     if (!day || day.done[key]) return state;
-    return { ...state, daily: { ...state.daily, days: { ...state.daily.days, [date]: { ...day, done: { ...day.done, [key]: true } } } } };
+    return syncRoute({ ...state, daily: { ...state.daily, days: { ...state.daily.days, [date]: { ...day, done: { ...day.done, [key]: true } } } } }, date);
   }
 
   function markLearned(state, ids) {
@@ -226,7 +331,12 @@ window.App = window.App || {};
     const today = Storage.todayLocal();
     const day = state.daily.days[today];
     if (!day) return state;
-    const order = dialogueOrder(state, null);
+    let order = dialogueOrder(state, null);
+    if (day.routeDay) {
+      const unlocked = routeDialogueIds(day.routeDay);
+      order = order.filter((id) => unlocked.includes(id));
+    }
+    if (order.length < 2) return state;
     const next = order[(order.indexOf(day.dialogueId) + 1) % order.length];
     return { ...state, daily: { ...state.daily, days: { ...state.daily.days, [today]: { ...day, dialogueId: next, done: { ...day.done, dialogue: false } } } } };
   }
@@ -283,6 +393,9 @@ window.App = window.App || {};
     kana: "五十音熱身",
   };
 
+  // The 五十音 task is called 五十音熱身 normally and 五十音練習 on a route day.
+  const titleOf = (key, day) => (key === "kana" && day && day.routeDay ? "五十音練習" : TITLES[key]);
+
   function firstUndone(day) {
     const f = doneFlags(day);
     return TASK_KEYS.find((k) => !f[k]) || null;
@@ -309,7 +422,16 @@ window.App = window.App || {};
     const day = state.daily.days[Storage.todayLocal()];
     const streak = streakInfo(state);
     const next = day ? firstUndone(day) : null;
-    return { count: doneCount(day), total: TASK_KEYS.length, streak, next, nextTitle: next ? TITLES[next] : null, countdown: countdownText(state) };
+    const total = routeDays().length;
+    return {
+      count: doneCount(day),
+      total: TASK_KEYS.length,
+      streak,
+      next,
+      nextTitle: next ? titleOf(next, day) : null,
+      countdown: countdownText(state),
+      routeText: state.path.mode === "route" && day && day.routeDay ? `🗾 路線第 ${day.routeDay} / ${total} 天` : null,
+    };
   }
 
   function statusIcon(done, n) {
@@ -322,6 +444,162 @@ window.App = window.App || {};
       { class: `card task-card ${done ? "is-done" : ""}`.trim() },
       h("div", { class: "row" }, statusIcon(done, n), h("div", { class: "grow" }, h("p", { class: "task-title" }, title), h("p", { class: "xs muted" }, sub))),
       body
+    );
+  }
+
+  // ── 路線 card (top of 今日任務) and 起點 screen ──────────────────────
+
+  function routeCard(ctx, rd) {
+    const { state } = ctx;
+    const p = state.path;
+    const total = routeDays().length;
+    const doneN = Object.keys(p.doneDays).length;
+    const go = (view) => {
+      ui.view = view;
+      ui.pick = null;
+      ctx.rerender({ scrollTop: true });
+    };
+    const toFree = () => {
+      ctx.onUpdate((s) => applyPath(s, { mode: "free" }));
+      window.App.Speech.toast("已回到自由模式");
+    };
+    const buttons = h(
+      "div",
+      { class: "row-sm mt-3" },
+      h("button", { class: "btn-soft grow", onclick: () => go("routeStart") }, "更換起點"),
+      h("button", { class: "btn-soft grow", onclick: toFree }, "回到自由模式")
+    );
+
+    if (p.mode !== "route") {
+      return h(
+        "div",
+        { class: "card accent route-card" },
+        h("p", { class: "h-heading" }, "🗾 30 日入門路線"),
+        h("p", { class: "small muted mt-1" }, "從零開始：每天解鎖一點新內容（五十音、句子、對話），每日任務會跟著路線出題。已經學過的，可以從中途開始。"),
+        inkButton("開始路線", () => go("routeStart"), { accent: true, class: "w-full mt-3" })
+      );
+    }
+    const next = nextRouteDay(state);
+    if (!rd) {
+      // route is on but today's plan is not a route day: finished, or switched on after answering today
+      return h(
+        "div",
+        { class: "card accent route-card" },
+        h("p", { class: "h-heading" }, "🗾 30 日入門路線"),
+        next === null
+          ? h("p", { class: "small mt-1" }, "🎉 你已完成全部 30 天。現在的每日任務使用自由模式的選題。")
+          : h("p", { class: "small mt-1" }, `路線已設定：第 ${next} 天會從明天開始（今天已有答題，所以今天的任務維持不變）。`),
+        buttons
+      );
+    }
+    const newChars = routeNewChars(rd);
+    const kanaLine = rd.kana
+      ? `今日新字：${rd.kana.label}（${newChars.length} 個）`
+      : rd.review
+        ? `今日：${SCRIPT_NAME[rd.review]}總複習`
+        : rd.day >= 18 && rd.day <= 28
+          ? "五十音：複習已學過的字"
+          : null;
+    const finished = !!p.doneDays[rd.day];
+    return h(
+      "div",
+      { class: "card accent route-card" },
+      h("div", { class: "row-between" }, h("p", { class: "h-heading" }, `🗾 路線第 ${rd.day} / ${total} 天`), h("span", { class: "small", style: { color: "var(--a-solid)" } }, `已完成 ${doneN} 天`)),
+      h("p", { class: "small mt-1" }, rd.title),
+      h(
+        "div",
+        { class: "route-dots", role: "img", "aria-label": `路線進度：已完成 ${doneN} / ${total} 天` },
+        routeDays().map((d) => h("span", { class: `route-dot${p.doneDays[d.day] ? " done" : ""}${d.day === rd.day ? " today" : ""}${d.day < p.start && !p.doneDays[d.day] ? " skip" : ""}` }))
+      ),
+      kanaLine && h("p", { class: "small mt-3" }, kanaLine),
+      rd.extras.length > 0 &&
+        h("div", { class: "mt-2" }, h("p", { class: "xs muted" }, "今日延伸（可選，不算任務）"), h("ul", { class: "rules" }, rd.extras.map((t) => h("li", null, t)))),
+      finished
+        ? h("p", { class: "note gold mt-3" }, rd.day < total ? `🎉 第 ${rd.day} 天完成！第 ${rd.day + 1} 天會在明天解鎖。` : "🎉 30 日入門路線全部完成！")
+        : h("p", { class: "xs muted mt-3" }, `完成「新句子」「口語」「五十音」三項，就完成第 ${rd.day} 天；第 ${rd.day + 1 <= total ? rd.day + 1 : rd.day} 天會在明天解鎖。`),
+      buttons
+    );
+  }
+
+  const START_PRESETS = [
+    { n: 1, title: "完全零基礎", sub: "從第 1 天開始：先學平假名和基本禮貌" },
+    { n: 10, title: "已經會平假名", sub: "從第 10 天開始：片假名加購物句子" },
+    { n: 18, title: "平假名和片假名都會", sub: "從第 18 天開始：交通、酒店、緊急等情境句子" },
+  ];
+
+  function startScreen(ctx) {
+    const { state } = ctx;
+    const p = state.path;
+    const days = routeDays();
+    const back = () => {
+      ui.view = "list";
+      ui.pick = null;
+      ctx.rerender({ scrollTop: true });
+    };
+    const pick = ui.pick;
+    const resume = pick ? nextRouteDayFrom(p, pick) : null;
+    const rd = resume ? routeDayOf(resume) : null;
+    const doneN = Object.keys(p.doneDays).length;
+    const choose = (n) => {
+      ui.pick = n;
+      ctx.rerender();
+    };
+    const confirm = () => {
+      const late = answeredToday(state);
+      ctx.onUpdate((s) => applyPath(s, { mode: "route", start: pick }));
+      ui.view = "list";
+      ui.pick = null;
+      window.App.Speech.toast(late ? "今天已有答題：路線從明天開始" : `路線已開始：第 ${resume} 天`);
+      ctx.rerender({ scrollTop: true });
+    };
+    return h(
+      "div",
+      { class: "stack-lg" },
+      modHeader("30 日入門路線", back),
+      h(
+        "div",
+        { class: "card accent" },
+        h("p", { class: "small" }, "你從哪裡開始？"),
+        h("p", { class: "xs muted mt-1" }, "每個日曆日最多解鎖一天；漏掉的日子不會被跳過。已完成的天數會保留，路線也不會鎖住其他功能。"),
+        p.mode === "route" && h("p", { class: "xs mt-2" }, `目前路線進行中，已完成 ${doneN} 天。`)
+      ),
+      h(
+        "div",
+        { class: "stack-sm" },
+        START_PRESETS.map((o) =>
+          h(
+            "button",
+            { class: `mode-opt ${pick === o.n ? "active" : ""}`.trim(), "aria-pressed": pick === o.n ? "true" : "false", onclick: () => choose(o.n) },
+            h("span", { class: "mode-title" }, o.title),
+            h("span", { class: "mode-desc" }, o.sub)
+          )
+        )
+      ),
+      h(
+        "div",
+        { class: "card" },
+        h("p", { class: "small mb-2" }, "或自選第幾天"),
+        h("div", { class: "wrap" }, days.map((d) => chip(String(d.day), pick === d.day, () => choose(d.day), { class: "row-chip" })))
+      ),
+      pick &&
+        h(
+          "div",
+          { class: "card accent" },
+          resume === null
+            ? h("p", { class: "small" }, "這個起點之後的天數都已經完成。請選擇較早的一天。")
+            : [
+                resume !== pick && h("p", { class: "xs muted mb-1" }, `第 ${pick} 天已經完成，會從第 ${resume} 天繼續。`),
+                h("p", { class: "h-heading" }, `第 ${rd.day} 天：${rd.title}`),
+                h(
+                  "p",
+                  { class: "small mt-1" },
+                  rd.kana ? `新字：${rd.kana.label}（${routeNewChars(rd).length} 個）・` : rd.review ? `${SCRIPT_NAME[rd.review]}總複習・` : "",
+                  `${rd.sentences.length} 句新句子`,
+                  rd.dialogue ? "・有新對話" : ""
+                ),
+              ]
+        ),
+      inkButton(resume ? `從第 ${resume} 天開始` : "請先選擇起點", confirm, { accent: true, class: "w-full", disabled: !pick || resume === null })
     );
   }
 
@@ -339,6 +617,8 @@ window.App = window.App || {};
     const dlg = dialogues().find((d) => d.id === day.dialogueId);
     const tts = window.App.Speech.isTTSSupported();
     const countdown = countdownText(state);
+    const rd = day.routeDay ? routeDayOf(day.routeDay) : null; // today's 路線 day (null in 自由模式)
+    const canSwap = !day.routeDay || routeDialogueIds(day.routeDay).length >= 2;
     // what 「繼續」 launches: for ①, whichever half still has something to do
     const nextKey = next === "review" ? (!day.done.reviewL && dueL > 0 ? "reviewL" : "reviewS") : next;
 
@@ -357,7 +637,7 @@ window.App = window.App || {};
       else if (key === "reviewS") ctx.onLaunch({ key: "reviewS", module: "speaking", kind: "review" });
       else if (key === "speak") ctx.onLaunch({ key: "speak", module: "speaking", kind: "practice", ids: day.speakIds });
       else if (key === "dialogue") ctx.onLaunch({ key: "dialogue", module: "dialogue", dlgId: day.dialogueId });
-      else if (key === "kana") ctx.onLaunch({ key: "kana", module: "listening", mode: "practice", kana: day.kanaChars, title: "五十音熱身" });
+      else if (key === "kana") ctx.onLaunch({ key: "kana", module: "listening", mode: "practice", kana: day.kanaChars, title: rd ? (routeNewChars(rd).length ? "五十音・今日新字" : "五十音複習") : "五十音熱身" });
     };
     const startBtn = (key, done, label, opts = {}) =>
       done
@@ -379,6 +659,9 @@ window.App = window.App || {};
       "div",
       { class: "stack-lg" },
       modHeader("今日任務", ctx.onBack),
+
+      // 30 日入門路線
+      routeCard(ctx, rd),
 
       // overview
       h(
@@ -419,7 +702,7 @@ window.App = window.App || {};
         flags.new,
         2,
         `今日新句子 ${day.newIds.length} 句`,
-        flags.new ? "已完成" : "先逐句學習，再做一個小測・約 4 分鐘",
+        flags.new ? (day.newIds.length ? "已完成" : "今天沒有新句子（複習日）") : "先逐句學習，再做一個小測・約 4 分鐘",
         day.newIds.length > 0 && startBtn("new", flags.new, "學習新句子", { class: "w-full mt-3" })
       ),
 
@@ -433,31 +716,33 @@ window.App = window.App || {};
       ),
 
       // ④ dialogue
-      taskCard(
-        flags.dialogue,
-        4,
-        `今日對話：${dlg ? `${dlg.emoji} ${dlg.title}` : ""}`,
-        flags.dialogue ? "已完成" : "和店員一問一答・約 4 分鐘",
-        h(
-          "div",
-          { class: "row-sm mt-3" },
-          startBtn("dialogue", flags.dialogue, "開始對話", { class: "grow" }),
-          !flags.dialogue && h("button", { class: "btn-soft", onclick: () => ctx.onUpdate(swapDialogue) }, "換一個")
-        )
-      ),
+      dlg
+        ? taskCard(
+            flags.dialogue,
+            4,
+            `今日對話：${dlg.emoji} ${dlg.title}`,
+            flags.dialogue ? "已完成" : rd && !(routeDayOf(rd.day).dialogue) ? "重玩一個已解鎖的對話・約 4 分鐘" : "和店員一問一答・約 4 分鐘",
+            h(
+              "div",
+              { class: "row-sm mt-3" },
+              startBtn("dialogue", flags.dialogue, "開始對話", { class: "grow" }),
+              !flags.dialogue && canSwap && h("button", { class: "btn-soft", onclick: () => ctx.onUpdate(swapDialogue) }, "換一個")
+            )
+          )
+        : taskCard(true, 4, "今日對話", "今天沒有對話（路線第 9 天起，每隔幾天會解鎖一個）"),
 
       // ⑤ kana warm-up
       taskCard(
         flags.kana,
         5,
-        "五十音熱身",
-        flags.kana ? "已完成" : `聽音選字 ${day.kanaChars.length} 題（取自「五十音」頁選擇的行）・約 2 分鐘`,
-        day.kanaChars.length > 0 && startBtn("kana", flags.kana, "開始熱身", { class: "w-full mt-3", disabled: !tts })
+        rd ? (routeNewChars(rd).length ? `五十音：今日新字 ${day.kanaChars.length} 題` : `五十音複習 ${day.kanaChars.length} 題`) : "五十音熱身",
+        flags.kana ? "已完成" : rd ? `聽音選字・${rd.kana ? rd.kana.label : "已學過的字"}・約 ${routeNewChars(rd).length ? 5 : 2} 分鐘` : `聽音選字 ${day.kanaChars.length} 題（取自「五十音」頁選擇的行）・約 2 分鐘`,
+        day.kanaChars.length > 0 && startBtn("kana", flags.kana, rd ? "開始練習" : "開始熱身", { class: "w-full mt-3", disabled: !tts })
       ),
 
       !tts && h("p", { class: "notice" }, "此瀏覽器沒有發音功能，聽力類任務無法使用。"),
 
-      next && inkButton(`繼續：${TITLES[next]}`, () => launch(nextKey), { class: "w-full", disabled: !!nextKey && (nextKey === "reviewL" || nextKey === "kana") && !tts })
+      next && inkButton(`繼續：${titleOf(next, day)}`, () => launch(nextKey), { class: "w-full", disabled: !!nextKey && (nextKey === "reviewL" || nextKey === "kana") && !tts })
     );
   }
 
@@ -495,7 +780,9 @@ window.App = window.App || {};
   }
 
   function render(ctx) {
-    return ui.view === "learn" ? learnScreen(ctx) : listScreen(ctx);
+    if (ui.view === "learn") return learnScreen(ctx);
+    if (ui.view === "routeStart") return startScreen(ctx);
+    return listScreen(ctx);
   }
 
   window.App.Daily = {
@@ -510,6 +797,14 @@ window.App = window.App || {};
     countdownText,
     statusOf,
     mustCounts,
+    routeDays,
+    routeDayOf,
+    routeNewChars,
+    routeKnownChars,
+    routeKnownIds,
+    nextRouteDay,
+    applyPath,
+    syncRoute,
     allSentences,
     kanaPool,
     STREAK_MIN,

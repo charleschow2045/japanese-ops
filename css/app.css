@@ -1144,3 +1144,11 @@ body::before {
 .sim-btn:active { transform: translateY(2px); }
 .sim-btn.on { border-color: var(--a-solid); background: var(--a-tint); }
 .sim-diff { margin-top: 10px; font-size: 0.9rem; font-weight: 700; line-height: 1.55; }
+
+/* ── 30 日入門路線 (stage 10, js/daily.js) ── */
+.route-dots { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; }
+.route-dot { width: 14px; height: 14px; border-radius: 50%; background: var(--a-border); }
+.route-dot.done { background: var(--good-solid); }
+.route-dot.today { background: var(--a-tint); outline: 2.5px solid var(--a-solid); outline-offset: 1px; }
+.route-dot.skip { opacity: 0.4; }
+.route-card .rules { margin-top: 4px; }
