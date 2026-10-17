@@ -1,4 +1,5 @@
-// 30 日入門路線（stage 10，版本一）：30 天資料、起點選擇、路線模式的每日任務、一個日曆日最多解鎖一天、備份、舊存檔。
+// 30 日入門路線（stage 10，版本一＋二）：30 天資料、主頁一次性提示、起點選擇、路線模式的每日任務、一個日曆日最多解鎖一天、
+// 路線地圖與「標記為已學過」、今日新字課、備份、舊存檔。
 const { chromium, BASE, CHROME } = require('./lib');
 const assert = (c, m) => { if (!c) { console.log('FAIL', m); process.exitCode = 1; } else console.log('ok  ', m); };
 (async () => {
@@ -41,8 +42,21 @@ const assert = (c, m) => { if (!c) { console.log('FAIL', m); process.exitCode = 
   assert(data.review === '9:hira 14:kata' && data.noSentenceDays === '29,30', '複習日（9 平、14 片）和無新句子的 29、30 天');
   assert(data.taxfree.length === 0, '路線不含免稅句子');
 
+  // ── 主頁一次性提示卡（版本二）──
+  assert((await main()).includes('新：30 日入門路線') && (await st()).path.promptSeen === false, '全新存檔：主頁有「新：30 日入門路線」提示卡');
+  await pg.getByRole('button', { name: '之後再說' }).click();
+  assert(!(await main()).includes('新：30 日入門路線') && (await st()).path.promptSeen === true, '按「之後再說」：提示卡消失並記住');
+  await pg.reload();
+  assert(!(await main()).includes('新：30 日入門路線'), '重新載入後提示卡不再出現');
+  await pg.evaluate(() => { const x = JSON.parse(localStorage.getItem('japaneseOps:v1')); x.path.promptSeen = false; localStorage.setItem('japaneseOps:v1', JSON.stringify(x)); });
+  await pg.reload();
+  await pg.getByRole('button', { name: '看看' }).click();
+  assert((await pg.locator('.mod-header h2').innerText()) === '30 日入門路線' && (await st()).path.promptSeen === true, '按「看看」：直接打開起點畫面，提示卡視為已回應');
+  await pg.locator('#main .btn-back').click(); // 起點 → 每日任務
+  await pg.locator('#main .btn-back').click(); // 每日任務 → 主頁
+
   // ── 自由模式不變，有「開始路線」入口 ──
-  await pg.getByText('開始今日任務').first().click();
+  await pg.locator('#main button', { hasText: /開始今日任務|繼續：/ }).first().click(); // fresh save: 錯題重溫 is auto-done, so the button may read 「繼續：今日新句子」
   let t = await main();
   assert(t.includes('30 日入門路線') && (await pg.getByRole('button', { name: '開始路線' }).count()) === 1, '自由模式：每日任務頂部有「30 日入門路線」入口');
   assert((await pg.locator('.task-title').allInnerTexts()).join('/') .includes('五十音熱身') && (await st()).path.mode === 'free', '自由模式的任務照舊（五十音熱身）');
@@ -86,6 +100,68 @@ const assert = (c, m) => { if (!c) { console.log('FAIL', m); process.exitCode = 
   assert(r.sameDay === 1, '同一個日曆日內，不會解鎖下一天');
   assert(r.next === 2, '下一個日曆日：解鎖第 2 天');
   assert(r.again === 1, '昨天沒完成：今天仍是第 1 天（漏掉的日子不會被跳過）');
+
+  // ── 路線地圖、標記為已學過、今日新字課（版本二）──
+  await pg.getByRole('button', { name: '📍 路線地圖' }).click();
+  assert((await pg.locator('.mod-header h2').innerText()) === '路線地圖' && (await pg.locator('.route-row').count()) === 30, '路線地圖：30 天');
+  assert((await pg.locator('.route-row .route-st').first().innerText()).includes('今天') && (await pg.locator('.route-row .route-st').nth(1).innerText()).includes('未解鎖'), '第 1 天是「今天」，第 2 天「未解鎖」');
+  await pg.locator('.route-row-head').first().click();
+  assert((await pg.locator('.route-row.open').innerText()).includes('こんにちは。') && (await pg.locator('.route-row.open .route-sentences li').count()) === 5, '展開第 1 天：顯示 5 句新句子');
+  await pg.locator('.route-row-head').nth(4).click();
+  assert((await pg.locator('.route-row.open .route-sentences li').count()) === 0 && (await pg.locator('.route-row.open').innerText()).includes('解鎖後會顯示完整內容'), '未解鎖的第 5 天只顯示摘要，不列出句子');
+  await pg.getByRole('button', { name: /標記為已學過/ }).click();
+  assert((await pg.locator('.confirm').innerText()).includes('確定把第 5 天標記為已學過'), '標記前要再確認');
+  await pg.getByRole('button', { name: '取消' }).click();
+  assert(!((await st()).path.skipDays || {})['5'], '取消：沒有略過');
+  await pg.getByRole('button', { name: /標記為已學過/ }).click();
+  await pg.getByRole('button', { name: '確定略過' }).click();
+  assert(((await st()).path.skipDays || {})['5'] === today && (await pg.locator('.route-row').nth(4).locator('.route-st').innerText()).includes('已略過'), '確定略過：記入 skipDays，狀態變「已略過」');
+  assert((await pg.locator('.route-dot.skipped').count()) === 1, '進度點出現「略過」顏色');
+  await pg.locator('.route-row-head').nth(4).click(); // already open → close, reopen
+  if ((await pg.locator('.route-row.open').count()) === 0) await pg.locator('.route-row-head').nth(4).click();
+  await pg.getByRole('button', { name: /取消略過/ }).click();
+  assert(Object.keys((await st()).path.skipDays || {}).length === 0, '取消略過：恢復');
+  await pg.locator('.route-row-head').first().click();
+  await pg.getByRole('button', { name: /標記為已學過/ }).click();
+  await pg.getByRole('button', { name: '確定略過' }).click();
+  s = await st();
+  assert(s.path.skipDays['1'] && s.daily.days[today].routeDay === 2, '略過今天的路線日（今天未答題）：今天的計劃立即換成第 2 天');
+  await pg.locator('#main .btn-back').click();
+  assert((await pg.locator('.task-title').allInnerTexts()).some((x) => x.includes('五十音：今日新字')) && (await pg.getByRole('button', { name: '學習新字' }).count()) === 1, '今日新字日：五十音任務的按鈕是「學習新字」');
+  await pg.getByRole('button', { name: '學習新字' }).click();
+  assert((await pg.locator('.mod-header h2').innerText()) === '今日新字' && (await pg.locator('.lesson-card').count()) === 10, '今日新字課：第 2 天（さ行・た行）10 張字卡');
+  assert((await pg.locator('.lesson-card').first().innerText()).includes('sa') || (await pg.locator('.lesson-card').first().innerText()).includes('ta'), '字卡有拼音');
+  await pg.getByRole('button', { name: '直接開始小測（10 題）' }).click();
+  assert((await pg.locator('.mod-header h2').innerText()) === '五十音・今日新字', '從新字課開始小測');
+  await pg.locator('#main .btn-back').click();
+  assert((await pg.locator('.mod-header h2').innerText()) === '今日任務', '離開小測回到任務列表（不是新字課）');
+  // a bigger lesson: day 8 (拗音 33)
+  await pg.getByRole('button', { name: '更換起點' }).click();
+  await pg.locator('#main .chip', { hasText: /^8$/ }).click();
+  await exact('從第 8 天開始').click();
+  await pg.getByRole('button', { name: '學習新字' }).click();
+  assert((await pg.locator('.lesson-card').count()) === 33, '第 8 天新字課：33 張拗音字卡');
+  await pg.locator('#main .btn-back').click();
+  // 路線地圖 also reachable in 自由模式 once there is progress; skipped days make nextRouteDay move on
+  const sk = await pg.evaluate(() => {
+    const S = App.Storage, D = App.Daily, today = S.todayLocal();
+    const loaded = S.loadState();
+    const days = { ...loaded.daily.days }; delete days[today]; // no plan yet today, so ensureToday builds one from the path below
+    const base = D.ensureToday({ ...loaded, daily: { ...loaded.daily, days }, path: { mode: 'route', start: 1, doneDays: { 1: 'x' }, skipDays: { 2: 'x', 3: 'x' }, promptSeen: true } });
+    const answered = { ...base, daily: { ...base.daily, activity: { [today]: { a: 2, c: 1 } } } };
+    const rd = base.daily.days[today].routeDay;
+    const kept = D.skipRouteDay(answered, rd);
+    return {
+      next: D.nextRouteDay(base), todayPlan: rd,
+      keptPlan: kept.daily.days[today] === answered.daily.days[today] && !!kept.path.skipDays[rd],
+      beforeStart: D.skipRouteDay({ ...base, path: { ...base.path, start: 10, skipDays: {} } }, 3).path.skipDays[3] === undefined,
+      prompt: [D.showPrompt(S.loadState()), D.showPrompt({ path: { mode: 'route', promptSeen: false, doneDays: {}, skipDays: {} } }), D.showPrompt({ path: { mode: 'free', promptSeen: false, doneDays: { 1: 'x' }, skipDays: {} } })],
+    };
+  });
+  assert(sk.next === 4 && sk.todayPlan === 4, '已完成和已略過的天數都被跳過（第 4 天）');
+  assert(sk.keptPlan, '今天已有答題時略過今天的路線日：今天的計劃保留，只記入 skipDays');
+  assert(sk.beforeStart === true, '起點之前的日子不能略過');
+  assert(sk.prompt.join() === 'false,false,false', '提示卡不會在已開始路線、已有進度的人身上出現');
 
   // ── 更換起點／今天已有答題 ──
   const sw = await pg.evaluate(() => {

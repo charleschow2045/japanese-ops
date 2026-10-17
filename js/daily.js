@@ -17,6 +17,8 @@
 // takes the next unfinished day of the 30 日入門路線 — its sentences, its dialogue and its 五十音 rows.
 // A route day is complete when 新句子、口語、五十音 are all done; the next route day unlocks the next
 // calendar day (at most one per day).  The 自由模式 above is the default and is unchanged.
+// 版本二: 路線地圖 (every day, 標記為已學過), 今日新字課 (kana cards before the ⑤ quiz) and a one-time
+// 主頁 prompt (see home.js).
 //
 // The sessions themselves are the existing 聽力／口語／對話 screens: this
 // module only decides what to ask and hands a "task" spec to app.js
@@ -34,9 +36,18 @@ window.App = window.App || {};
   const KEEP_DAYS = 365;
 
   // view: "list" | "learn" | "routeStart" (choose where the 30 日入門路線 starts); pick = the day chosen there
-  const ui = { view: "list", pick: null };
+  // map = "routeMap" (路線地圖: `open` = the expanded day, `confirmSkip` = a day waiting for 確定略過);
+  // "kanaLesson" = 今日新字課
+  const ui = { view: "list", pick: null, open: null, confirmSkip: null };
   function reset() {
     ui.view = "list";
+    ui.pick = null;
+    ui.open = null;
+    ui.confirmSkip = null;
+  }
+  // Open the 起點 screen directly (主頁 prompt).
+  function openStart() {
+    ui.view = "routeStart";
     ui.pick = null;
   }
 
@@ -109,7 +120,7 @@ window.App = window.App || {};
 
   // First route day ≥ the start day that is not completed (null: all done).
   function nextRouteDayFrom(path, from) {
-    for (let n = from; n <= routeDays().length; n++) if (!path.doneDays[n]) return n;
+    for (let n = from; n <= routeDays().length; n++) if (!path.doneDays[n] && !(path.skipDays || {})[n]) return n;
     return null;
   }
   const nextRouteDay = (state) => nextRouteDayFrom(state.path, state.path.start);
@@ -164,7 +175,7 @@ window.App = window.App || {};
   // Switch mode / change the start day. Today's plan is rebuilt at once unless something was already
   // answered today (then the change applies from tomorrow, so today's progress and streak are kept).
   function applyPath(state, patch) {
-    const path = { ...state.path, ...patch };
+    const path = { ...state.path, ...patch, promptSeen: true };
     const today = Storage.todayLocal();
     let daily = state.daily;
     const answered = ((daily.activity[today] || {}).a || 0) > 0;
@@ -176,6 +187,39 @@ window.App = window.App || {};
     return { ...state, path, daily };
   }
   const answeredToday = (state) => ((state.daily.activity[Storage.todayLocal()] || {}).a || 0) > 0;
+
+  const dropTodayPlan = (state) => {
+    const days = { ...state.daily.days };
+    delete days[Storage.todayLocal()];
+    return { ...state, daily: { ...state.daily, days } };
+  };
+
+  // 標記為已學過: the day is treated as done and never comes up as a task; sentence / kana statuses
+  // do not change. If it is today's route day and nothing was answered today, today's plan is rebuilt
+  // with the next day at once (skipping is not unlocking new content).
+  function skipRouteDay(state, n) {
+    const p = state.path;
+    if (p.doneDays[n] || (p.skipDays || {})[n] || n < p.start) return state;
+    let next = { ...state, path: { ...p, skipDays: { ...(p.skipDays || {}), [n]: Storage.todayLocal() } } };
+    const day = next.daily.days[Storage.todayLocal()];
+    if (day && day.routeDay === n && !answeredToday(next)) next = dropTodayPlan(next);
+    return next;
+  }
+
+  function unskipRouteDay(state, n) {
+    const skipDays = { ...(state.path.skipDays || {}) };
+    if (!skipDays[n]) return state;
+    delete skipDays[n];
+    return { ...state, path: { ...state.path, skipDays } };
+  }
+
+  // One-time prompt on 主頁: only for people who never started the route and did not answer it yet.
+  function showPrompt(state) {
+    const p = state.path;
+    return p.mode === "free" && !p.promptSeen && Object.keys(p.doneDays).length === 0 && Object.keys(p.skipDays || {}).length === 0 && routeDays().length > 0;
+  }
+  const dismissPrompt = (state) => (state.path.promptSeen ? state : { ...state, path: { ...state.path, promptSeen: true } });
+
 
   // ── building a day's plan ────────────────────────────────────────────
 
@@ -452,22 +496,32 @@ window.App = window.App || {};
   function routeCard(ctx, rd) {
     const { state } = ctx;
     const p = state.path;
+    const skipped = p.skipDays || {};
     const total = routeDays().length;
     const doneN = Object.keys(p.doneDays).length;
+    const skipN = Object.keys(skipped).length;
     const go = (view) => {
       ui.view = view;
       ui.pick = null;
+      ui.open = null;
+      ui.confirmSkip = null;
       ctx.rerender({ scrollTop: true });
     };
     const toFree = () => {
       ctx.onUpdate((s) => applyPath(s, { mode: "free" }));
       window.App.Speech.toast("已回到自由模式");
     };
+    const mapBtn = (cls) => h("button", { class: `btn-soft ${cls}`.trim(), onclick: () => go("routeMap") }, "📍 路線地圖");
     const buttons = h(
       "div",
-      { class: "row-sm mt-3" },
-      h("button", { class: "btn-soft grow", onclick: () => go("routeStart") }, "更換起點"),
-      h("button", { class: "btn-soft grow", onclick: toFree }, "回到自由模式")
+      { class: "mt-3" },
+      mapBtn("w-full"),
+      h(
+        "div",
+        { class: "row-sm mt-2" },
+        h("button", { class: "btn-soft grow", onclick: () => go("routeStart") }, "更換起點"),
+        h("button", { class: "btn-soft grow", onclick: toFree }, "回到自由模式")
+      )
     );
 
     if (p.mode !== "route") {
@@ -476,7 +530,9 @@ window.App = window.App || {};
         { class: "card accent route-card" },
         h("p", { class: "h-heading" }, "🗾 30 日入門路線"),
         h("p", { class: "small muted mt-1" }, "從零開始：每天解鎖一點新內容（五十音、句子、對話），每日任務會跟著路線出題。已經學過的，可以從中途開始。"),
-        inkButton("開始路線", () => go("routeStart"), { accent: true, class: "w-full mt-3" })
+        doneN + skipN > 0 && h("p", { class: "xs mt-2" }, `你之前已完成 ${doneN} 天${skipN ? `、略過 ${skipN} 天` : ""}，進度仍保留。`),
+        inkButton(doneN + skipN > 0 ? "繼續路線" : "開始路線", () => go("routeStart"), { accent: true, class: "w-full mt-3" }),
+        doneN + skipN > 0 && mapBtn("w-full mt-2")
       );
     }
     const next = nextRouteDay(state);
@@ -509,7 +565,7 @@ window.App = window.App || {};
       h(
         "div",
         { class: "route-dots", role: "img", "aria-label": `路線進度：已完成 ${doneN} / ${total} 天` },
-        routeDays().map((d) => h("span", { class: `route-dot${p.doneDays[d.day] ? " done" : ""}${d.day === rd.day ? " today" : ""}${d.day < p.start && !p.doneDays[d.day] ? " skip" : ""}` }))
+        routeDays().map((d) => h("span", { class: `route-dot${p.doneDays[d.day] ? " done" : skipped[d.day] ? " skipped" : ""}${d.day === rd.day ? " today" : ""}${d.day < p.start && !p.doneDays[d.day] ? " skip" : ""}` }))
       ),
       kanaLine && h("p", { class: "small mt-3" }, kanaLine),
       rd.extras.length > 0 &&
@@ -518,6 +574,185 @@ window.App = window.App || {};
         ? h("p", { class: "note gold mt-3" }, rd.day < total ? `🎉 第 ${rd.day} 天完成！第 ${rd.day + 1} 天會在明天解鎖。` : "🎉 30 日入門路線全部完成！")
         : h("p", { class: "xs muted mt-3" }, `完成「新句子」「口語」「五十音」三項，就完成第 ${rd.day} 天；第 ${rd.day + 1 <= total ? rd.day + 1 : rd.day} 天會在明天解鎖。`),
       buttons
+    );
+  }
+
+  // ── 路線地圖: all 30 days, with 標記為已學過 ───────────────────────────
+
+  const ST_LABEL = { done: "✓ 完成", skipped: "⏭ 已略過", before: "起點之前", today: "📍 今天", next: "下一天", tomorrow: "明天解鎖", locked: "未解鎖" };
+
+  function mapScreen(ctx) {
+    const { state } = ctx;
+    const p = state.path;
+    const skipped = p.skipDays || {};
+    const total = routeDays().length;
+    const plan = state.daily.days[Storage.todayLocal()];
+    const todayDay = p.mode === "route" && plan && plan.routeDay ? plan.routeDay : null;
+    const next = nextRouteDay(state);
+    const doneN = Object.keys(p.doneDays).length;
+    const skipN = Object.keys(skipped).length;
+    const back = () => {
+      ui.view = "list";
+      ui.open = null;
+      ui.confirmSkip = null;
+      ctx.rerender({ scrollTop: true });
+    };
+    const status = (n) =>
+      p.doneDays[n] ? "done" : skipped[n] ? "skipped" : n < p.start ? "before" : n === todayDay ? "today" : n === next ? (todayDay === null ? "next" : "tomorrow") : "locked";
+    const sentenceRow = (id) => {
+      const x = byId(id);
+      return x && h("li", null, h("span", { lang: "ja", class: "jp" }, x.p.ja), h("span", { class: "xs muted block" }, x.p.yue));
+    };
+
+    function detail(d, st) {
+      const dlg = d.dialogue && dialogues().find((x) => x.id === d.dialogue);
+      const newChars = routeNewChars(d);
+      return h(
+        "div",
+        { class: "route-detail" },
+        d.kana && h("p", { class: "small" }, `新字：${d.kana.label}（${newChars.length} 個）`),
+        d.review && h("p", { class: "small" }, `${SCRIPT_NAME[d.review]}總複習`),
+        st === "locked"
+          ? h("p", { class: "xs muted mt-2" }, `${d.sentences.length} 句新句子${d.dialogue ? "，有新對話" : ""}。這一天解鎖後會顯示完整內容。`)
+          : [
+              d.sentences.length > 0 && h("p", { class: "caption mt-2" }, `新句子（${d.sentences.length} 句）`),
+              d.sentences.length > 0 && h("ul", { class: "route-sentences" }, d.sentences.map(sentenceRow)),
+              dlg && h("p", { class: "small mt-2" }, `新對話：${dlg.emoji} ${dlg.title}`),
+              d.extras.length > 0 && h("div", { class: "mt-2" }, h("p", { class: "caption" }, "今日延伸"), h("ul", { class: "rules" }, d.extras.map((t) => h("li", null, t)))),
+            ],
+        st === "done" && h("p", { class: "xs muted mt-2" }, `完成日期：${p.doneDays[d.day]}`),
+        st === "skipped" &&
+          h("button", { class: "btn-soft w-full mt-3", onclick: () => ctx.onUpdate((s) => unskipRouteDay(s, d.day)) }, "取消略過（這一天重新出現在路線中）"),
+        ["today", "next", "tomorrow", "locked"].includes(st) &&
+          (ui.confirmSkip === d.day
+            ? h(
+                "div",
+                { class: "confirm mt-3" },
+                h("p", { class: "mb-3" }, `確定把第 ${d.day} 天標記為已學過？這一天的任務不會再出現，句子和五十音的熟練狀態不變。`),
+                h(
+                  "div",
+                  { class: "row-sm" },
+                  h("button", { class: "btn-plain grow", onclick: () => ((ui.confirmSkip = null), ctx.rerender()) }, "取消"),
+                  inkButton(
+                    "確定略過",
+                    () => {
+                      ui.confirmSkip = null;
+                      ctx.onUpdate((s) => skipRouteDay(s, d.day));
+                      window.App.Speech.toast(`第 ${d.day} 天已標記為已學過`);
+                    },
+                    { class: "grow" }
+                  )
+                )
+              )
+            : h("button", { class: "btn-soft w-full mt-3", onclick: () => ((ui.confirmSkip = d.day), ctx.rerender()) }, "標記為已學過（略過這一天）"))
+      );
+    }
+
+    return h(
+      "div",
+      { class: "stack-lg" },
+      modHeader("路線地圖", back),
+      h(
+        "div",
+        { class: "card accent" },
+        h("p", { class: "small" }, `已完成 ${doneN} 天${skipN ? `・略過 ${skipN} 天` : ""}・共 ${total} 天`),
+        h(
+          "div",
+          { class: "route-dots", role: "img", "aria-label": `路線進度：已完成 ${doneN} / ${total} 天` },
+          routeDays().map((d) => h("span", { class: `route-dot${p.doneDays[d.day] ? " done" : skipped[d.day] ? " skipped" : ""}${d.day === todayDay ? " today" : ""}${d.day < p.start && !p.doneDays[d.day] && !skipped[d.day] ? " skip" : ""}` }))
+        ),
+        h("p", { class: "xs muted mt-2" }, "路線不會鎖住其他功能。按一天可以看內容；已經學過的天數可以標記為已學過。")
+      ),
+      routeDays().map((d) => {
+        const st = status(d.day);
+        const open = ui.open === d.day;
+        const sub = [d.kana ? d.kana.label : d.review ? `${SCRIPT_NAME[d.review]}複習` : null, d.sentences.length ? `${d.sentences.length} 句` : null, d.dialogue ? "新對話" : null].filter(Boolean).join("・");
+        return h(
+          "div",
+          { class: `card route-row st-${st}${open ? " open" : ""}` },
+          h(
+            "button",
+            { class: "route-row-head", "aria-expanded": open ? "true" : "false", onclick: () => ((ui.open = open ? null : d.day), (ui.confirmSkip = null), ctx.rerender()) },
+            h("span", { class: "route-n" }, String(d.day)),
+            h("span", { class: "grow" }, h("span", { class: "route-title" }, d.title), sub && h("span", { class: "xs muted block" }, sub)),
+            h("span", { class: `route-st ${st}` }, ST_LABEL[st])
+          ),
+          open && detail(d, st)
+        );
+      })
+    );
+  }
+
+  // ── 今日新字課 (⑤ on a route day with new characters) ───────────────
+
+  // The 五十音 quiz of today's plan (also started from the lesson).
+  function launchKana(ctx, day, rd) {
+    ctx.onLaunch({ key: "kana", module: "listening", mode: "practice", kana: day.kanaChars, title: rd ? (routeNewChars(rd).length ? "五十音・今日新字" : "五十音複習") : "五十音熱身" });
+  }
+
+  function lessonScreen(ctx) {
+    const { state, settings } = ctx;
+    const day = state.daily.days[Storage.todayLocal()];
+    const rd = day && day.routeDay ? routeDayOf(day.routeDay) : null;
+    if (!rd || !rd.kana) {
+      ui.view = "list";
+      return listScreen(ctx);
+    }
+    const { KANA, KANA_ROWS } = window.App.Content;
+    const script = rd.kana.script;
+    const noteKey = script === "hira" ? "hiraNote" : "kataNote";
+    const tts = window.App.Speech.isTTSSupported();
+    const back = () => {
+      ui.view = "list";
+      ctx.rerender({ scrollTop: true });
+    };
+    const rows = KANA_ROWS.filter((r) => rd.kana.rows.includes(r.key));
+    const rowTitle = (r) =>
+      r.key === "n"
+        ? KANA.n[script]
+        : ["seion", "dakuon", "handakuon"].includes(r.group)
+          ? `${KANA[r.cells.find(Boolean)][script]}行`
+          : r.cells.filter(Boolean).map((id) => KANA[id][script]).filter(Boolean).join("・");
+    const card = (id) => {
+      const k = KANA[id];
+      const ch = k[script];
+      const note = [k.note, k[noteKey]].filter(Boolean).join("；");
+      return h(
+        "button",
+        { class: "lesson-card", "aria-label": `聽 ${ch}`, onclick: () => window.App.Speech.speak(ch, settings) },
+        h("span", { lang: "ja", class: "jp lesson-ch" }, ch),
+        settings.showRomaji && h("span", { class: "lesson-rom" }, k.romaji + (k.romajiAlt ? `（亦寫 ${k.romajiAlt}）` : "")),
+        settings.showYue && h("span", { class: "lesson-yue" }, k.yue ? `近似：${k.yue}` : "廣東話沒有對應"),
+        note && h("span", { class: "lesson-note" }, `💡 ${note}`)
+      );
+    };
+    const start = () => {
+      ui.view = "list"; // so 返回今日任務 from the quiz lands on the task list, not on this lesson
+      launchKana(ctx, day, rd);
+    };
+    return h(
+      "div",
+      { class: "stack-lg" },
+      modHeader("今日新字", back),
+      h(
+        "div",
+        { class: "card accent" },
+        h("p", { class: "h-heading" }, `第 ${rd.day} 天：${rd.kana.label}`),
+        h("p", { class: "small muted mt-1" }, `共 ${routeNewChars(rd).length} 個新字。按每個字可以聽發音，看清楚拼音；小測會從這些字抽 ${day.kanaChars.length} 題。`),
+        settings.showYue && h("p", { class: "xs muted mt-1" }, "廣東話近似讀音僅供參考，請以發音為準。"),
+        tts && inkButton(`直接開始小測（${day.kanaChars.length} 題）`, start, { accent: true, class: "w-full mt-3" })
+      ),
+      rows.map((r) =>
+        h(
+          "div",
+          null,
+          h("p", { lang: "ja", class: "h-heading jp mb-2" }, rowTitle(r)),
+          h("div", { class: "lesson-grid" }, r.cells.filter(Boolean).filter((id) => KANA[id][script]).map(card))
+        )
+      ),
+      inkButton(tts ? `開始小測（${day.kanaChars.length} 題）` : "返回", tts ? start : back, { accent: true, class: "w-full" }),
+      !tts && h("p", { class: "xs muted center" }, "此瀏覽器沒有發音功能，無法進行聽音小測。"),
+      h("button", { class: "btn-soft w-full", onclick: back }, "稍後再做")
     );
   }
 
@@ -588,7 +823,7 @@ window.App = window.App || {};
           resume === null
             ? h("p", { class: "small" }, "這個起點之後的天數都已經完成。請選擇較早的一天。")
             : [
-                resume !== pick && h("p", { class: "xs muted mb-1" }, `第 ${pick} 天已經完成，會從第 ${resume} 天繼續。`),
+                resume !== pick && h("p", { class: "xs muted mb-1" }, `第 ${pick} 天已經完成或已略過，會從第 ${resume} 天繼續。`),
                 h("p", { class: "h-heading" }, `第 ${rd.day} 天：${rd.title}`),
                 h(
                   "p",
@@ -637,7 +872,12 @@ window.App = window.App || {};
       else if (key === "reviewS") ctx.onLaunch({ key: "reviewS", module: "speaking", kind: "review" });
       else if (key === "speak") ctx.onLaunch({ key: "speak", module: "speaking", kind: "practice", ids: day.speakIds });
       else if (key === "dialogue") ctx.onLaunch({ key: "dialogue", module: "dialogue", dlgId: day.dialogueId });
-      else if (key === "kana") ctx.onLaunch({ key: "kana", module: "listening", mode: "practice", kana: day.kanaChars, title: rd ? (routeNewChars(rd).length ? "五十音・今日新字" : "五十音複習") : "五十音熱身" });
+      else if (key === "kana") {
+        if (rd && routeNewChars(rd).length) {
+          ui.view = "kanaLesson";
+          ctx.rerender({ scrollTop: true });
+        } else launchKana(ctx, day, rd);
+      }
     };
     const startBtn = (key, done, label, opts = {}) =>
       done
@@ -737,7 +977,7 @@ window.App = window.App || {};
         5,
         rd ? (routeNewChars(rd).length ? `五十音：今日新字 ${day.kanaChars.length} 題` : `五十音複習 ${day.kanaChars.length} 題`) : "五十音熱身",
         flags.kana ? "已完成" : rd ? `聽音選字・${rd.kana ? rd.kana.label : "已學過的字"}・約 ${routeNewChars(rd).length ? 5 : 2} 分鐘` : `聽音選字 ${day.kanaChars.length} 題（取自「五十音」頁選擇的行）・約 2 分鐘`,
-        day.kanaChars.length > 0 && startBtn("kana", flags.kana, rd ? "開始練習" : "開始熱身", { class: "w-full mt-3", disabled: !tts })
+        day.kanaChars.length > 0 && startBtn("kana", flags.kana, rd ? (routeNewChars(rd).length ? "學習新字" : "開始練習") : "開始熱身", { class: "w-full mt-3", disabled: !tts })
       ),
 
       !tts && h("p", { class: "notice" }, "此瀏覽器沒有發音功能，聽力類任務無法使用。"),
@@ -782,6 +1022,8 @@ window.App = window.App || {};
   function render(ctx) {
     if (ui.view === "learn") return learnScreen(ctx);
     if (ui.view === "routeStart") return startScreen(ctx);
+    if (ui.view === "routeMap") return mapScreen(ctx);
+    if (ui.view === "kanaLesson") return lessonScreen(ctx);
     return listScreen(ctx);
   }
 
@@ -805,6 +1047,11 @@ window.App = window.App || {};
     nextRouteDay,
     applyPath,
     syncRoute,
+    skipRouteDay,
+    unskipRouteDay,
+    showPrompt,
+    dismissPrompt,
+    openStart,
     allSentences,
     kanaPool,
     STREAK_MIN,

@@ -110,10 +110,11 @@ window.App = window.App || {};
   }
 
   // path (stage 10 30 日入門路線): mode "free" | "route"; start = the route day the user began at;
-  //   doneDays = { "<day 1–30>": "YYYY-MM-DD" } route days completed (that date).  The route day of a
+  //   doneDays = { "<day 1–30>": "YYYY-MM-DD" } route days completed (that date).  skipDays = same shape: days the user marked 已學過 (路線地圖);
+  //   promptSeen = the one-time 主頁 prompt about the route has been answered or the route was started.  The route day of a
   //   calendar day is fixed in daily.days[date].routeDay; one new route day unlocks per calendar day.
   function defaultPath() {
-    return { mode: "free", start: 1, doneDays: {} };
+    return { mode: "free", start: 1, doneDays: {}, skipDays: {}, promptSeen: false };
   }
 
   // backup (進度備份): lastExportAt = ISO time of the last 匯出 (shown in 設定; the
@@ -243,7 +244,7 @@ window.App = window.App || {};
       if (!daily[k] || typeof daily[k] !== "object" || Array.isArray(daily[k])) daily[k] = {};
     });
     if (!(daily.cursor >= 0)) daily.cursor = 0;
-    const path = { mode: "free", start: 1, doneDays: {} };
+    const path = { mode: "free", start: 1, doneDays: {}, skipDays: {}, promptSeen: false };
     if (parsed.path && typeof parsed.path === "object" && !Array.isArray(parsed.path)) {
       if (parsed.path.mode === "route") path.mode = "route";
       if (Number.isInteger(parsed.path.start) && parsed.path.start >= 1 && parsed.path.start <= 30) path.start = parsed.path.start;
@@ -251,6 +252,13 @@ window.App = window.App || {};
       if (dd && typeof dd === "object" && !Array.isArray(dd)) {
         Object.keys(dd).forEach((k) => /^([1-9]|[12]\d|30)$/.test(k) && typeof dd[k] === "string" && /^\d{4}-\d{2}-\d{2}$/.test(dd[k]) && (path.doneDays[k] = dd[k]));
       }
+      for (const field of ["skipDays"]) {
+        const m = parsed.path[field];
+        if (m && typeof m === "object" && !Array.isArray(m)) {
+          Object.keys(m).forEach((k) => /^([1-9]|[12]\d|30)$/.test(k) && typeof m[k] === "string" && /^\d{4}-\d{2}-\d{2}$/.test(m[k]) && (path[field][k] = m[k]));
+        }
+      }
+      if (parsed.path.promptSeen === true) path.promptSeen = true;
     }
     const backup = {
       lastExportAt: parsed.backup && typeof parsed.backup.lastExportAt === "string" && parsed.backup.lastExportAt.length <= 40 ? parsed.backup.lastExportAt : null,
@@ -561,6 +569,8 @@ window.App = window.App || {};
       mode: rp.mode === "route" ? "route" : "free",
       start: isInt(rp.start, 1, 30) ? rp.start : 1,
       doneDays: cleanMap(rp.doneDays, (v) => (isDate(v) ? v : undefined), (k) => /^([1-9]|[12]\d|30)$/.test(k)),
+      skipDays: cleanMap(rp.skipDays, (v) => (isDate(v) ? v : undefined), (k) => /^([1-9]|[12]\d|30)$/.test(k)),
+      promptSeen: rp.promptSeen === true,
     };
     out.backup = { lastExportAt: raw.backup && isShortStr(raw.backup.lastExportAt) ? raw.backup.lastExportAt : null };
     return out;

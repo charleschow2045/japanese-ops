@@ -68,6 +68,17 @@ window.App = window.App || {};
     render({ scrollTop: true });
   }
 
+  // 主頁 prompt → the 路線 起點 screen (the prompt is answered by looking).
+  function openRoute() {
+    state = Daily.dismissPrompt(state);
+    Storage.saveState(state);
+    nav.view = "daily";
+    nav.task = null;
+    Daily.reset();
+    Daily.openStart();
+    render({ scrollTop: true });
+  }
+
   function openModule(key) {
     nav.view = key;
     nav.task = null;
@@ -324,7 +335,7 @@ window.App = window.App || {};
       );
     } else {
       nav.view = "home";
-      content = Home.render(state, openModule);
+      content = Home.render(state, openModule, { onOpenRoute: openRoute, onDismiss: () => setState(Daily.dismissPrompt) });
     }
 
     mainEl.replaceChildren(content);

@@ -80,11 +80,25 @@ window.App = window.App || {};
     );
   }
 
-  function render(state, onOpenModule) {
+  // One-time prompt about the 30 日入門路線 (see Daily.showPrompt): 看看 opens the 起點 screen,
+  // 之後再說 hides it for good (it is also hidden once the route was started).
+  function routePrompt(state, extra) {
+    if (!extra || !window.App.Daily.showPrompt(state)) return null;
+    return h(
+      "div",
+      { class: "card accent route-prompt", style: accentVars("daily") },
+      h("p", { class: "h-heading" }, "🗾 新：30 日入門路線"),
+      h("p", { class: "small muted mt-1" }, "零基礎也可以：每天解鎖一點新內容（五十音、句子、對話），每日任務會跟著路線出題。已經學過的，可以從中途開始。"),
+      h("div", { class: "row-sm" }, inkButton("看看", extra.onOpenRoute, { accent: true, class: "grow" }), h("button", { class: "btn-soft grow", onclick: extra.onDismiss }, "之後再說"))
+    );
+  }
+
+  function render(state, onOpenModule, extra) {
     return h(
       "div",
       { class: "stack-lg" },
       todayBlock(state, () => onOpenModule("daily")),
+      routePrompt(state, extra),
       GROUPS.map((g) =>
         h(
           "section",

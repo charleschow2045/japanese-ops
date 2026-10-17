@@ -1152,3 +1152,29 @@ body::before {
 .route-dot.today { background: var(--a-tint); outline: 2.5px solid var(--a-solid); outline-offset: 1px; }
 .route-dot.skip { opacity: 0.4; }
 .route-card .rules { margin-top: 4px; }
+
+/* ── 路線地圖、今日新字課、首次提示卡 (stage 10 版本二) ── */
+.route-dot.skipped { background: var(--gold); }
+.route-row { padding: 0; overflow: hidden; }
+.route-row.st-before { opacity: 0.6; }
+.route-row-head { width: 100%; min-height: 56px; display: flex; align-items: center; gap: 12px; padding: 10px 14px; text-align: left; }
+.route-n { flex-shrink: 0; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: var(--font-stamp); font-weight: 700; background: var(--a-tint); color: var(--a-dark); border: 2px solid var(--a-border); }
+.route-row.st-done .route-n { background: var(--good-solid); border-color: var(--good); color: #fff; }
+.route-row.st-today .route-n { border-color: var(--a-solid); }
+.route-title { display: block; font-weight: 800; line-height: 1.3; }
+.block { display: block; }
+.route-st { flex-shrink: 0; font-size: 0.75rem; font-weight: 800; padding: 3px 10px; border-radius: 999px; background: var(--a-tint); color: var(--a-dark); border: 1px solid var(--a-border); }
+.route-st.done { background: var(--good-tint); color: var(--good); border-color: var(--good-solid); }
+.route-st.today { background: var(--a-solid); color: var(--a-on); border-color: var(--a-solid); }
+.route-st.locked, .route-st.before { background: transparent; color: var(--muted); }
+.route-detail { padding: 0 14px 14px; }
+.route-sentences { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 8px; }
+.route-sentences li { font-weight: 700; }
+.lesson-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.lesson-card { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 12px 8px; border-radius: 18px; background: var(--paper-card); color: var(--ink); border: 2px solid var(--a-border); box-shadow: 0 3px 0 var(--a-border); text-align: center; }
+.lesson-card:active { transform: translateY(2px); }
+.lesson-ch { font-size: 2.6rem; line-height: 1.15; }
+.lesson-rom { font-weight: 800; font-size: 1.05rem; color: var(--a-dark); }
+.lesson-yue { font-size: 0.8rem; font-weight: 700; color: var(--muted); }
+.lesson-note { font-size: 0.75rem; font-weight: 700; color: var(--muted); line-height: 1.4; margin-top: 4px; }
+.route-prompt .row-sm { margin-top: 12px; }
