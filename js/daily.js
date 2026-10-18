@@ -19,6 +19,8 @@
 // calendar day (at most one per day).  The 自由模式 above is the default and is unchanged.
 // 版本二: 路線地圖 (every day, 標記為已學過), 今日新字課 (kana cards before the ⑤ quiz) and a one-time
 // 主頁 prompt (see home.js).
+// 版本三: 今日延伸 are links (back returns to the page they were on), a 結業 card with the numbers so far (and
+// 重新開始路線), the 進度頁 route section, and days 29–30 practise the 必學 30 句 not yet 熟練.
 //
 // The sessions themselves are the existing 聽力／口語／對話 screens: this
 // module only decides what to ask and hands a "task" spec to app.js
@@ -38,11 +40,18 @@ window.App = window.App || {};
   // view: "list" | "learn" | "routeStart" (choose where the 30 日入門路線 starts); pick = the day chosen there
   // map = "routeMap" (路線地圖: `open` = the expanded day, `confirmSkip` = a day waiting for 確定略過);
   // "kanaLesson" = 今日新字課
-  const ui = { view: "list", pick: null, open: null, confirmSkip: null };
+  const ui = { view: "list", pick: null, open: null, confirmSkip: null, confirmRestart: false };
   function reset() {
     ui.view = "list";
     ui.pick = null;
     ui.open = null;
+    ui.confirmSkip = null;
+    ui.confirmRestart = false;
+  }
+  // Open the 路線地圖 directly (進度頁 button, 今日延伸 return).
+  function openMap(open) {
+    ui.view = "routeMap";
+    ui.open = open || null;
     ui.confirmSkip = null;
   }
   // Open the 起點 screen directly (主頁 prompt).
@@ -148,13 +157,22 @@ window.App = window.App || {};
     return order.find((id) => id !== avoid) || order[0] || null;
   }
 
+  // Days 29–30 teach nothing new: ③ practises the 必學 30 句 (the ones you say) that are not 熟練 yet,
+  // then the usual choice fills up.
+  function pickSpeakMust(state, allowed) {
+    const must = (window.App.Content.MUST_HAVE || []).map(byId).filter((x) => x && x.mine && !state.flags.includes(x.p.id) && statusOf(state, x) !== "mastered");
+    const ids = shuffle(must).slice(0, SPEAK_COUNT).map((x) => x.p.id);
+    const rest = pickSpeak(state, [], allowed).filter((id) => !ids.includes(id));
+    return ids.concat(rest).slice(0, SPEAK_COUNT);
+  }
+
   function makeRoutePlan(state, today, n) {
     const d = routeDayOf(n);
     const yesterday = state.daily.days[Storage.addDaysLocal(today, -1)];
     return {
       routeDay: n,
       newIds: d.sentences.filter((id) => !!byId(id)),
-      speakIds: pickSpeak(state, d.sentences, routeKnownIds(n)),
+      speakIds: d.day >= 29 ? pickSpeakMust(state, routeKnownIds(n)) : pickSpeak(state, d.sentences, routeKnownIds(n)),
       dialogueId: routeDialogue(state, n, yesterday && yesterday.dialogueId),
       kanaChars: routeKanaPlan(state, n),
       due0: { l: window.App.Listening.dueCount(state), s: window.App.Speaking.dueCount(state) },
@@ -493,6 +511,104 @@ window.App = window.App || {};
 
   // ── 路線 card (top of 今日任務) and 起點 screen ──────────────────────
 
+  // 今日延伸 as links: `go` is opened by app.js (openExtra); 返回 there comes back to this page.
+  function extraList(ctx, extras) {
+    return h(
+      "ul",
+      { class: "extras" },
+      extras.map((x) =>
+        h("li", null, x.go && ctx.onOpenExtra ? h("button", { class: "extra-link", onclick: () => ctx.onOpenExtra(x.go, { view: ui.view, open: ui.open }) }, `${x.text} ›`) : x.text)
+      )
+    );
+  }
+
+  // The 30 dots: done (green), skipped (gold), today (outlined), before the start (faint).
+  function routeDots(state, todayDay) {
+    const p = state.path;
+    const skipped = p.skipDays || {};
+    const doneN = Object.keys(p.doneDays).length;
+    const total = routeDays().length;
+    return h(
+      "div",
+      { class: "route-dots", role: "img", "aria-label": `路線進度：已完成 ${doneN} / ${total} 天` },
+      routeDays().map((d) => h("span", { class: `route-dot${p.doneDays[d.day] ? " done" : skipped[d.day] ? " skipped" : ""}${d.day === todayDay ? " today" : ""}${d.day < p.start && !p.doneDays[d.day] && !skipped[d.day] ? " skip" : ""}` }))
+    );
+  }
+
+  // The numbers shown on the 結業 card and in the 進度頁 route section.
+  function routeStatsList(state) {
+    const st = window.App.Progress.routeStats(state);
+    return h(
+      "ul",
+      { class: "route-stats" },
+      h("li", null, `📌 必學 30 句：熟練 ${st.must.mastered} / ${st.must.total}`),
+      h("li", null, `あ 五十音掌握：平假名 ${st.hira.done} / ${st.hira.total}・片假名 ${st.kata.done} / ${st.kata.total}`),
+      h("li", null, `💬 句子熟練：${st.sentences.mastered} / ${st.sentences.all}`),
+      h("li", null, `🛎️ 情境對話：已玩 ${st.dialogues.played} / ${st.dialogues.total}`, h("span", { class: "xs muted" }, "　藥妝店對話不在路線內"))
+    );
+  }
+
+  // 重新開始路線: clears the done / skipped days and starts again at day 1 (statuses of sentences and kana stay).
+  function restartConfirm(ctx) {
+    return h(
+      "div",
+      { class: "confirm mt-3" },
+      h("p", { class: "mb-3" }, "確定重新開始？完成和略過的天數會清除，從第 1 天重來；句子和五十音的熟練狀態不變。"),
+      h(
+        "div",
+        { class: "row-sm" },
+        h("button", { class: "btn-plain grow", onclick: () => ((ui.confirmRestart = false), ctx.rerender()) }, "取消"),
+        inkButton(
+          "確定重新開始",
+          () => {
+            ui.confirmRestart = false;
+            ui.view = "list";
+            ctx.onUpdate((s) => applyPath(s, { mode: "route", start: 1, doneDays: {}, skipDays: {} }));
+            window.App.Speech.toast("路線已重新開始：第 1 天");
+            ctx.rerender({ scrollTop: true });
+          },
+          { class: "grow" }
+        )
+      )
+    );
+  }
+
+  // All 30 days are done or skipped.
+  function finishCard(ctx) {
+    const { state } = ctx;
+    const p = state.path;
+    const total = routeDays().length;
+    const doneN = Object.keys(p.doneDays).length;
+    const skipN = Object.keys(p.skipDays || {}).length;
+    const mapBtn = h("button", { class: "btn-soft w-full", onclick: () => ((ui.view = "routeMap"), (ui.open = null), ctx.rerender({ scrollTop: true })) }, "📍 路線地圖");
+    return h(
+      "div",
+      { class: "card accent route-card route-finish" },
+      window.App.Feedback.hero(1, 1),
+      h("p", { class: "h-heading center" }, "🎉 30 日入門路線結業"),
+      h("p", { class: "small center mt-1" }, `共 ${total} 天：完成 ${doneN} 天${skipN ? `、略過 ${skipN} 天` : ""}`),
+      routeStatsList(state),
+      p.mode === "route" && h("p", { class: "xs muted mt-2" }, "現在的每日任務使用自由模式的選題。"),
+      ui.confirmRestart
+        ? restartConfirm(ctx)
+        : h(
+            "div",
+            { class: "mt-3 stack-sm" },
+            p.mode === "route" &&
+              inkButton(
+                "回到自由模式",
+                () => {
+                  ctx.onUpdate((s) => applyPath(s, { mode: "free" }));
+                  window.App.Speech.toast("已回到自由模式");
+                },
+                { accent: true, class: "w-full" }
+              ),
+            mapBtn,
+            h("button", { class: "btn-soft w-full", onclick: () => ((ui.confirmRestart = true), ctx.rerender()) }, "重新開始路線")
+          )
+    );
+  }
+
   function routeCard(ctx, rd) {
     const { state } = ctx;
     const p = state.path;
@@ -524,6 +640,8 @@ window.App = window.App || {};
       )
     );
 
+    const next = nextRouteDay(state);
+    if (next === null && doneN + skipN > 0) return finishCard(ctx);
     if (p.mode !== "route") {
       return h(
         "div",
@@ -535,7 +653,6 @@ window.App = window.App || {};
         doneN + skipN > 0 && mapBtn("w-full mt-2")
       );
     }
-    const next = nextRouteDay(state);
     if (!rd) {
       // route is on but today's plan is not a route day: finished, or switched on after answering today
       return h(
@@ -569,7 +686,7 @@ window.App = window.App || {};
       ),
       kanaLine && h("p", { class: "small mt-3" }, kanaLine),
       rd.extras.length > 0 &&
-        h("div", { class: "mt-2" }, h("p", { class: "xs muted" }, "今日延伸（可選，不算任務）"), h("ul", { class: "rules" }, rd.extras.map((t) => h("li", null, t)))),
+        h("div", { class: "mt-2" }, h("p", { class: "xs muted" }, "今日延伸（可選，不算任務）"), extraList(ctx, rd.extras)),
       finished
         ? h("p", { class: "note gold mt-3" }, rd.day < total ? `🎉 第 ${rd.day} 天完成！第 ${rd.day + 1} 天會在明天解鎖。` : "🎉 30 日入門路線全部完成！")
         : h("p", { class: "xs muted mt-3" }, `完成「新句子」「口語」「五十音」三項，就完成第 ${rd.day} 天；第 ${rd.day + 1 <= total ? rd.day + 1 : rd.day} 天會在明天解鎖。`),
@@ -618,7 +735,7 @@ window.App = window.App || {};
               d.sentences.length > 0 && h("p", { class: "caption mt-2" }, `新句子（${d.sentences.length} 句）`),
               d.sentences.length > 0 && h("ul", { class: "route-sentences" }, d.sentences.map(sentenceRow)),
               dlg && h("p", { class: "small mt-2" }, `新對話：${dlg.emoji} ${dlg.title}`),
-              d.extras.length > 0 && h("div", { class: "mt-2" }, h("p", { class: "caption" }, "今日延伸"), h("ul", { class: "rules" }, d.extras.map((t) => h("li", null, t)))),
+              d.extras.length > 0 && h("div", { class: "mt-2" }, h("p", { class: "caption" }, "今日延伸"), extraList(ctx, d.extras)),
             ],
         st === "done" && h("p", { class: "xs muted mt-2" }, `完成日期：${p.doneDays[d.day]}`),
         st === "skipped" &&
@@ -835,6 +952,9 @@ window.App = window.App || {};
               ]
         ),
       inkButton(resume ? `從第 ${resume} 天開始` : "請先選擇起點", confirm, { accent: true, class: "w-full", disabled: !pick || resume === null })
+      ,
+      doneN + Object.keys(p.skipDays || {}).length > 0 &&
+        (ui.confirmRestart ? restartConfirm(ctx) : h("button", { class: "btn-plain w-full", onclick: () => ((ui.confirmRestart = true), ctx.rerender()) }, "重新開始路線（清除完成與略過紀錄）"))
     );
   }
 
@@ -1049,6 +1169,9 @@ window.App = window.App || {};
     syncRoute,
     skipRouteDay,
     unskipRouteDay,
+    openMap,
+    routeDots,
+    routeStatsList,
     showPrompt,
     dismissPrompt,
     openStart,

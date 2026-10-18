@@ -1,5 +1,5 @@
-// 30 日入門路線（stage 10，版本一＋二）：30 天資料、主頁一次性提示、起點選擇、路線模式的每日任務、一個日曆日最多解鎖一天、
-// 路線地圖與「標記為已學過」、今日新字課、備份、舊存檔。
+// 30 日入門路線（stage 10，版本一＋二＋三）：30 天資料、主頁一次性提示、起點選擇、路線模式的每日任務、一個日曆日最多解鎖一天、
+// 路線地圖與「標記為已學過」、今日新字課、今日延伸連結（返回原頁）、結業卡、重新開始路線、進度頁路線區、第 29–30 天口語、備份、舊存檔。
 const { chromium, BASE, CHROME } = require('./lib');
 const assert = (c, m) => { if (!c) { console.log('FAIL', m); process.exitCode = 1; } else console.log('ok  ', m); };
 (async () => {
@@ -191,7 +191,104 @@ const assert = (c, m) => { if (!c) { console.log('FAIL', m); process.exitCode = 
   await pg.locator('#main .btn-back').click();
   await pg.getByRole('button', { name: '回到自由模式' }).click();
   s = await st();
-  assert(s.path.mode === 'free' && (await pg.getByRole('button', { name: '開始路線' }).count()) === 1, '回到自由模式：入口卡回來，任務回到自由選題');
+  assert(s.path.mode === 'free' && (await pg.getByRole('button', { name: /開始路線|繼續路線/ }).count()) === 1, '回到自由模式：入口卡回來，任務回到自由選題');
+
+  // ── 版本三：今日延伸連結、結業卡、重新開始路線、進度頁路線區、第 29–30 天口語 ──
+  const seed = async (path) => {
+    await pg.evaluate((p) => {
+      const S = App.Storage; const x = S.loadState(); const d = { ...x.daily, days: { ...x.daily.days } };
+      delete d.days[S.todayLocal()];
+      localStorage.setItem('japaneseOps:v1', JSON.stringify({ ...x, daily: d, path: p }));
+    }, path);
+    await pg.reload();
+  };
+  const upTo = (n, date) => Object.fromEntries(Array.from({ length: n }, (_, i) => [i + 1, date || '2026-01-01']));
+  const openDaily = async () => { await pg.locator('#main button', { hasText: /開始今日任務|繼續：/ }).first().click(); };
+  const tab = (name) => pg.locator('.tab-label', { hasText: name }).click();
+
+  // 今日延伸連結（第 3 天：數字）→ 返回回到每日任務
+  await seed({ mode: 'route', start: 1, doneDays: upTo(2), skipDays: {}, promptSeen: true });
+  await openDaily();
+  assert((await pg.locator('#main .extra-link').count()) >= 1 && (await main()).includes('🗾 路線第 3 / 30 天'), '今日延伸是連結（第 3 天）');
+  await pg.locator('#main .extra-link').first().click();
+  assert(!(await main()).includes('今日延伸'), '按延伸連結：打開目標模組（數字）');
+  await pg.locator('#main .btn-back').first().click();
+  assert((await main()).includes('🗾 路線第 3 / 30 天') && (await main()).includes('今日延伸'), '從路線卡進去，← 返回回到每日任務');
+
+  // 路線地圖展開同一日 → 延伸連結 → 返回仍然係路線地圖、同一日展開
+  await pg.getByRole('button', { name: '📍 路線地圖' }).click();
+  await pg.locator('#main .route-row').nth(2).locator('.route-row-head').click();
+  assert((await pg.locator('#main .route-row.open .extra-link').count()) >= 1, '地圖展開第 3 天（今天）：有延伸連結');
+  await pg.locator('#main .route-row.open .extra-link').first().click();
+  await pg.locator('#main .btn-back').first().click();
+  assert((await main()).includes('路線地圖') && (await pg.locator('#main .route-row.open').count()) === 1 && (await pg.locator('#main .route-row').nth(2).getAttribute('class')).includes('open'), '從路線地圖進去，← 返回回到路線地圖並展開同一天');
+  await pg.locator('#main .btn-back').first().click(); // 地圖 → 每日任務
+  assert((await main()).includes('🗾 路線第 3 / 30 天'), '路線地圖 ← 返回：每日任務');
+
+  // 結業卡（28 完成 + 2 略過）
+  await seed({ mode: 'route', start: 1, doneDays: upTo(28), skipDays: { 29: '2026-01-02', 30: '2026-01-02' }, promptSeen: true });
+  await openDaily();
+  let fin = await main();
+  assert(fin.includes('30 日入門路線結業') && fin.includes('完成 28 天') && fin.includes('略過 2 天'), '結業卡：完成 28 天、略過 2 天');
+  assert(/情境對話：已玩 \d+ ?\/ ?10/.test(fin.replace(/\s+/g, ' ')) && fin.includes('藥妝店對話不在路線內'), '結業卡：「情境對話已玩 x/10」旁有「藥妝店對話不在路線內」');
+  assert(fin.includes('必學 30 句') && fin.includes('五十音掌握') && fin.includes('句子熟練'), '結業卡：必學 30 句、五十音、句子熟練統計');
+  assert((await pg.getByRole('button', { name: '回到自由模式' }).count()) === 1 && (await pg.getByRole('button', { name: '重新開始路線' }).count()) === 1, '結業卡（路線模式）：有「回到自由模式」和「重新開始路線」');
+
+  // 重新開始路線：先取消，再確定
+  await pg.getByRole('button', { name: '重新開始路線' }).click();
+  assert((await main()).includes('確定重新開始？'), '重新開始路線：先出確認');
+  await pg.getByRole('button', { name: '取消' }).click();
+  s = await st();
+  assert(Object.keys(s.path.doneDays).length === 28 && (await main()).includes('30 日入門路線結業'), '取消：路線紀錄不變，仍是結業卡');
+  await pg.getByRole('button', { name: '重新開始路線' }).click();
+  await pg.getByRole('button', { name: '確定重新開始' }).click();
+  s = await st();
+  assert(s.path.mode === 'route' && s.path.start === 1 && Object.keys(s.path.doneDays).length === 0 && Object.keys(s.path.skipDays).length === 0, '確定重新開始：doneDays／skipDays 清空、從第 1 天');
+
+  // 結業後回到自由模式 → 卡只有兩個掣
+  await seed({ mode: 'free', start: 1, doneDays: upTo(28), skipDays: { 29: '2026-01-02', 30: '2026-01-02' }, promptSeen: true });
+  await openDaily();
+  fin = await main();
+  assert(fin.includes('30 日入門路線結業') && (await pg.getByRole('button', { name: '回到自由模式' }).count()) === 0 && (await pg.getByRole('button', { name: '重新開始路線' }).count()) === 1 && (await pg.getByRole('button', { name: '📍 路線地圖' }).count()) === 1, '結業後自由模式：只有「路線地圖」「重新開始路線」兩個掣');
+  await pg.locator('#main .btn-back').first().click();
+
+  // 路線起點畫面：有進度時有「重新開始路線」
+  await seed({ mode: 'free', start: 1, doneDays: upTo(3), skipDays: {}, promptSeen: true });
+  await openDaily();
+  await pg.getByRole('button', { name: /開始路線|繼續路線/ }).first().click();
+  assert((await pg.getByRole('button', { name: /重新開始路線/ }).count()) === 1, '起點畫面（有進度）：有「重新開始路線」');
+
+  // 進度頁路線區：未開始 → 沒有；進行中；自由模式有進度；結業
+  await seed({ mode: 'free', start: 1, doneDays: {}, skipDays: {}, promptSeen: true });
+  await tab('進度');
+  assert((await pg.getByRole('button', { name: '📍 路線地圖' }).count()) === 0 && !(await main()).includes('30 日入門路線'), '進度頁：未開始路線 → 不顯示路線區');
+  await seed({ mode: 'route', start: 1, doneDays: upTo(4), skipDays: { 5: '2026-01-02' }, promptSeen: true });
+  await tab('進度');
+  let pgT = await main();
+  assert(pgT.includes('已完成 4 天') && pgT.includes('略過 1 天') && (await pg.getByRole('button', { name: '📍 路線地圖' }).count()) === 1, '進度頁：進行中（已完成 4 天、略過 1 天、有路線地圖掣）');
+  await pg.getByRole('button', { name: '📍 路線地圖' }).click();
+  assert((await main()).includes('路線地圖') && (await pg.locator('#main .route-row').count()) === 30, '進度頁「路線地圖」掣：打開 30 行路線地圖');
+  await seed({ mode: 'free', start: 1, doneDays: upTo(4), skipDays: {}, promptSeen: true });
+  await tab('進度');
+  assert((await main()).includes('自由模式') && (await pg.getByRole('button', { name: '📍 路線地圖' }).count()) === 1, '進度頁：自由模式但有進度 → 顯示路線區（自由模式）');
+  await seed({ mode: 'route', start: 1, doneDays: upTo(30), skipDays: {}, promptSeen: true });
+  await tab('進度');
+  assert((await main()).includes('已結業') && (await main()).includes('藥妝店對話不在路線內'), '進度頁：結業顯示「已結業」和統計');
+
+  // 第 29–30 天口語：優先必學 30 句（未熟練的）
+  const sp = await pg.evaluate(() => {
+    const S = App.Storage, D = App.Daily, M = new Set(App.Content.MUST_HAVE);
+    const out = {};
+    for (const n of [29, 30]) {
+      const x = S.loadState();
+      const days = { ...x.daily.days }; delete days[S.todayLocal()];
+      const st = D.ensureToday({ ...x, daily: { ...x.daily, days }, path: { mode: 'route', start: n, doneDays: {}, skipDays: {}, promptSeen: true } });
+      const plan = st.daily.days[S.todayLocal()];
+      out[n] = { day: plan.routeDay, n: plan.speakIds.length, allMust: plan.speakIds.every((id) => M.has(id)) };
+    }
+    return out;
+  });
+  assert(sp[29].day === 29 && sp[30].day === 30 && sp[29].n > 0 && sp[30].n > 0 && sp[29].allMust && sp[30].allMust, '第 29／30 天口語：全部係必學 30 句（未熟練）');
 
   // ── 備份與舊存檔 ──
   const bk = await pg.evaluate(() => {

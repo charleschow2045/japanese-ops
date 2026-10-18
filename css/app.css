@@ -1178,3 +1178,10 @@ body::before {
 .lesson-yue { font-size: 0.8rem; font-weight: 700; color: var(--muted); }
 .lesson-note { font-size: 0.75rem; font-weight: 700; color: var(--muted); line-height: 1.4; margin-top: 4px; }
 .route-prompt .row-sm { margin-top: 12px; }
+
+/* ── 路線：今日延伸連結、結業卡 (stage 10 版本三) ── */
+.extras { list-style: none; margin: 4px 0 0; padding: 0; }
+.extra-link { display: flex; align-items: center; width: 100%; min-height: 44px; padding: 6px 0; text-align: left; font-weight: 700; color: var(--a-dark); text-decoration: underline; text-underline-offset: 3px; }
+.route-finish .result-hero { margin-bottom: 4px; }
+.route-stats { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 8px; font-weight: 700; }
+.route-stats li { line-height: 1.5; }

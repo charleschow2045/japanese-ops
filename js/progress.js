@@ -265,11 +265,51 @@ window.App = window.App || {};
     return h("div", { class: "note gold" }, h("p", null, `💾 ${text}`), ctx.onOpenBackup && h("button", { class: "btn-soft w-full mt-2", onclick: ctx.onOpenBackup }, "前往進度備份"));
   }
 
-  // ctx: { state, onOpenBackup }
-  function render(ctx) {
-    const { state } = ctx;
-    return h("div", { class: "stack-lg" }, h("h2", { class: "h-display" }, "進度"), backupNudge(ctx), overview(state), weekChart(state), kanaSection(state), phraseSection(state), dialogueSection(state), reviewSection(state));
+  // The numbers behind the 結業 card (js/daily.js) and the route section below.
+  function routeStats(state) {
+    const k = kanaCounts(state);
+    const sc = sentenceCounts(state);
+    const list = window.App.Content.DIALOGUES;
+    return {
+      must: Daily.mustCounts(state),
+      hira: k.hira,
+      kata: k.kata,
+      sentences: { mastered: sc.total.mastered, all: sc.total.all },
+      dialogues: { played: list.filter((d) => state.dialogue.stats[d.id] && state.dialogue.stats[d.id].plays > 0).length, total: list.length },
+    };
   }
 
-  window.App.Progress = { render, summary };
+  // 30 日入門路線: only shown once the route was started (or has any done / skipped day).
+  function routeSection(ctx) {
+    const { state } = ctx;
+    const p = state.path;
+    const doneN = Object.keys(p.doneDays).length;
+    const skipN = Object.keys(p.skipDays || {}).length;
+    if (p.mode !== "route" && doneN + skipN === 0) return null;
+    const total = Daily.routeDays().length;
+    const next = Daily.nextRouteDay(state);
+    const plan = state.daily.days[Storage.todayLocal()];
+    const todayDay = p.mode === "route" && plan && plan.routeDay ? plan.routeDay : null;
+    const rd = Daily.routeDayOf(todayDay || next || 0);
+    return section(
+      "🗾 30 日入門路線",
+      "daily",
+      next === null
+        ? [h("p", { class: "small mb-2" }, "🎉 已結業"), Daily.routeStatsList(state)]
+        : [
+            h("p", { class: "small" }, rd ? `第 ${rd.day} / ${total} 天・${rd.title}` : `共 ${total} 天`),
+            Daily.routeDots(state, todayDay),
+            h("p", { class: "xs muted mt-2" }, `已完成 ${doneN} 天${skipN ? `・略過 ${skipN} 天` : ""}${p.mode === "route" ? "" : "・目前是自由模式"}`),
+          ],
+      ctx.onOpenRouteMap && h("button", { class: "btn-soft w-full mt-3", onclick: ctx.onOpenRouteMap }, "📍 路線地圖")
+    );
+  }
+
+  // ctx: { state, onOpenBackup, onOpenRouteMap }
+  function render(ctx) {
+    const { state } = ctx;
+    return h("div", { class: "stack-lg" }, h("h2", { class: "h-display" }, "進度"), backupNudge(ctx), overview(state), routeSection(ctx), weekChart(state), kanaSection(state), phraseSection(state), dialogueSection(state), reviewSection(state));
+  }
+
+  window.App.Progress = { render, summary, routeStats };
 })();

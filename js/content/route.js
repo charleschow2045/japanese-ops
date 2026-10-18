@@ -6,7 +6,9 @@
 //   review     "hira" | "kata" | null — a kana review day (no new characters)
 //   sentences  句子庫 ids taught that day (the 今日新句子 task)
 //   dialogue   id of the 情境對話 unlocked that day, or null
-//   extras     optional 「今日延伸」 lines (not tasks)
+//   extras     optional 「今日延伸」 links, { text, go } — not tasks. go = where the link opens:
+//              numbers | kana:lookalike | kana:contrast | kana:sounds | kana:examples | show |
+//              phrases:must | backup | settings (see openExtra in js/app.js)
 // Days without `kana` or `review` (18+) keep the normal 五十音熱身 on the characters learnt so far.
 // All Japanese comes from the 句子庫; the 免稅 sentences and the 藥妝店對話 are left out on purpose
 // (the 免稅 rules change on 2026-11-01).
@@ -40,7 +42,7 @@ window.App.Content = window.App.Content || {};
       review: null,
       sentences: ["polite-12", "polite-13", "polite-14", "polite-15", "polite-16"],
       dialogue: null,
-      extras: ["數字・價錢：讀音表「基本數字 0–10」"],
+      extras: [{ text: "數字・價錢：讀音表「基本數字 0–10」", go: "numbers" }],
     },
     {
       day: 4,
@@ -58,7 +60,7 @@ window.App.Content = window.App.Content || {};
       review: null,
       sentences: ["polite-03", "polite-20", "polite-26", "polite-21", "polite-22"],
       dialogue: null,
-      extras: ["五十音：相似字分辨（平假名）", "數字・價錢：讀音表「11–99」"],
+      extras: [{ text: "五十音：相似字分辨（平假名）", go: "kana:lookalike" }, { text: "數字・價錢：讀音表「11–99」", go: "numbers" }],
     },
     {
       day: 6,
@@ -67,7 +69,7 @@ window.App.Content = window.App.Content || {};
       review: null,
       sentences: ["rest-01", "rest-02", "rest-03", "rest-22", "rest-04"],
       dialogue: null,
-      extras: ["五十音：清濁對比", "數字・價錢：讀音表「人數」"],
+      extras: [{ text: "五十音：清濁對比", go: "kana:contrast" }, { text: "數字・價錢：讀音表「人數」", go: "numbers" }],
     },
     {
       day: 7,
@@ -76,7 +78,7 @@ window.App.Content = window.App.Content || {};
       review: null,
       sentences: ["rest-05", "rest-10", "rest-12", "rest-11", "rest-33"],
       dialogue: null,
-      extras: ["五十音：促音・長音", "數字・價錢：讀音表「物品數量」"],
+      extras: [{ text: "五十音：促音・長音", go: "kana:sounds" }, { text: "數字・價錢：讀音表「物品數量」", go: "numbers" }],
     },
     {
       day: 8,
@@ -94,7 +96,7 @@ window.App.Content = window.App.Content || {};
       review: "hira",
       sentences: ["rest-19", "rest-20", "rest-21", "rest-13", "rest-27", "rest-28"],
       dialogue: "ramen",
-      extras: ["指給店員看：試設定「過敏卡」", "五十音：相似字分辨（平假名）"],
+      extras: [{ text: "指給店員看：試設定「過敏卡」", go: "show" }, { text: "五十音：相似字分辨（平假名）", go: "kana:lookalike" }],
     },
     {
       day: 10,
@@ -103,7 +105,7 @@ window.App.Content = window.App.Content || {};
       review: null,
       sentences: ["shop-01", "shop-02", "shop-08", "shop-03", "shop-04"],
       dialogue: null,
-      extras: ["數字・價錢：讀音表「百・千」", "數字聽力：價錢（入門）"],
+      extras: [{ text: "數字・價錢：讀音表「百・千」", go: "numbers" }, { text: "數字聽力：價錢（入門）", go: "numbers" }],
     },
     {
       day: 11,
@@ -121,7 +123,7 @@ window.App.Content = window.App.Content || {};
       review: null,
       sentences: ["shop-13", "shop-16", "shop-17", "shop-18", "shop-20"],
       dialogue: "fastfood",
-      extras: ["數字聽力：價錢（一般）"],
+      extras: [{ text: "數字聽力：價錢（一般）", go: "numbers" }],
     },
     {
       day: 13,
@@ -139,7 +141,7 @@ window.App.Content = window.App.Content || {};
       review: "kata",
       sentences: ["shop-27", "shop-28", "shop-31", "shop-34", "shop-32"],
       dialogue: "conbini",
-      extras: ["五十音：相似字分辨（片假名）", "五十音：片假名實例"],
+      extras: [{ text: "五十音：相似字分辨（片假名）", go: "kana:lookalike" }, { text: "五十音：片假名實例", go: "kana:examples" }],
     },
     {
       day: 15,
@@ -148,7 +150,7 @@ window.App.Content = window.App.Content || {};
       review: null,
       sentences: ["trans-01", "trans-02", "trans-03", "trans-20", "trans-21"],
       dialogue: null,
-      extras: ["數字聽力：月台（番線）"],
+      extras: [{ text: "數字聽力：月台（番線）", go: "numbers" }],
     },
     {
       day: 16,
@@ -157,7 +159,7 @@ window.App.Content = window.App.Content || {};
       review: null,
       sentences: ["trans-22", "trans-23", "trans-04", "trans-05", "trans-24"],
       dialogue: null,
-      extras: ["五十音：片假名實例"],
+      extras: [{ text: "五十音：片假名實例", go: "kana:examples" }],
     },
     {
       day: 17,
@@ -166,7 +168,7 @@ window.App.Content = window.App.Content || {};
       review: null,
       sentences: ["trans-06", "trans-07", "trans-08", "trans-09", "trans-31"],
       dialogue: "station",
-      extras: ["數字・價錢：讀音表「時間（點）」", "數字聽力：時間（入門）"],
+      extras: [{ text: "數字・價錢：讀音表「時間（點）」", go: "numbers" }, { text: "數字聽力：時間（入門）", go: "numbers" }],
     },
     {
       day: 18,
@@ -184,7 +186,7 @@ window.App.Content = window.App.Content || {};
       review: null,
       sentences: ["trans-10", "trans-27", "trans-19", "trans-17", "trans-30"],
       dialogue: "taxi",
-      extras: ["數字・價錢：讀音表「時間（分）」", "數字聽力：分鐘"],
+      extras: [{ text: "數字・價錢：讀音表「時間（分）」", go: "numbers" }, { text: "數字聽力：分鐘", go: "numbers" }],
     },
     {
       day: 20,
@@ -193,7 +195,7 @@ window.App.Content = window.App.Content || {};
       review: null,
       sentences: ["hotel-01", "hotel-02", "hotel-03", "hotel-04", "hotel-21"],
       dialogue: null,
-      extras: ["指給店員看：輸入「酒店資料」"],
+      extras: [{ text: "指給店員看：輸入「酒店資料」", go: "show" }],
     },
     {
       day: 21,
@@ -202,7 +204,7 @@ window.App.Content = window.App.Content || {};
       review: null,
       sentences: ["hotel-06", "hotel-22", "hotel-07", "hotel-24", "hotel-08"],
       dialogue: "hotel",
-      extras: ["數字聽力：時間（一般）"],
+      extras: [{ text: "數字聽力：時間（一般）", go: "numbers" }],
     },
     {
       day: 22,
@@ -220,7 +222,7 @@ window.App.Content = window.App.Content || {};
       review: null,
       sentences: ["dir-12", "dir-13", "dir-06", "dir-07", "dir-20"],
       dialogue: "directions",
-      extras: ["數字聽力：分鐘"],
+      extras: [{ text: "數字聽力：分鐘", go: "numbers" }],
     },
     {
       day: 24,
@@ -229,7 +231,7 @@ window.App.Content = window.App.Content || {};
       review: null,
       sentences: ["emer-01", "emer-02", "emer-12", "emer-15", "emer-18"],
       dialogue: null,
-      extras: ["指給店員看：看一次「緊急情況」類大字卡"],
+      extras: [{ text: "指給店員看：看一次「緊急情況」類大字卡", go: "show" }],
     },
     {
       day: 25,
@@ -238,7 +240,7 @@ window.App.Content = window.App.Content || {};
       review: null,
       sentences: ["emer-05", "emer-06", "emer-09", "emer-10", "emer-36"],
       dialogue: "emergency",
-      extras: ["句子庫：查看「必學 30 句」的進度"],
+      extras: [{ text: "句子庫：查看「必學 30 句」的進度", go: "phrases:must" }],
     },
     {
       day: 26,
@@ -265,7 +267,7 @@ window.App.Content = window.App.Content || {};
       review: null,
       sentences: ["call-01", "call-02", "call-03", "call-04", "call-05"],
       dialogue: null,
-      extras: ["數字聽力：價錢（進階）"],
+      extras: [{ text: "數字聽力：價錢（進階）", go: "numbers" }],
     },
     {
       day: 29,
@@ -274,7 +276,7 @@ window.App.Content = window.App.Content || {};
       review: null,
       sentences: [],
       dialogue: null,
-      extras: ["指給店員看：檢查所有大字卡"],
+      extras: [{ text: "指給店員看：檢查所有大字卡", go: "show" }],
     },
     {
       day: 30,
@@ -283,7 +285,7 @@ window.App.Content = window.App.Content || {};
       review: null,
       sentences: [],
       dialogue: null,
-      extras: ["備份：匯出一份進度備份", "設定：輸入旅行日期（設定 → 學習目標）"],
+      extras: [{ text: "備份：匯出一份進度備份", go: "backup" }, { text: "設定：輸入旅行日期（設定 → 學習目標）", go: "settings" }],
     },
   ];
 

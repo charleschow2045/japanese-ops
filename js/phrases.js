@@ -26,8 +26,19 @@ window.App = window.App || {};
   // view: "scenes" | "scene" | "list" (list: "must" | "favs"); q = search text
   const ui = { view: "scenes", scene: null, filter: "all", list: null, q: "" };
 
+  // Open the 必學 / 收藏 list straight from outside (路線的「今日延伸」連結): its 返回 leaves to where
+  // the user came from (ctx.onBack) instead of to the scene list.
+  function open(which) {
+    ui.view = "list";
+    ui.list = which;
+    ui.scene = null;
+    ui.q = "";
+    ui.direct = true;
+  }
+
   function reset() {
     ui.view = "scenes";
+    ui.direct = false;
     ui.scene = null;
     ui.filter = "all";
     ui.list = null;
@@ -324,6 +335,12 @@ window.App = window.App || {};
       ? mustIds().map(flatById).filter(Boolean)
       : allFlat().filter((x) => favs.includes(x.p.id)); // scene order
     const back = () => {
+      if (ui.direct) {
+        ui.direct = false;
+        ui.list = null;
+        ctx.onBack();
+        return;
+      }
       ui.view = "scenes";
       ui.list = null;
       ctx.rerender({ scrollTop: true });
@@ -383,5 +400,5 @@ window.App = window.App || {};
 
   // One sentence card (日文、假名、拼音、意思、🔊 🐢 🚩, ⭐ when ctx.onToggleFav) — reused by 今日新句子.
   // `search` / `norm` are exposed for the automated tests.
-  window.App.Phrases = { render, reset, countOf, locate, sentenceCard: (p, ctx) => sentence(p, ctx, false), search, norm };
+  window.App.Phrases = { render, reset, open, countOf, locate, sentenceCard: (p, ctx) => sentence(p, ctx, false), search, norm };
 })();

@@ -20,10 +20,34 @@ window.App = window.App || {};
 
   // view: "menu" | "chart" | "see" | "hear" | "examples"
   // quiz: { questions, index, picked, results } while in see/hear
-  const ui = { view: "menu", chartScript: "hira", openId: null, quiz: null, scrollFeedback: false };
+  const ui = { direct: false, view: "menu", chartScript: "hira", openId: null, quiz: null, scrollFeedback: false };
+
+  // Open a sub-screen straight from outside (路線的「今日延伸」連結): its 返回 goes back to where the
+  // user came from (ctx.onBack) instead of to the 五十音 menu.
+  function open(view) {
+    ui.view = view;
+    ui.openId = null;
+    ui.quiz = null;
+    ui.direct = true;
+    if (view === "chart") ui.chartScript = "hira";
+    if (view === "contrast") window.App.Contrast.reset();
+    if (view === "lookalike") window.App.Lookalike.reset();
+  }
+
+  // Leave a sub-screen: to the 五十音 menu, or to the origin when opened with open().
+  function toMenu(ctx) {
+    if (ui.direct) {
+      ui.direct = false;
+      ctx.onBack();
+    } else {
+      ui.view = "menu";
+      ctx.rerender({ scrollTop: true });
+    }
+  }
 
   function reset() {
     ui.view = "menu";
+    ui.direct = false;
     ui.openId = null;
     ui.quiz = null;
   }
@@ -260,10 +284,7 @@ window.App = window.App || {};
     return h(
       "div",
       null,
-      modHeader("字表", () => {
-        ui.view = "menu";
-        ctx.rerender({ scrollTop: true });
-      }),
+      modHeader("字表", () => toMenu(ctx)),
       h(
         "div",
         { class: "chips-fill mb-3" },
@@ -496,10 +517,7 @@ window.App = window.App || {};
     return h(
       "div",
       null,
-      modHeader("片假名實例", () => {
-        ui.view = "menu";
-        ctx.rerender({ scrollTop: true });
-      }),
+      modHeader("片假名實例", () => toMenu(ctx)),
       window.App.Help.card("kata"),
       h(
         "p",
@@ -666,20 +684,11 @@ window.App = window.App || {};
     else if ((ui.view === "see" || ui.view === "hear") && ui.quiz) main = kanaQuiz(ctx);
     else if (ui.view === "examples") main = katakanaExamples(ctx);
     else if (ui.view === "sounds")
-      main = window.App.Sounds.render(ctx, () => {
-        ui.view = "menu";
-        ctx.rerender({ scrollTop: true });
-      });
+      main = window.App.Sounds.render(ctx, () => toMenu(ctx));
     else if (ui.view === "contrast")
-      main = window.App.Contrast.render(ctx, () => {
-        ui.view = "menu";
-        ctx.rerender({ scrollTop: true });
-      });
+      main = window.App.Contrast.render(ctx, () => toMenu(ctx));
     else if (ui.view === "lookalike")
-      main = window.App.Lookalike.render(ctx, () => {
-        ui.view = "menu";
-        ctx.rerender({ scrollTop: true });
-      });
+      main = window.App.Lookalike.render(ctx, () => toMenu(ctx));
     else {
       ui.view = "menu";
       main = kanaMenu(ctx);
@@ -690,5 +699,5 @@ window.App = window.App || {};
 
   // `helpers` are shared with js/contrast.js (清濁對比) so both screens
   // display romaji / 廣東話近似讀音 / speak buttons identically.
-  window.App.KanaModule = { render, reset, helpers: { shuffle, romajiText, yueLine, speakButton, otherScript, pickDistractors, QUIZ_LENGTH } };
+  window.App.KanaModule = { render, reset, open, helpers: { shuffle, romajiText, yueLine, speakButton, otherScript, pickDistractors, QUIZ_LENGTH } };
 })();

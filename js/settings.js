@@ -40,7 +40,8 @@ window.App = window.App || {};
         onBack: () => {
           view = "main";
           window.App.Backup.reset();
-          ctx.rerender({ scrollTop: true });
+          if (ctx.onExit) ctx.onExit(); // opened from a 路線 link: back to that page
+          else ctx.rerender({ scrollTop: true });
         },
       });
     }

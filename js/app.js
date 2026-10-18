@@ -14,7 +14,7 @@ window.App = window.App || {};
   ];
 
   let state = Storage.loadState();
-  const nav = { tab: "home", view: "home", task: null }; // view = screen inside the 主頁 tab; task = 每日任務 session in progress
+  const nav = { tab: "home", view: "home", task: null, ret: null }; // view = screen inside the 主頁 tab; task = 每日任務 session in progress
   let taskSeq = 0;
 
   const mainEl = document.getElementById("main");
@@ -54,7 +54,61 @@ window.App = window.App || {};
   function openBackup() {
     nav.tab = "settings";
     nav.task = null;
+    nav.ret = null;
     Settings.open("backup");
+    render({ scrollTop: true });
+  }
+
+  // 今日延伸 links (js/daily.js): open a module / sub-screen; its 返回 comes back to where the link was
+  // (nav.ret = { view: "list" | "routeMap", open } on the 每日任務 page). Not for the settings tab.
+  function returnToOrigin() {
+    const ret = nav.ret;
+    nav.ret = null;
+    nav.tab = "home";
+    nav.task = null;
+    Listening.reset();
+    Speaking.reset();
+    Dialogue.reset();
+    Show.reset();
+    Settings.reset();
+    nav.view = "daily";
+    Daily.reset();
+    if (ret && ret.view === "routeMap") Daily.openMap(ret.open);
+    render({ scrollTop: true });
+  }
+  const backFromModule = () => (nav.ret ? returnToOrigin() : goHome());
+
+  function openExtra(go, ret) {
+    nav.task = null;
+    nav.ret = go === "settings" ? null : ret || { view: "list" };
+    const [mod, sub] = go.split(":");
+    if (mod === "backup" || mod === "settings") {
+      nav.tab = "settings";
+      Settings.reset();
+      if (mod === "backup") Settings.open("backup");
+    } else {
+      nav.tab = "home";
+      nav.view = mod;
+      if (mod === "kana") {
+        KanaModule.reset();
+        if (sub) KanaModule.open(sub);
+      } else if (mod === "phrases") {
+        Phrases.reset();
+        if (sub) Phrases.open(sub);
+      } else if (mod === "numbers") Listening.reset();
+      else if (mod === "show") Show.reset();
+    }
+    render({ scrollTop: true });
+  }
+
+  // 進度頁 → 路線地圖
+  function openRouteMap() {
+    nav.tab = "home";
+    nav.view = "daily";
+    nav.task = null;
+    nav.ret = null;
+    Daily.reset();
+    Daily.openMap();
     render({ scrollTop: true });
   }
 
@@ -72,6 +126,7 @@ window.App = window.App || {};
   function openRoute() {
     state = Daily.dismissPrompt(state);
     Storage.saveState(state);
+    nav.ret = null;
     nav.view = "daily";
     nav.task = null;
     Daily.reset();
@@ -82,6 +137,7 @@ window.App = window.App || {};
   function openModule(key) {
     nav.view = key;
     nav.task = null;
+    nav.ret = null;
     if (key === "daily") Daily.reset();
     if (key === "kana") KanaModule.reset();
     if (key === "phrases") Phrases.reset();
@@ -97,6 +153,7 @@ window.App = window.App || {};
   // launched it, so audio is allowed on iOS) and reports back through
   // onTaskDone; leaving returns to the 今日任務 page.
   function launchTask(spec) {
+    nav.ret = null;
     nav.task = { ...spec, id: ++taskSeq, date: Storage.todayLocal() };
     nav.tab = "home";
     nav.view = spec.module;
@@ -123,6 +180,7 @@ window.App = window.App || {};
   function selectTab(key) {
     nav.tab = key;
     nav.task = null;
+    nav.ret = null;
     Show.reset(); // closes a held-up card (and lets the screen sleep again)
     if (key === "home") nav.view = "home"; // tapping 主頁 always returns to the module list
     Settings.reset();
@@ -179,7 +237,7 @@ window.App = window.App || {};
     }
 
     if (nav.tab === "progress") {
-      content = h("div", { style: accentVars("daily") }, Progress.render({ state, onOpenBackup: openBackup }));
+      content = h("div", { style: accentVars("daily") }, Progress.render({ state, onOpenBackup: openBackup, onOpenRouteMap: openRouteMap }));
     } else if (nav.tab === "settings") {
       content = Settings.render({
         settings: state.settings,
@@ -188,6 +246,7 @@ window.App = window.App || {};
         onUpdate: (fn) => setState(fn),
         onRestore: restoreBackup,
         onUndo: undoRestore,
+        onExit: nav.ret ? returnToOrigin : null,
         onChange: (patch) => setState((s) => ({ ...s, settings: { ...s.settings, ...patch } })),
         onReset: () => {
           state = Storage.clearState();
@@ -201,10 +260,7 @@ window.App = window.App || {};
         kana: state.kana,
         onPrefsChange: (patch) => setState((s) => ({ ...s, kana: { ...s.kana, prefs: { ...s.kana.prefs, ...patch } } })),
         onAnswer: (char, correct) => setState((s) => Storage.recordKanaAnswer(s, char, correct)),
-        onBack: () => {
-          nav.view = "home";
-          render({ scrollTop: true });
-        },
+        onBack: backFromModule,
         rerender: render,
       });
       content = h("div", { style: accentVars("kana") }, out.main);
@@ -220,10 +276,7 @@ window.App = window.App || {};
           favs: state.favs,
           onToggleFav: (id) => setState((s) => Storage.toggleFav(s, id)),
           onToggleFlag: (id) => setState((s) => Storage.toggleFlag(s, id)),
-          onBack: () => {
-            nav.view = "home";
-            render({ scrollTop: true });
-          },
+          onBack: backFromModule,
           rerender: render,
         })
       );
@@ -253,7 +306,7 @@ window.App = window.App || {};
               const next = Storage.recordKanaAnswer(s, q.target.char, correct);
               return correct && mode === "review" ? Storage.reviewCorrect(next, `k:${q.target.char}`) : next;
             }),
-          onBack: () => (nav.task ? leaveTask() : goHome()),
+          onBack: () => (nav.task ? leaveTask() : backFromModule()),
           rerender: render,
         })
       );
@@ -288,7 +341,7 @@ window.App = window.App || {};
           Storage.saveState(state);
           return state;
         },
-        onBack: goHome,
+        onBack: backFromModule,
         rerender: render,
       });
       content = h("div", { style: accentVars("show") }, out.main);
@@ -326,6 +379,7 @@ window.App = window.App || {};
           onToggleFlag: (id) => setState((s) => Storage.toggleFlag(s, id)),
           onUpdate: (fn) => setState(fn),
           onLaunch: launchTask,
+          onOpenExtra: openExtra,
           onBack: () => {
             Daily.reset();
             goHome();
