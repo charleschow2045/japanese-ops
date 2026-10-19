@@ -1185,3 +1185,14 @@ body::before {
 .route-finish .result-hero { margin-bottom: 4px; }
 .route-stats { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 8px; font-weight: 700; }
 .route-stats li { line-height: 1.5; }
+
+/* ── 口訣 (stage 10) ── */
+.mnemo { border-radius: 16px; padding: 10px 12px; background: var(--gold-tint); border: 1.5px solid var(--gold-tint-border); color: var(--ink); }
+.mnemo p { margin: 0; }
+.mnemo-head { display: flex; align-items: center; gap: 4px; font-size: 0.83rem; font-weight: 800; color: var(--gold-dark); }
+.mnemo-kind { margin-left: auto; padding: 1px 8px; border-radius: 999px; background: var(--paper-card); border: 1.5px solid var(--gold-tint-border); font-size: 0.78rem; font-weight: 800; color: var(--gold-dark); }
+.mnemo-body { display: flex; align-items: flex-start; gap: 8px; margin-top: 6px !important; font-weight: 700; line-height: 1.5; }
+.mnemo-emoji { font-size: 1.6rem; line-height: 1.2; flex: none; }
+.mnemo-sub { margin-top: 6px !important; font-size: 0.83rem; font-weight: 700; color: var(--muted); }
+.lesson-mnemo { font-size: 0.78rem; font-weight: 700; color: var(--gold-dark); line-height: 1.4; margin-top: 4px; }
+.lesson-mnemo-sub { display: block; color: var(--muted); }

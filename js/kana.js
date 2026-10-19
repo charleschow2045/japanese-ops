@@ -191,6 +191,7 @@ window.App = window.App || {};
     const char = k[script];
     const scriptNote = script === "hira" ? k.hiraNote : k.kataNote;
     const examples = script === "kata" ? KATAKANA_EXAMPLES.filter((ex) => containsSound(ex.word, char)) : [];
+    const mnemo = window.App.UI.mnemonic(char);
     const close = () => {
       ui.openId = null;
       ctx.rerender();
@@ -225,6 +226,7 @@ window.App = window.App || {};
             k.note && h("p", { class: "note blue" }, `💡 ${k.note}`),
             scriptNote && h("p", { class: "note gold" }, `👀 ${scriptNote}`)
           ),
+        mnemo && h("div", { class: "mt-3" }, mnemo),
         speakButton(char, settings, "聽發音", "w-full mt-4"),
         examples.length > 0 &&
           h(

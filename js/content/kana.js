@@ -497,6 +497,59 @@ window.App.Content = window.App.Content || {};
     { id: "k12", script: "kata", chars: ["ミ", "ニ"], diff: "ミ 有三條斜短橫；ニ 只有兩條橫" },
   ];
 
+  // 口訣 (stage 10): a one-line memory aid + emoji for characters that are hard to remember (30 of them:
+  // 15 hira, 15 kata; the 相似字分辨 groups first). Keyed by the character itself (hira and kata glyphs never clash).
+  // `kind` says what the aid relies on (labels in MNEMONIC_KINDS):
+  //   meaning = the character starts a real word    sound = a sound / reading association
+  //   kanji   = looks like (or comes from) a kanji — only helps the shape, the reading stays Japanese
+  //   shape   = pure shape description
+  // Only characters we are sure about get one; the rest simply show nothing.
+  const MNEMONIC_KINDS = {
+    meaning: "意義聯想",
+    sound: "讀音聯想",
+    kanji: "形似漢字",
+    shape: "字形",
+  };
+  const M = (char, emoji, kind, text) => ({ char, emoji, kind, text });
+  const KANA_MNEMONICS = [
+    // 平假名
+    M("め", "👁️", "meaning", "め 是「眼睛」（め），字形像一隻帶睫毛的眼；沒有小圈"),
+    M("ぬ", "🍜", "sound", "ぬ 像一團捲起的麵條，英文 noodle 以 n 開頭；末端的小圈像麵條捲起"),
+    M("ね", "🐱", "meaning", "ね 是「貓」（ねこ）的第一個字，末端的小圈像貓尾捲起"),
+    M("ふ", "🗻", "meaning", "ふ 是「富士山」（ふじさん）的第一個字，字形像山頂冒煙"),
+    M("ひ", "😄", "sound", "ひ 像一張咧嘴大笑的嘴，笑聲是「hi hi」"),
+    M("の", "🐌", "shape", "の 像一筆畫成的蝸牛殼，沒有交叉筆畫，也沒有小圈"),
+    M("れ", "🦵", "shape", "れ 末端向外撇，像人向外踢出一腳"),
+    M("わ", "🐶", "sound", "わ 是犬吠聲「わん」的第一個字，末端向內彎，像狗向內捲起的尾巴"),
+    M("ろ", "🛣️", "sound", "ろ 像一條彎彎的路，漢字「路」在日文也讀 ro"),
+    M("る", "🪢", "shape", "る 是 ろ 末端打了個結，多出一個小圈"),
+    M("は", "😆", "sound", "は 是笑聲「ha ha」，右邊的豎畫像笑得彎下腰"),
+    M("ほ", "🎅", "sound", "ほ 是聖誕老人的笑聲「ho ho ho」，比 は 多一橫，像多戴了一頂帽子"),
+    M("さ", "🍶", "meaning", "さ 是「酒」（さけ）的第一個字，只有一橫"),
+    M("き", "🔑", "sound", "き 像一把有兩個齒的鑰匙，英文 key 的讀音接近 ki"),
+    M("ち", "5️⃣", "shape", "ち 像數字 5，下方的彎向右凸（さ 向左凸）"),
+    // 片假名
+    M("ニ", "2️⃣", "kanji", "ニ 由漢字「二」演變而來，日文「二」讀 ni"),
+    M("ミ", "3️⃣", "kanji", "ミ 就是斜放的「三」，日文「三つ」（みっつ，mittsu）的第一個音是 mi"),
+    M("ハ", "8️⃣", "kanji", "ハ 由漢字「八」演變而來，日文「八」讀 hachi，第一個音是 ha"),
+    M("ロ", "👄", "kanji", "ロ 樣子像漢字「口」，讀 ro，和漢字「口」的讀音無關"),
+    M("エ", "🏗️", "kanji", "エ 樣子像漢字「工」，讀 e"),
+    M("カ", "💪", "kanji", "カ 樣子像漢字「力」，讀 ka，和「力」的讀音無關"),
+    M("タ", "🌇", "kanji", "タ 樣子像漢字「夕」，讀 ta，和「夕」的讀音無關"),
+    M("ヌ", "✖️", "kanji", "ヌ 樣子像漢字「又」，第二筆穿過第一筆（ス 沒有穿過）"),
+    M("ス", "🐍", "sound", "ス 像一條蛇，蛇的嘶嘶聲是「su su」；第二筆不穿過第一筆"),
+    M("ル", "🏃", "sound", "ル 像兩條奔跑的腿，英文 run 的讀音接近 ru"),
+    M("レ", "🍋", "meaning", "レ 像打勾，是「レモン」（remon，檸檬）的第一個字"),
+    M("シ", "💧", "kanji", "シ 樣子像三點水「氵」：兩點在左、長筆向右上挑"),
+    M("ツ", "🐜", "shape", "ツ 兩點在上方，像頭上豎起兩根觸角，長筆向左下撇"),
+    M("ソ", "☝️", "shape", "ソ 比 ツ 少一點，只有一點加一長撇"),
+    M("ン", "〰️", "shape", "ン 比 シ 少一點，長筆向右上挑"),
+  ];
+  const KANA_MNEMONIC = Object.fromEntries(KANA_MNEMONICS.map((m) => [m.char, m]));
+
+  window.App.Content.KANA_MNEMONICS = KANA_MNEMONICS;
+  window.App.Content.KANA_MNEMONIC = KANA_MNEMONIC;
+  window.App.Content.MNEMONIC_KINDS = MNEMONIC_KINDS;
   window.App.Content.KANA = KANA;
   window.App.Content.KANA_TOTAL = KANA_TOTAL;
   window.App.Content.SOUND_TOPICS = SOUND_TOPICS;

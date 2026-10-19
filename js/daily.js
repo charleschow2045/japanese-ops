@@ -840,7 +840,8 @@ window.App = window.App || {};
         h("span", { lang: "ja", class: "jp lesson-ch" }, ch),
         settings.showRomaji && h("span", { class: "lesson-rom" }, k.romaji + (k.romajiAlt ? `（亦寫 ${k.romajiAlt}）` : "")),
         settings.showYue && h("span", { class: "lesson-yue" }, k.yue ? `近似：${k.yue}` : "廣東話沒有對應"),
-        note && h("span", { class: "lesson-note" }, `💡 ${note}`)
+        note && h("span", { class: "lesson-note" }, `💡 ${note}`),
+        window.App.UI.mnemonic(ch, { compact: true })
       );
     };
     const start = () => {

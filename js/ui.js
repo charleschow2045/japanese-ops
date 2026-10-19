@@ -106,5 +106,25 @@ window.App = window.App || {};
     );
   }
 
-  window.App.UI = { h, MODULE_ACCENTS, accentVars, jp, inkButton, backButton, modHeader, chip, toggle };
+  // 口訣 (js/content/kana.js KANA_MNEMONIC) for one character; null when the character has none.
+  //   full    → the detail sheet: a block with the kind label, emoji + text (+ the 形似漢字 reminder)
+  //   compact → a lesson card: one small line (the kind label is dropped)
+  const KANJI_NOTE = "只幫助記字形，讀音以日文為準";
+  function mnemonic(char, opts = {}) {
+    const m = window.App.Content && window.App.Content.KANA_MNEMONIC && window.App.Content.KANA_MNEMONIC[char];
+    if (!m) return null;
+    const label = window.App.Content.MNEMONIC_KINDS[m.kind];
+    if (opts.compact) {
+      return h("span", { class: "lesson-mnemo" }, `🧠 ${m.emoji} ${m.text}`, m.kind === "kanji" && h("span", { class: "lesson-mnemo-sub" }, `（${KANJI_NOTE}）`));
+    }
+    return h(
+      "div",
+      { class: "mnemo", "data-kind": m.kind },
+      h("p", { class: "mnemo-head" }, h("span", { "aria-hidden": "true" }, "🧠"), " 口訣", h("span", { class: "mnemo-kind" }, label)),
+      h("p", { class: "mnemo-body" }, h("span", { class: "mnemo-emoji", "aria-hidden": "true" }, m.emoji), h("span", null, m.text)),
+      m.kind === "kanji" && h("p", { class: "mnemo-sub" }, KANJI_NOTE)
+    );
+  }
+
+  window.App.UI = { h, MODULE_ACCENTS, accentVars, jp, inkButton, backButton, modHeader, chip, toggle, mnemonic };
 })();
