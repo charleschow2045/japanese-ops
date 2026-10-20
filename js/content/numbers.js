@@ -1,12 +1,14 @@
 // 數字・價錢・時間讀音表 (stage 8, step 2-A). Reading reference only — the
 // listening quiz built on top of it comes in step 2-B.
 //
-// Each topic: { key, title, intro: [lines], rows: [{ show, kana, romaji, note? }] }
+// Each topic: { key, title, intro: [lines], rows: [{ show, kana, romaji, note?, irregular?, say? }] }
 //   show    what a sign / price tag / clock shows (digits or kanji)
 //   kana    the reading; this is also what text-to-speech is given, because
 //           numbers read from digits are unreliable across voices
 //   romaji  Hepburn, long vowels doubled (juu), っ doubles the next consonant
 //   note    short Chinese reminder (written Chinese) shown beside the row
+//   irregular  true = a special reading to learn by heart (shown with ⚠️; 日期 topics)
+//   say     optional: what text-to-speech gets instead of `kana` (date combos: 、between month and day)
 //
 // Default readings (decided 2026-10-10): 0 = ゼロ, 4 = よん, 7 = なな,
 // 9 = きゅう, 10分 = じゅっぷん; irregular counters (4時 よじ, 7時 しちじ,
@@ -157,6 +159,107 @@ window.App.Content = window.App.Content || {};
         { show: "一枚", kana: "いちまい", romaji: "ichimai", note: "車票、毛巾" },
         { show: "二枚", kana: "にまい", romaji: "nimai" },
         { show: "三枚", kana: "さんまい", romaji: "sanmai" },
+      ],
+    },
+    {
+      key: "month",
+      title: "日期：月（1–12 月）",
+      intro: ["月份＝數字＋「がつ」。", "4 月＝しがつ、7 月＝しちがつ、9 月＝くがつ 是特別讀法（⚠️）。"],
+      sequence: true,
+      rows: [
+        { show: "1月", kana: "いちがつ", romaji: "ichigatsu" },
+        { show: "2月", kana: "にがつ", romaji: "nigatsu" },
+        { show: "3月", kana: "さんがつ", romaji: "sangatsu" },
+        { show: "4月", kana: "しがつ", romaji: "shigatsu", note: "不讀「よんがつ」", irregular: true },
+        { show: "5月", kana: "ごがつ", romaji: "gogatsu" },
+        { show: "6月", kana: "ろくがつ", romaji: "rokugatsu" },
+        { show: "7月", kana: "しちがつ", romaji: "shichigatsu", note: "不讀「なながつ」", irregular: true },
+        { show: "8月", kana: "はちがつ", romaji: "hachigatsu" },
+        { show: "9月", kana: "くがつ", romaji: "kugatsu", note: "不讀「きゅうがつ」", irregular: true },
+        { show: "10月", kana: "じゅうがつ", romaji: "juugatsu" },
+        { show: "11月", kana: "じゅういちがつ", romaji: "juuichigatsu" },
+        { show: "12月", kana: "じゅうにがつ", romaji: "juunigatsu" },
+      ],
+    },
+    {
+      key: "day",
+      title: "日期：日（1–31 日）",
+      intro: [
+        "1–10 日、14 日、20 日、24 日是特別讀法（⚠️），要整個記；其餘大多是「數字＋にち」。",
+        "日期說「1 日」是ついたち；「一天」（一整天）則是いちにち。",
+      ],
+      rows: [
+        { show: "1日", kana: "ついたち", romaji: "tsuitachi", note: "日期；「一天」讀いちにち", irregular: true },
+        { show: "2日", kana: "ふつか", romaji: "futsuka", irregular: true },
+        { show: "3日", kana: "みっか", romaji: "mikka", irregular: true },
+        { show: "4日", kana: "よっか", romaji: "yokka", note: "不讀「よんにち」", irregular: true },
+        { show: "5日", kana: "いつか", romaji: "itsuka", irregular: true },
+        { show: "6日", kana: "むいか", romaji: "muika", irregular: true },
+        { show: "7日", kana: "なのか", romaji: "nanoka", irregular: true },
+        { show: "8日", kana: "ようか", romaji: "youka", note: "和 4 日容易混", irregular: true },
+        { show: "9日", kana: "ここのか", romaji: "kokonoka", irregular: true },
+        { show: "10日", kana: "とおか", romaji: "tooka", irregular: true },
+        { show: "11日", kana: "じゅういちにち", romaji: "juuichinichi" },
+        { show: "12日", kana: "じゅうににち", romaji: "juuninichi" },
+        { show: "13日", kana: "じゅうさんにち", romaji: "juusannichi" },
+        { show: "14日", kana: "じゅうよっか", romaji: "juuyokka", note: "個位 4 讀「よっか」", irregular: true },
+        { show: "15日", kana: "じゅうごにち", romaji: "juugonichi" },
+        { show: "16日", kana: "じゅうろくにち", romaji: "juurokunichi" },
+        { show: "17日", kana: "じゅうしちにち", romaji: "juushichinichi", note: "也讀「じゅうななにち」" },
+        { show: "18日", kana: "じゅうはちにち", romaji: "juuhachinichi" },
+        { show: "19日", kana: "じゅうくにち", romaji: "juukunichi", note: "也讀「じゅうきゅうにち」" },
+        { show: "20日", kana: "はつか", romaji: "hatsuka", note: "不讀「にじゅうにち」", irregular: true },
+        { show: "21日", kana: "にじゅういちにち", romaji: "nijuuichinichi" },
+        { show: "22日", kana: "にじゅうににち", romaji: "nijuuninichi" },
+        { show: "23日", kana: "にじゅうさんにち", romaji: "nijuusannichi" },
+        { show: "24日", kana: "にじゅうよっか", romaji: "nijuuyokka", note: "個位 4 讀「よっか」", irregular: true },
+        { show: "25日", kana: "にじゅうごにち", romaji: "nijuugonichi" },
+        { show: "26日", kana: "にじゅうろくにち", romaji: "nijuurokunichi" },
+        { show: "27日", kana: "にじゅうしちにち", romaji: "nijuushichinichi", note: "也讀「にじゅうななにち」" },
+        { show: "28日", kana: "にじゅうはちにち", romaji: "nijuuhachinichi" },
+        { show: "29日", kana: "にじゅうくにち", romaji: "nijuukunichi", note: "也讀「にじゅうきゅうにち」" },
+        { show: "30日", kana: "さんじゅうにち", romaji: "sanjuunichi" },
+        { show: "31日", kana: "さんじゅういちにち", romaji: "sanjuuichinichi" },
+      ],
+    },
+    {
+      key: "datecombo",
+      title: "日期的說法",
+      intro: ["先說月、再說日：10 月 5 日＝じゅうがつ いつか。", "問日期：何月何日（なんがつ なんにち）。"],
+      rows: [
+        { show: "3月1日", kana: "さんがつ ついたち", say: "さんがつ、ついたち", romaji: "sangatsu tsuitachi" },
+        { show: "4月20日", kana: "しがつ はつか", say: "しがつ、はつか", romaji: "shigatsu hatsuka" },
+        { show: "7月14日", kana: "しちがつ じゅうよっか", say: "しちがつ、じゅうよっか", romaji: "shichigatsu juuyokka" },
+        { show: "9月9日", kana: "くがつ ここのか", say: "くがつ、ここのか", romaji: "kugatsu kokonoka" },
+        { show: "10月5日", kana: "じゅうがつ いつか", say: "じゅうがつ、いつか", romaji: "juugatsu itsuka" },
+        { show: "12月25日", kana: "じゅうにがつ にじゅうごにち", say: "じゅうにがつ、にじゅうごにち", romaji: "juunigatsu nijuugonichi" },
+        { show: "何月何日", kana: "なんがつ なんにち", say: "なんがつ、なんにち", romaji: "nangatsu nannichi", note: "幾月幾日" },
+      ],
+    },
+    {
+      key: "weekday",
+      title: "曜日（星期）",
+      intro: ["「〜曜日（ようび）」＝星期。", "朗讀用假名，讀音要整個記。"],
+      sequence: true,
+      rows: [
+        { show: "日曜日", kana: "にちようび", romaji: "nichiyoubi", note: "星期日" },
+        { show: "月曜日", kana: "げつようび", romaji: "getsuyoubi", note: "星期一" },
+        { show: "火曜日", kana: "かようび", romaji: "kayoubi", note: "星期二" },
+        { show: "水曜日", kana: "すいようび", romaji: "suiyoubi", note: "星期三" },
+        { show: "木曜日", kana: "もくようび", romaji: "mokuyoubi", note: "星期四" },
+        { show: "金曜日", kana: "きんようび", romaji: "kin’youbi", note: "星期五" },
+        { show: "土曜日", kana: "どようび", romaji: "doyoubi", note: "星期六" },
+      ],
+    },
+    {
+      key: "today",
+      title: "今日・明日・明後日",
+      intro: ["今天＝きょう、明天＝あした、後天＝あさって。", "朗讀用假名，避免被讀成其他讀法。"],
+      sequence: true,
+      rows: [
+        { show: "今日", kana: "きょう", romaji: "kyou", note: "今天" },
+        { show: "明日", kana: "あした", romaji: "ashita", note: "明天" },
+        { show: "明後日", kana: "あさって", romaji: "asatte", note: "後天" },
       ],
     },
   ];

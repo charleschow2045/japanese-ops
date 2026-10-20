@@ -378,7 +378,7 @@ window.App = window.App || {};
       "div",
       { class: "card accent mb-4" },
       h("p", { class: "h-heading accent-text" }, "🔢 數字聽力"),
-      h("p", { class: "xs muted mb-3" }, "聽價錢、時間、月台號碼，從 4 個寫法中選出聽到的。答錯的數字會加入「錯題重溫」。"),
+      h("p", { class: "xs muted mb-3" }, "聽價錢、時間、月台號碼、日期，從 4 個寫法中選出聽到的。答錯的數字會加入「錯題重溫」。"),
       h("p", { class: "small mb-1" }, "內容"),
       h("div", { class: "wrap mb-3" }, NumberQuiz.CATEGORIES.map((c) => chip(c.label, np.cats.includes(c.key), () => toggleCat(c.key)))),
       h("p", { class: "small mb-1" }, "難度"),

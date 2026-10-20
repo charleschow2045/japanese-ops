@@ -1,10 +1,10 @@
 // 數字聽力 (stage 8, step 2-B): randomly generated listening questions for
-// numbers, prices, times, platforms, people and minutes. The audio is the kana
+// numbers, prices, times, platforms, people, minutes and dates (月・日). The audio is the kana
 // reading built here (same default readings as the 2-A 讀音表, see
 // js/content/numbers.js); the 4 options are written forms (1,800円 / 4:30 …).
 //
 // Question: { type: "number", kind, vs, key, display, segs, kana, romaji, options: [{ vs, display }] }
-//   kind  yen | time | ban (番線) | nin (人) | fun (分) | num (0–99)
+//   kind  yen | time | ban (番線) | nin (人) | fun (分) | num (0–99) | month (1–12月) | day (1–31日) | date (月＋日)
 //   vs    canonical value string ("1800", "4:30"); options compare by it
 //   key   錯題重溫 key "n:<kind>:<vs>" — a wrong answer re-asks exactly this value
 // Used by js/listening.js (menu, quiz, 錯題重溫); nothing here touches state.
@@ -16,13 +16,14 @@ window.App = window.App || {};
     { key: "time", label: "🕐 時間", kinds: ["time"] },
     { key: "things", label: "🚉 月台・人數・分鐘", kinds: ["ban", "nin", "fun"] },
     { key: "num", label: "🔢 純數字 0–99", kinds: ["num"] },
+    { key: "date", label: "📅 日期", kinds: ["month", "day", "date"] },
   ];
   const LEVELS = [
-    { key: 1, label: "入門", hint: "整百價錢、整點與半點、1–10" },
-    { key: 2, label: "一般", hint: "10 的倍數價錢、5 分鐘一格" },
-    { key: 3, label: "進階", hint: "個位數都有，價錢最高 99,999" },
+    { key: 1, label: "入門", hint: "整百價錢、整點與半點、1–10、日期 1–10 日" },
+    { key: 2, label: "一般", hint: "10 的倍數價錢、5 分鐘一格、日期 1–31 日" },
+    { key: 3, label: "進階", hint: "個位數都有，價錢最高 99,999、完整的月＋日" },
   ];
-  const KIND_LABEL = { yen: "價錢", time: "時間", ban: "月台", nin: "人數", fun: "分鐘", num: "數字" };
+  const KIND_LABEL = { yen: "價錢", time: "時間", ban: "月台", nin: "人數", fun: "分鐘", num: "數字", month: "月份", day: "日", date: "日期" };
 
   const rand = (n) => Math.floor(Math.random() * n);
   const pick = (arr) => arr[rand(arr.length)];
@@ -43,6 +44,17 @@ window.App = window.App || {};
   const HOUR = ["", "いちじ", "にじ", "さんじ", "よじ", "ごじ", "ろくじ", "しちじ", "はちじ", "くじ", "じゅうじ", "じゅういちじ", "じゅうにじ"];
   const NIN = ["", "ひとり", "ふたり", "さんにん", "よにん", "ごにん", "ろくにん", "ななにん", "はちにん", "きゅうにん", "じゅうにん"];
   const FUN = ["", "いっぷん", "にふん", "さんぷん", "よんぷん", "ごふん", "ろっぷん", "ななふん", "はっぷん", "きゅうふん"];
+
+  // 日期 (stage 10 ⑤): 月 1–12 and 日 1–31, same readings as the 日期 topics in js/content/numbers.js.
+  // 4月しがつ 7月しちがつ 9月くがつ; 日 1–10 + 14 + 20 + 24 are irregular (ついたち … はつか).
+  const MONTH = ["", "いちがつ", "にがつ", "さんがつ", "しがつ", "ごがつ", "ろくがつ", "しちがつ", "はちがつ", "くがつ", "じゅうがつ", "じゅういちがつ", "じゅうにがつ"];
+  const DAY = [
+    "", "ついたち", "ふつか", "みっか", "よっか", "いつか", "むいか", "なのか", "ようか", "ここのか", "とおか",
+    "じゅういちにち", "じゅうににち", "じゅうさんにち", "じゅうよっか", "じゅうごにち", "じゅうろくにち", "じゅうしちにち", "じゅうはちにち", "じゅうくにち", "はつか",
+    "にじゅういちにち", "にじゅうににち", "にじゅうさんにち", "にじゅうよっか", "にじゅうごにち", "にじゅうろくにち", "にじゅうしちにち", "にじゅうはちにち", "にじゅうくにち",
+    "さんじゅうにち", "さんじゅういちにち",
+  ];
+  const DAYS_IN_MONTH = [0, 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 
   // 0–99,999. `four` = how a final digit 4 is read ("よ" before 円).
   function numSegs(n, four = "よん") {
@@ -93,6 +105,12 @@ window.App = window.App || {};
         return [NIN[v]];
       case "fun":
         return funSegs(v);
+      case "month":
+        return [MONTH[v]];
+      case "day":
+        return [DAY[v]];
+      case "date":
+        return [MONTH[v.m], DAY[v.d]];
       default:
         return numSegs(v);
     }
@@ -133,7 +151,7 @@ window.App = window.App || {};
 
   // ── values ───────────────────────────────────────────────────────────
 
-  const vsOf = (kind, v) => (kind === "time" ? `${v.h}:${pad2(v.m)}` : String(v));
+  const vsOf = (kind, v) => (kind === "time" ? `${v.h}:${pad2(v.m)}` : kind === "date" ? `${v.m}:${v.d}` : String(v));
   const comma = (n) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
   function displayOf(kind, v) {
     switch (kind) {
@@ -147,6 +165,12 @@ window.App = window.App || {};
         return `${v}人`;
       case "fun":
         return `${v}分`;
+      case "month":
+        return `${v}月`;
+      case "day":
+        return `${v}日`;
+      case "date":
+        return `${v.m}月${v.d}日`;
       default:
         return String(v);
     }
@@ -166,6 +190,13 @@ window.App = window.App || {};
         return isInt(v) && v >= 1 && v <= (level === 1 ? 10 : 20);
       case "nin":
         return isInt(v) && v >= 1 && v <= 10;
+      case "month":
+        return isInt(v) && v >= 1 && v <= 12;
+      case "day":
+        return isInt(v) && v >= 1 && v <= (level === 1 ? 10 : 31);
+      case "date":
+        if (level < 3 || !v || !isInt(v.m) || !isInt(v.d) || v.m < 1 || v.m > 12) return false;
+        return v.d >= 1 && v.d <= DAYS_IN_MONTH[v.m];
       case "fun":
         return isInt(v) && (level === 3 ? v >= 1 && v <= 60 : v >= 1 && v <= 10 || (level === 2 && v % 5 === 0 && v <= 60));
       default:
@@ -185,6 +216,14 @@ window.App = window.App || {};
         return 1 + rand(level === 1 ? 10 : 20);
       case "nin":
         return 1 + rand(10);
+      case "month":
+        return 1 + rand(12);
+      case "day":
+        return 1 + rand(level === 1 ? 10 : 31);
+      case "date": {
+        const m = 1 + rand(12);
+        return { m, d: 1 + rand(DAYS_IN_MONTH[m]) };
+      }
       case "fun":
         return level === 1 ? 1 + rand(10) : level === 2 ? pick([1 + rand(10), (1 + rand(12)) * 5]) : 1 + rand(60);
       default:
@@ -217,7 +256,23 @@ window.App = window.App || {};
     return out;
   }
 
+  // 日: pairs that sound alike or get mixed up (4日よっか／8日ようか, 1日ついたち／11日, 10日とおか／20日はつか, 14／24 …).
+  const DAY_PAIRS = [[4, 8], [2, 12], [1, 11], [10, 20], [14, 24], [9, 19], [7, 17], [3, 13], [5, 15], [6, 16], [8, 18], [4, 14], [24, 4], [20, 2], [7, 10]];
+  const dayLike = (d) => DAY_PAIRS.flatMap(([a, b]) => (a === d ? [b] : b === d ? [a] : []));
+
   function candidates(kind, level, v) {
+    if (kind === "month") {
+      // 4月・7月・9月 are the irregular ones (しがつ しちがつ くがつ); 1↔7, 4↔7, 4↔9 also sound close
+      return [...digitVariants(v), v + 1, v - 1, v + 2, v - 2, ...(v === 4 ? [7, 9] : v === 7 ? [4, 1] : v === 9 ? [4] : v === 1 ? [7] : [])];
+    }
+    if (kind === "day") return [...dayLike(v), ...digitVariants(v), v + 1, v - 1, v + 2, v - 2, v + 10, v - 10];
+    if (kind === "date") {
+      const c = [];
+      [...candidates("month", level, v.m)].forEach((m) => c.push({ m, d: v.d }));
+      [...candidates("day", level, v.d)].forEach((d) => c.push({ m: v.m, d }));
+      c.push({ m: v.d, d: v.m }); // month and day swapped (only valid when both fit)
+      return c;
+    }
     if (kind === "time") {
       const c = [];
       const hs = [v.h === 12 ? 1 : v.h + 1, v.h === 1 ? 12 : v.h - 1, ...digitVariants(v.h).filter((h) => h >= 1 && h <= 12)];
@@ -261,15 +316,21 @@ window.App = window.App || {};
       key: `n:${kind}:${vs}`,
       display: displayOf(kind, v),
       segs,
-      kana: segs.join(""),
+      kana: kind === "date" ? segs.join("、") : segs.join(""),
       romaji: segs.map(romajiOf).join(" "),
       options: pickOptions(kind, level, v).map((o) => ({ vs: vsOf(kind, o), display: displayOf(kind, o) })),
     };
   }
 
+  // Which kinds a category rotates through at a level (入門／一般: months and days only; 進階 adds full dates).
+  function kindsFor(cat, level) {
+    if (cat.key !== "date") return cat.kinds;
+    return level === 3 ? ["month", "day", "date", "date"] : ["month", "day"];
+  }
+
   // prefs: { cats, level, count }. No repeats inside one round.
   function buildPractice(prefs) {
-    const catKinds = CATEGORIES.filter((c) => prefs.cats.includes(c.key)).map((c) => c.kinds);
+    const catKinds = CATEGORIES.filter((c) => prefs.cats.includes(c.key)).map((c) => kindsFor(c, prefs.level));
     if (!catKinds.length) return [];
     const out = [];
     const seen = new Set();
@@ -290,7 +351,7 @@ window.App = window.App || {};
 
   // "n:yen:1800" → question, or null when the key is not a value this app can ask.
   function fromKey(key) {
-    const m = /^n:(yen|time|ban|nin|fun|num):([0-9:]{1,8})$/.exec(key || "");
+    const m = /^n:(yen|time|ban|nin|fun|num|month|day|date):([0-9:]{1,8})$/.exec(key || "");
     if (!m) return null;
     const kind = m[1];
     let v;
@@ -298,6 +359,10 @@ window.App = window.App || {};
       const t = /^(\d{1,2}):(\d{2})$/.exec(m[2]);
       if (!t) return null;
       v = { h: Number(t[1]), m: Number(t[2]) };
+    } else if (kind === "date") {
+      const t = /^(\d{1,2}):(\d{1,2})$/.exec(m[2]);
+      if (!t) return null;
+      v = { m: Number(t[1]), d: Number(t[2]) };
     } else {
       if (!/^\d{1,5}$/.test(m[2])) return null;
       v = Number(m[2]);
@@ -306,5 +371,5 @@ window.App = window.App || {};
   }
 
   // Everything below is exposed for the tests and for listening.js.
-  window.App.NumberQuiz = { CATEGORIES, LEVELS, KIND_LABEL, buildPractice, fromKey, makeQuestion, readingSegs, romajiOf, displayOf, ok, sample };
+  window.App.NumberQuiz = { CATEGORIES, LEVELS, KIND_LABEL, MONTH, DAY, buildPractice, fromKey, makeQuestion, readingSegs, romajiOf, displayOf, ok, sample };
 })();

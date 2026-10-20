@@ -204,7 +204,7 @@ window.App.Content = window.App.Content || {};
       review: null,
       sentences: ["hotel-06", "hotel-22", "hotel-07", "hotel-24", "hotel-08"],
       dialogue: "hotel",
-      extras: [{ text: "數字聽力：時間（一般）", go: "numbers" }],
+      extras: [{ text: "數字聽力：時間（一般）", go: "numbers" }, { text: "數字・價錢：讀音表「日期（月・日）」", go: "numbers" }],
     },
     {
       day: 22,
@@ -267,7 +267,7 @@ window.App.Content = window.App.Content || {};
       review: null,
       sentences: ["call-01", "call-02", "call-03", "call-04", "call-05"],
       dialogue: null,
-      extras: [{ text: "數字聽力：價錢（進階）", go: "numbers" }],
+      extras: [{ text: "數字聽力：價錢（進階）", go: "numbers" }, { text: "數字・價錢：讀音表「日期（月・日）」", go: "numbers" }],
     },
     {
       day: 29,

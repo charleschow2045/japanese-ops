@@ -1,7 +1,7 @@
 // 數字・價錢・時間讀音表 (stage 8, step 2-A): a read-only reference inside
 // the 聽力練習 module. Tap a row to hear it. No quiz yet (step 2-B).
 // Content: NUMBER_TOPICS in js/content/numbers.js. Speech is given the kana
-// reading, not the digits, so every voice says the same thing.
+// reading, not the digits, so every voice says the same thing. A row's `say` (date combos) is spoken instead of `kana`.
 window.App = window.App || {};
 
 (function () {
@@ -11,11 +11,11 @@ window.App = window.App || {};
   function row(r, settings, tts) {
     return h(
       "button",
-      { class: "ex-card", onclick: () => speak(r.kana, settings), "aria-label": `${r.show} ${r.kana}` },
+      { class: "ex-card", onclick: () => speak(r.say || r.kana, settings), "aria-label": `${r.show} ${r.kana}${r.irregular ? "（特別讀法）" : ""}` },
       h(
         "span",
         { class: "grow" },
-        h("span", { lang: "ja", class: "jp ex-word" }, r.show),
+        h("span", { lang: "ja", class: "jp ex-word" }, r.irregular && h("span", { class: "irr", "aria-hidden": "true" }, "⚠️ "), r.show),
         jp(r.kana, "ex-kana"),
         settings.showRomaji && h("span", { class: "ex-rom" }, r.romaji)
       ),
@@ -55,7 +55,7 @@ window.App = window.App || {};
       null,
       modHeader("數字・價錢・時間", back),
       notice && h("div", { class: "mb-4" }, notice),
-      h("p", { class: "small muted mb-4" }, "價錢、車站月台、時間都是用數字說的。按一下每一行聆聽；顯示的是招牌、價錢牌上的寫法，下面是讀音。"),
+      h("p", { class: "small muted mb-4" }, "價錢、車站月台、時間、日期都是用數字說的。按一下每一行聆聽；顯示的是招牌、價錢牌上的寫法，下面是讀音。"),
       window.App.Content.NUMBER_TOPICS.map((t) => topicCard(t, settings, tts))
     );
   }

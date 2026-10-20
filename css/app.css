@@ -1196,3 +1196,6 @@ body::before {
 .mnemo-sub { margin-top: 6px !important; font-size: 0.83rem; font-weight: 700; color: var(--muted); }
 .lesson-mnemo { font-size: 0.78rem; font-weight: 700; color: var(--gold-dark); line-height: 1.4; margin-top: 4px; }
 .lesson-mnemo-sub { display: block; color: var(--muted); }
+
+/* ── 日期讀音表：特別讀法標記 (stage 10 ⑤) ── */
+.ex-word .irr { font-size: 0.9rem; margin-right: 2px; vertical-align: 2px; }

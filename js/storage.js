@@ -92,11 +92,11 @@ window.App = window.App || {};
 
   // numbers (stage 8 步驟 2-B 數字聽力): randomly generated questions, so no per-question
   //   stats — only per category kind.
-  //   prefs: cats (price / time / things / num), level 1–3 (入門／一般／進階), count (5/10/20)
-  //   stats: { [kind: yen|time|ban|nin|fun|num]: { c, w, last } }
+  //   prefs: cats (price / time / things / num / date), level 1–3 (入門／一般／進階), count (5/10/20)
+  //   stats: { [kind: yen|time|ban|nin|fun|num|month|day|date]: { c, w, last } }
   //   A wrong answer enters 錯題重溫 as "n:<kind>:<value>" (see js/numquiz.js).
   function defaultNumbers() {
-    return { prefs: { cats: ["yen", "time", "things", "num"], level: 1, count: 10 }, stats: {} };
+    return { prefs: { cats: ["yen", "time", "things", "num", "date"], level: 1, count: 10 }, stats: {} };
   }
 
   // daily (stage 7b 每日任務):
@@ -362,7 +362,7 @@ window.App = window.App || {};
     return correct ? next : reviewWrong(next, `s:${id}`);
   }
 
-  // 數字聽力／重溫 answer. `kind` = yen | time | ban | nin | fun | num, `key` = the
+  // 數字聽力／重溫 answer. `kind` = yen | time | ban | nin | fun | num | month | day | date, `key` = the
   // 錯題重溫 key ("n:<kind>:<value>"); a wrong one (re)enters 錯題重溫.
   function recordNumberAnswer(state, kind, key, correct) {
     const prev = state.numbers.stats[kind] || { c: 0, w: 0, last: null };
@@ -522,10 +522,10 @@ window.App = window.App || {};
     const nm = raw.numbers || {};
     const np = isObj(nm.prefs) ? nm.prefs : {};
     out.numbers = {
-      stats: cleanMap(nm.stats, cleanStat, (key) => ["yen", "time", "ban", "nin", "fun", "num"].includes(key)),
+      stats: cleanMap(nm.stats, cleanStat, (key) => ["yen", "time", "ban", "nin", "fun", "num", "month", "day", "date"].includes(key)),
       prefs: {},
     };
-    put(out.numbers.prefs, "cats", Array.isArray(np.cats) ? np.cats.filter((c) => ["yen", "time", "things", "num"].includes(c)).slice(0, 4) : null);
+    put(out.numbers.prefs, "cats", Array.isArray(np.cats) ? np.cats.filter((c) => ["yen", "time", "things", "num", "date"].includes(c)).slice(0, 5) : null);
     put(out.numbers.prefs, "level", [1, 2, 3].includes(np.level) ? np.level : undefined);
     put(out.numbers.prefs, "count", [5, 10, 20].includes(np.count) ? np.count : undefined);
 
@@ -557,7 +557,7 @@ window.App = window.App || {};
       items: cleanMap(
         rv.items,
         (v) => (isObj(v) && isInt(v.box, 0, 4) && isDate(v.due) ? { box: v.box, due: v.due } : undefined),
-        (key) => /^[psk]:.{1,30}$/.test(key) || /^n:(yen|time|ban|nin|fun|num):[0-9:]{1,8}$/.test(key)
+        (key) => /^[psk]:.{1,30}$/.test(key) || /^n:(yen|time|ban|nin|fun|num|month|day|date):[0-9:]{1,8}$/.test(key)
       ),
       graduated: isInt(rv.graduated, 0, 1e7) ? rv.graduated : 0,
     };
