@@ -18,6 +18,7 @@
 // recorded (recorded when moving on with 下一題).
 // Wrong → 錯題重溫 item "s:<id>" (口語, kept apart from 聽力 "p:<id>").
 // 🚩-flagged sentences are not asked (their audio is wrong).
+// 換字練習 (stage 10 ⑥): the same screens ask virtual sentences from js/swap.js; 錯題重溫 key "w:s:<pattern>:<word>".
 window.App = window.App || {};
 
 (function () {
@@ -176,6 +177,8 @@ window.App = window.App || {};
     return allCache;
   }
   const byId = (id) => allMine().find((x) => x.p.id === id) || null;
+  // A 錯題重溫 key → the item to ask: "s:<id>" is a 句子庫 sentence, "w:s:<pattern>:<word>" a 換字練習 sentence.
+  const itemOfKey = (key) => (key.startsWith("w:s:") ? window.App.Swap.itemOfKey(key, "s") : key.startsWith("s:") ? byId(key.slice(2)) : null);
 
   function practicePool(prefs, flags) {
     const mine = allMine().filter((x) => prefs.scenes.includes(x.scene.key));
@@ -186,8 +189,8 @@ window.App = window.App || {};
   function dueItems(state) {
     const today = Storage.todayLocal();
     return Object.entries(state.review.items)
-      .filter(([key, it]) => key.startsWith("s:") && it.due <= today)
-      .filter(([key]) => byId(key.slice(2)) && !state.flags.includes(key.slice(2)))
+      .filter(([key, it]) => (key.startsWith("s:") || key.startsWith("w:s:")) && it.due <= today)
+      .filter(([key]) => itemOfKey(key) && !(key.startsWith("s:") && state.flags.includes(key.slice(2))))
       .sort((a, b) => (a[1].due < b[1].due ? -1 : a[1].due > b[1].due ? 1 : 0));
   }
 
@@ -224,6 +227,7 @@ window.App = window.App || {};
   function reset() {
     stopRec();
     ui.view = "menu";
+    window.App.Swap.reset();
     ui.quiz = null;
     ui.q = null;
   }
@@ -234,7 +238,9 @@ window.App = window.App || {};
     const mode = effectiveMode(state.speak.prefs.mode);
     let questions;
     if (kind === "review") {
-      questions = shuffle(dueItems(state).slice(0, REVIEW_MAX)).map(([key]) => byId(key.slice(2)));
+      questions = shuffle(dueItems(state).slice(0, REVIEW_MAX)).map(([key]) => itemOfKey(key));
+    } else if (kind === "swap") {
+      questions = window.App.Swap.buildPractice(state.swap.prefs);
     } else {
       const { usable } = practicePool(state.speak.prefs, state.flags);
       let order = [];
@@ -242,7 +248,7 @@ window.App = window.App || {};
       questions = order.slice(0, state.speak.prefs.count);
     }
     if (!questions.length) return;
-    ui.quiz = { kind, mode, questions, index: 0, results: [] };
+    ui.quiz = { kind: kind === "review" ? "review" : "practice", source: kind, mode, questions, index: 0, results: [] };
     ui.view = "quiz";
     newQ();
     ctx.rerender({ scrollTop: true });
@@ -254,7 +260,7 @@ window.App = window.App || {};
     const t = ctx.task;
     const state = ctx.state;
     let questions;
-    if (t.kind === "review") questions = shuffle(dueItems(state).slice(0, REVIEW_MAX)).map(([key]) => byId(key.slice(2)));
+    if (t.kind === "review") questions = shuffle(dueItems(state).slice(0, REVIEW_MAX)).map(([key]) => itemOfKey(key));
     else questions = shuffle((t.ids || []).filter((id) => !state.flags.includes(id)).map(byId).filter(Boolean));
     if (!questions.length) {
       ui.quiz = null;
@@ -385,7 +391,7 @@ window.App = window.App || {};
     const quiz = ui.quiz;
     const q = ui.q;
     const total = quiz.questions.length;
-    const title = quiz.kind === "review" ? "口語重溫" : "口語練習";
+    const title = quiz.kind === "review" ? "口語重溫" : quiz.source === "swap" ? "換字練習（口語）" : "口語練習";
     const back = () => {
       stopRec();
       if (ctx.task) return ctx.onBack();
@@ -600,7 +606,7 @@ window.App = window.App || {};
         h(
           "div",
           { class: "stack mt-4" },
-          !review && !ctx.task && inkButton("再來一輪", () => start(ctx, "practice"), { class: "w-full" }),
+          !review && !ctx.task && inkButton("再來一輪", () => start(ctx, quiz.source === "swap" ? "swap" : "practice"), { class: "w-full" }),
           inkButton(ctx.task ? "返回今日任務" : "返回口語練習", back, { accent: true, class: "w-full" })
         )
       )
@@ -653,7 +659,7 @@ window.App = window.App || {};
     const toggleScene = (key) =>
       ctx.onPrefsChange({ scenes: prefs.scenes.includes(key) ? prefs.scenes.filter((k) => k !== key) : [...prefs.scenes, key] });
     const later = Object.entries(state.review.items)
-      .filter(([k, it]) => k.startsWith("s:") && it.due > Storage.todayLocal())
+      .filter(([k, it]) => (k.startsWith("s:") || k.startsWith("w:s:")) && it.due > Storage.todayLocal())
       .map(([, it]) => it.due)
       .sort()[0];
 
@@ -702,7 +708,10 @@ window.App = window.App || {};
           usable.length ? `可出題的句子：${usable.length} 句${skippedFlagged ? `（略過 🚩 讀錯 ${skippedFlagged} 句）` : ""}` : "請至少選擇一個情境"
         ),
         inkButton("🎤 開始口語練習", () => start(ctx, "practice"), { accent: true, disabled: usable.length === 0, class: "w-full mt-3" })
-      )
+      ),
+
+      // 換字練習 (stage 10 ⑥)
+      window.App.Swap.card(ctx, "speak", () => start(ctx, "swap"), false)
     );
   }
 

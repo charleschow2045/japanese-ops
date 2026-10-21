@@ -55,7 +55,7 @@ const assert = (c, m) => { if (!c) { console.log('FAIL', m); process.exitCode = 
           visited.push('wrongcheck');
         }
         visited.push('check:' + p.answer);
-        await pg.locator('.dlg-opt', { hasText: p.answer }).first().click();
+        await pg.locator('.dlg-opt').nth(p.options.indexOf(p.answer)).click(); // by position: 「可以」is contained in 「不可以」
       } else await pg.waitForTimeout(60);
     }
     return { done: false, visited };

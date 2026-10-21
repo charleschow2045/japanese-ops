@@ -290,6 +290,7 @@ window.App = window.App || {};
           task: nav.task,
           onTaskDone: taskDone,
           onPrefsChange: (patch) => setState((s) => ({ ...s, listen: { ...s.listen, prefs: { ...s.listen.prefs, ...patch } } })),
+          onSwapPrefsChange: (patch) => setState((s) => ({ ...s, swap: { ...s.swap, prefs: { ...s.swap.prefs, ...patch } } })),
           onNumberPrefsChange: (patch) => setState((s) => ({ ...s, numbers: { ...s.numbers, prefs: { ...s.numbers.prefs, ...patch } } })),
           // Wrong answers (re)enter 錯題重溫 inside record*Answer; only a
           // correct answer DURING 重溫 moves an item to its next interval.
@@ -298,6 +299,11 @@ window.App = window.App || {};
               if (q.type === "number") {
                 const next = Storage.recordNumberAnswer(s, q.kind, q.key, correct);
                 return correct && mode === "review" ? Storage.reviewCorrect(next, q.key) : next;
+              }
+              if (q.type === "phrase" && q.target.p.swap) {
+                const sw = q.target.p.swap;
+                const next = Storage.recordSwapAnswer(s, "h", sw.pat, sw.wid, correct);
+                return correct && mode === "review" ? Storage.reviewCorrect(next, `w:h:${sw.pat}:${sw.wid}`) : next;
               }
               if (q.type === "phrase") {
                 const next = Storage.recordListenAnswer(s, q.target.p.id, correct);
@@ -353,10 +359,16 @@ window.App = window.App || {};
         Speaking.render({
           state,
           onPrefsChange: (patch) => setState((s) => ({ ...s, speak: { ...s.speak, prefs: { ...s.speak.prefs, ...patch } } })),
+          onSwapPrefsChange: (patch) => setState((s) => ({ ...s, swap: { ...s.swap, prefs: { ...s.swap.prefs, ...patch } } })),
           // First attempt of a question (review: only a correct answer moves
           // the item on; a wrong one — here or in practice — (re)enters 重溫).
           onAnswer: (item, correct, kind) =>
             setState((s) => {
+              if (item.p.swap) {
+                const sw = item.p.swap;
+                const next = Storage.recordSwapAnswer(s, "s", sw.pat, sw.wid, correct);
+                return correct && kind === "review" ? Storage.reviewCorrect(next, `w:s:${sw.pat}:${sw.wid}`) : next;
+              }
               const next = Storage.recordSpeakAnswer(s, item.p.id, correct);
               return correct && kind === "review" ? Storage.reviewCorrect(next, `s:${item.p.id}`) : next;
             }),

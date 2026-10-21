@@ -5,6 +5,8 @@
 // 錯題重溫: due items from state.review — 句子 (same question format) and
 // 五十音 characters (聽音選字 format). Schedule lives in js/storage.js
 // (wrong → today; correct in review → 1/3/7/14 days → 畢業).
+// 換字練習 (stage 10 ⑥): the same screens ask virtual sentences from js/swap.js (pattern + swapped word);
+// their 錯題重溫 keys are "w:h:<pattern>:<word>".
 //
 // 🚩-flagged sentences are never asked (their audio is known to be wrong);
 // a flagged sentence that is due simply waits until the flag is removed.
@@ -25,6 +27,7 @@ window.App = window.App || {};
   function reset() {
     ui.view = "menu";
     ui.quiz = null;
+    window.App.Swap.reset();
   }
 
   const scenes = () => window.App.Content.PHRASE_SCENES;
@@ -88,6 +91,11 @@ window.App = window.App || {};
     return { type: "phrase", target: x, options: pickPhraseOptions(x) };
   }
 
+  // 換字練習: a virtual sentence (pattern + word); the 3 wrong options are the same pattern with other words.
+  function swapQuestion(item) {
+    return { type: "phrase", target: item, options: window.App.Swap.options(item) };
+  }
+
   function kanaQuestion(ch) {
     const info = kanaInfo(ch);
     const target = { id: info.id, script: info.script, char: ch };
@@ -112,6 +120,7 @@ window.App = window.App || {};
       .filter(([key]) => {
         if (key.startsWith("p:")) return !!phraseById(key.slice(2)) && !state.flags.includes(key.slice(2));
         if (key.startsWith("n:")) return !!window.App.NumberQuiz.fromKey(key);
+        if (key.startsWith("w:h:")) return !!window.App.Swap.itemOfKey(key, "h");
         if (key.startsWith("k:")) return !!kanaInfo(key.slice(2));
         return false;
       })
@@ -122,7 +131,13 @@ window.App = window.App || {};
     const { shuffle } = kanaHelpers();
     const picked = dueItems(state).slice(0, REVIEW_MAX); // earliest due first
     return shuffle(picked).map(([key]) =>
-      key.startsWith("p:") ? phraseQuestion(phraseById(key.slice(2))) : key.startsWith("n:") ? window.App.NumberQuiz.fromKey(key) : kanaQuestion(key.slice(2))
+      key.startsWith("p:")
+        ? phraseQuestion(phraseById(key.slice(2)))
+        : key.startsWith("n:")
+          ? window.App.NumberQuiz.fromKey(key)
+          : key.startsWith("w:h:")
+            ? swapQuestion(window.App.Swap.itemOfKey(key, "h"))
+            : kanaQuestion(key.slice(2))
     );
   }
 
@@ -137,14 +152,16 @@ window.App = window.App || {};
 
   // Built inside the start tap so the first sound plays within the user
   // gesture (iOS requirement).
-  // mode: "review" | "practice" (聽句子) | "numbers" (數字聽力, a kind of practice)
+  // mode: "review" | "practice" (聽句子) | "numbers" (數字聽力) | "swap" (換字練習) — the last two are kinds of practice
   function start(ctx, mode) {
     const questions =
       mode === "review"
         ? buildReview(ctx.state)
         : mode === "numbers"
           ? window.App.NumberQuiz.buildPractice(ctx.state.numbers.prefs)
-          : buildPractice(ctx.state.listen.prefs, ctx.state.flags);
+          : mode === "swap"
+            ? window.App.Swap.buildPractice(ctx.state.swap.prefs).map(swapQuestion)
+            : buildPractice(ctx.state.listen.prefs, ctx.state.flags);
     if (!questions.length) return;
     ui.quiz = { mode: mode === "review" ? "review" : "practice", source: mode, questions, index: 0, picked: null, results: [] };
     ui.view = "quiz";
@@ -208,7 +225,7 @@ window.App = window.App || {};
     const settings = ctx.state.settings;
     const quiz = ui.quiz;
     const total = quiz.questions.length;
-    const title = ctx.task && ctx.task.title ? ctx.task.title : quiz.mode === "review" ? "錯題重溫" : quiz.source === "numbers" ? "數字聽力" : "聽力練習";
+    const title = ctx.task && ctx.task.title ? ctx.task.title : quiz.mode === "review" ? "錯題重溫" : quiz.source === "numbers" ? "數字聽力" : quiz.source === "swap" ? "換字練習（聽力）" : "聽力練習";
     const back = () => {
       if (ctx.task) return ctx.onBack();
       ui.view = "menu";
@@ -399,7 +416,8 @@ window.App = window.App || {};
     const due = dueItems(state);
     const dueP = due.filter(([k]) => k.startsWith("p:")).length;
     const dueN = due.filter(([k]) => k.startsWith("n:")).length;
-    const dueK = due.length - dueP - dueN;
+    const dueW = due.filter(([k]) => k.startsWith("w:h:")).length;
+    const dueK = due.length - dueP - dueN - dueW;
     const waitingFlagged = Object.entries(state.review.items).filter(
       ([k, it]) => k.startsWith("p:") && it.due <= Storage.todayLocal() && state.flags.includes(k.slice(2))
     ).length;
@@ -425,7 +443,7 @@ window.App = window.App || {};
         due.length > 0
           ? h("p", { class: "review-count" }, `今天需重溫 ${due.length} 句`)
           : h("p", { class: "small muted mt-1" }, "今天沒有需要重溫的內容 🎉"),
-        due.length > 0 && h("p", { class: "xs muted" }, `句子 ${dueP}・五十音 ${dueK}・數字 ${dueN}${due.length > REVIEW_MAX ? `（每次最多 ${REVIEW_MAX} 題）` : ""}`),
+        due.length > 0 && h("p", { class: "xs muted" }, `句子 ${dueP}・五十音 ${dueK}・數字 ${dueN}・換字 ${dueW}${due.length > REVIEW_MAX ? `（每次最多 ${REVIEW_MAX} 題）` : ""}`),
         waitingFlagged > 0 && h("p", { class: "xs muted mt-1" }, `另有 ${waitingFlagged} 句已標記 🚩 讀錯，修正前不會出題`),
         later && h("p", { class: "xs muted mt-1" }, `下一批重溫：${later}`),
         h("p", { class: "xs muted mt-1" }, "答錯 → 今天再出現；重溫答對 → 隔 1、3、7、14 天再出現，第 5 次答對即畢業。"),
@@ -436,6 +454,9 @@ window.App = window.App || {};
 
       // 數字聽力 (stage 8 step 2-B)
       numbersCard(ctx, tts),
+
+      // 換字練習 (stage 10 ⑥)
+      window.App.Swap.card(ctx, "listen", () => start(ctx, "swap"), !tts),
 
       // 聽力練習 settings
       h(

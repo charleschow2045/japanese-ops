@@ -22,7 +22,7 @@ const assert=(c,m)=>{if(!c){console.log('FAIL',m);process.exitCode=1}else consol
        const i=p.options.findIndex(o=>o.ok);visited.push(p.options[i].l);await pg.locator('.dlg-opt').nth(i).click();
      } else if(p.type==='check'){
        if(wrongFirst&&!wrongDone){const j=p.options.findIndex(o=>o!==p.answer);await pg.locator('.dlg-opt').nth(j).click();wrongDone=true;visited.push('wrongcheck')}
-       await pg.locator('.dlg-opt',{hasText:p.answer}).first().click();visited.push('check');
+       await pg.locator('.dlg-opt').nth(p.options.indexOf(p.answer)).click();visited.push('check');
      } else await pg.waitForTimeout(60);
    }
    return {visited,done:false};

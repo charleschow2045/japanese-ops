@@ -17,7 +17,7 @@ const NEW3=['sight','onsen','call'];
  const rows=await pg.locator('.tile,.mod-row').allInnerTexts();
  assert(rows.length===13,'2 cards + 11 scenes listed ('+rows.length+')');
  console.log('  last 3:',rows.slice(-3).map(r=>r.replace(/\n/g,' ')).join(' / '));
- assert(rows[10].includes('觀光景點')&&rows[10].includes('16 句')&&rows[11].includes('溫泉')&&rows[11].includes('12 句')&&rows[12].includes('預約與電話')&&rows[12].includes('12 句'),'new scene rows & counts');
+ assert(rows[10].includes('觀光景點')&&rows[10].includes('21 句')&&rows[11].includes('溫泉')&&rows[11].includes('15 句')&&rows[12].includes('預約與電話')&&rows[12].includes('16 句'),'new scene rows & counts');
  assert(rows[3].includes('43 句')&&rows[4].includes('34 句'),'restaurant 43, shopping 34');
  await pg.locator('.tile,.mod-row',{hasText:'預約與電話'}).click();
  assert(await pg.locator('.phrase').count()>=10,'call scene lists cards');
