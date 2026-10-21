@@ -230,7 +230,7 @@ const assert = (c, m) => { if (!c) { console.log('FAIL', m); process.exitCode = 
   await openDaily();
   let fin = await main();
   assert(fin.includes('30 日入門路線結業') && fin.includes('完成 28 天') && fin.includes('略過 2 天'), '結業卡：完成 28 天、略過 2 天');
-  assert(/情境對話：已玩 \d+ ?\/ ?10/.test(fin.replace(/\s+/g, ' ')) && fin.includes('藥妝店對話不在路線內'), '結業卡：「情境對話已玩 x/10」旁有「藥妝店對話不在路線內」');
+  assert(/情境對話：已玩 \d+ ?\/ ?13/.test(fin.replace(/\s+/g, ' ')) && fin.includes('藥妝店、觀光景點、溫泉、預約與電話的對話不在路線內'), '結業卡：「情境對話已玩 x/13」旁有「藥妝店、觀光景點、溫泉、預約與電話的對話不在路線內」');
   assert(fin.includes('必學 30 句') && fin.includes('五十音掌握') && fin.includes('句子熟練'), '結業卡：必學 30 句、五十音、句子熟練統計');
   assert((await pg.getByRole('button', { name: '回到自由模式' }).count()) === 1 && (await pg.getByRole('button', { name: '重新開始路線' }).count()) === 1, '結業卡（路線模式）：有「回到自由模式」和「重新開始路線」');
 
@@ -273,7 +273,7 @@ const assert = (c, m) => { if (!c) { console.log('FAIL', m); process.exitCode = 
   assert((await main()).includes('自由模式') && (await pg.getByRole('button', { name: '📍 路線地圖' }).count()) === 1, '進度頁：自由模式但有進度 → 顯示路線區（自由模式）');
   await seed({ mode: 'route', start: 1, doneDays: upTo(30), skipDays: {}, promptSeen: true });
   await tab('進度');
-  assert((await main()).includes('已結業') && (await main()).includes('藥妝店對話不在路線內'), '進度頁：結業顯示「已結業」和統計');
+  assert((await main()).includes('已結業') && (await main()).includes('藥妝店、觀光景點、溫泉、預約與電話的對話不在路線內'), '進度頁：結業顯示「已結業」和統計');
 
   // 第 29–30 天口語：優先必學 30 句（未熟練的）
   const sp = await pg.evaluate(() => {

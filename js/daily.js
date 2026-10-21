@@ -544,7 +544,7 @@ window.App = window.App || {};
       h("li", null, `📌 必學 30 句：熟練 ${st.must.mastered} / ${st.must.total}`),
       h("li", null, `あ 五十音掌握：平假名 ${st.hira.done} / ${st.hira.total}・片假名 ${st.kata.done} / ${st.kata.total}`),
       h("li", null, `💬 句子熟練：${st.sentences.mastered} / ${st.sentences.all}`),
-      h("li", null, `🛎️ 情境對話：已玩 ${st.dialogues.played} / ${st.dialogues.total}`, h("span", { class: "xs muted" }, "　藥妝店對話不在路線內"))
+      h("li", null, `🛎️ 情境對話：已玩 ${st.dialogues.played} / ${st.dialogues.total}`, h("span", { class: "xs muted" }, "　藥妝店、觀光景點、溫泉、預約與電話的對話不在路線內"))
     );
   }
 

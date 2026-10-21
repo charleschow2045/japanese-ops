@@ -56,7 +56,7 @@ const NEW3=['sight','onsen','call'];
  // 6 progress + daily + backup
  pg=await mk(null);await pg.goto(U);await pg.getByRole('button',{name:'進度'}).click();
  const pt=await pg.locator('main').innerText();
- assert(pt.includes('303')&&pt.includes('觀光景點')&&pt.includes('溫泉')&&pt.includes('預約與電話'),'進度頁 303 + new scenes');
+ assert(pt.includes('315')&&pt.includes('觀光景點')&&pt.includes('溫泉')&&pt.includes('預約與電話'),'進度頁 315 + new scenes');
  const plan=await pg.evaluate(()=>{const S=window.App.Storage;let s=S.loadState();s={...s,daily:{...s.daily,cursor:8,days:{}}};const r=window.App.Daily.ensureToday(s);return r.daily.days[S.todayLocal()].newIds});
  assert(plan.length>0&&plan.every(id=>id.startsWith('sight-')),'daily new sentences can come from 觀光景點: '+plan.join(','));
  const bk=await pg.evaluate(()=>{const S=window.App.Storage;const s=S.loadState();const t=JSON.stringify(S.buildBackup(s));const r=S.parseBackup(t);

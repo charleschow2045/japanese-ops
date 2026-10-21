@@ -156,7 +156,7 @@ window.App.Content = window.App.Content || {};
     // stage 7a — new sentences
     { id: "shop-23", ja: "カードでお願いします。", kana: "カードでおねがいします", romaji: "kaado de onegai shimasu", yue: "我用信用卡付款", use: "回答「請問如何付款？」", who: "me" },
     { id: "shop-24", ja: "あちらです。", kana: "あちらです", romaji: "achira desu", yue: "在那邊", use: "被問到商品或地點位置時店員回答", who: "staff" },
-    { id: "shop-25", ja: "はい、できます。", kana: "はい、できます", romaji: "hai, dekimasu", yue: "是的，可以辦理", use: "被問到「可以免稅嗎？」時店員回答", who: "staff" },
+    { id: "shop-25", ja: "はい、できます。", kana: "はい、できます", romaji: "hai, dekimasu", yue: "是的，可以辦理", use: "被問到可否辦理（例如免稅、刷卡）時店員回答", who: "staff" },
     { id: "shop-26", ja: "すみません、免税はできません。", kana: "すみません、めんぜいはできません", romaji: "sumimasen, menzei wa dekimasen", yue: "不好意思，無法辦理免稅", use: "店員回答（不辦理免稅）", who: "staff" },
     { id: "shop-27", ja: "試着室はどこですか。", kana: "しちゃくしつはどこですか", romaji: "shichakushitsu wa doko desu ka", yue: "試衣間在哪裡？", use: "買衣服想試穿時", who: "me" },
     { id: "shop-28", ja: "これの在庫はありますか。", kana: "これのざいこはありますか", romaji: "kore no zaiko wa arimasu ka", yue: "這個還有庫存嗎？", use: "展示品只有一件或尺寸不齊時", who: "me" },
@@ -420,6 +420,11 @@ window.App.Content = window.App.Content || {};
     { id: "sight-14", ja: "ここに荷物を預けられますか。", kana: "ここににもつをあずけられますか", romaji: "koko ni nimotsu o azukeraremasu ka", yue: "可以在這裡寄存行李嗎？", use: "參觀前想寄存行李", who: "me" },
     { id: "sight-15", ja: "お土産売り場はどこですか。", kana: "おみやげうりばはどこですか", romaji: "omiyage uriba wa doko desu ka", yue: "手信（紀念品）店在哪裡？", use: "想買手信時", who: "me" },
     { id: "sight-16", ja: "休憩できる場所はありますか。", kana: "きゅうけいできるばしょはありますか", romaji: "kyuukei dekiru basho wa arimasu ka", yue: "有可以休息的地方嗎？", use: "走累了或想坐下時", who: "me" },
+    { id: "sight-17", ja: "大人は1,000円です。", kana: "おとなはせんえんです", romaji: "otona wa sen en desu", yue: "成人票 1,000 日圓", use: "售票處職員報票價（金額會變）", who: "staff", say: "大人はせん円です。" },
+    { id: "sight-18", ja: "大人は1,500円です。", kana: "おとなはせんごひゃくえんです", romaji: "otona wa sen gohyaku en desu", yue: "成人票 1,500 日圓", use: "售票處職員報票價（金額會變）", who: "staff", say: "大人はせんごひゃく円です。" },
+    { id: "sight-19", ja: "2,000円です。", kana: "にせんえんです", romaji: "nisen en desu", yue: "2,000 日圓", use: "售票處職員報總金額（金額會變）", who: "staff", say: "にせん円です。" },
+    { id: "sight-20", ja: "3,000円です。", kana: "さんぜんえんです", romaji: "sanzen en desu", yue: "3,000 日圓", use: "售票處職員報總金額（金額會變）", who: "staff", say: "さんぜん円です。" },
+    { id: "sight-21", ja: "こちらがチケットです。", kana: "こちらがチケットです", romaji: "kochira ga chiketto desu", yue: "這是您的門票", use: "職員交出門票時", who: "staff" },
   ];
 
   const ONSEN = [
@@ -435,6 +440,9 @@ window.App.Content = window.App.Content || {};
     { id: "onsen-10", ja: "タオルをお湯に入れないでください。", kana: "タオルをおゆにいれないでください", romaji: "taoru o oyu ni irenaide kudasai", yue: "請不要把毛巾放進浴池", use: "職員提醒浴池規矩", who: "staff" },
     { id: "onsen-11", ja: "ここで靴を脱いでください。", kana: "ここでくつをぬいでください", romaji: "koko de kutsu o nuide kudasai", yue: "請在這裡脫鞋", use: "進入旅館或浴場入口時", who: "staff" },
     { id: "onsen-12", ja: "ロッカーの鍵はどこですか。", kana: "ロッカーのかぎはどこですか", romaji: "rokkaa no kagi wa doko desu ka", yue: "儲物櫃的鎖匙在哪裡？", use: "找更衣櫃的鎖匙", who: "me" },
+    { id: "onsen-13", ja: "800円です。", kana: "はっぴゃくえんです", romaji: "happyaku en desu", yue: "800 日圓", use: "被問到入浴費時職員回答（金額會變）", who: "staff", say: "はっぴゃく円です。" },
+    { id: "onsen-14", ja: "1,000円です。", kana: "せんえんです", romaji: "sen en desu", yue: "1,000 日圓", use: "被問到入浴費時職員回答（金額會變）", who: "staff", say: "せん円です。" },
+    { id: "onsen-15", ja: "はい、お貸しできます。", kana: "はい、おかしできます", romaji: "hai, okashi dekimasu", yue: "是的，可以借給您", use: "被問到能否借毛巾時職員回答", who: "staff" },
   ];
 
   const CALL = [
@@ -456,6 +464,10 @@ window.App.Content = window.App.Content || {};
     { id: "call-10", ja: "もしもし。", kana: "もしもし", romaji: "moshimoshi", yue: "喂（電話中的招呼）", use: "接通電話時", who: "me" },
     { id: "call-11", ja: "あとでまた電話します。", kana: "あとでまたでんわします", romaji: "atode mata denwa shimasu", yue: "我稍後再打電話過來", use: "對方暫時不能接聽時", who: "me" },
     { id: "call-12", ja: "電話番号を教えてください。", kana: "でんわばんごうをおしえてください", romaji: "denwabangou o oshiete kudasai", yue: "請告訴我電話號碼", use: "需要記下對方電話時", who: "me" },
+    { id: "call-13", ja: "お電話ありがとうございます。", kana: "おでんわありがとうございます", romaji: "odenwa arigatou gozaimasu", yue: "感謝您來電", use: "餐廳或酒店接聽電話時的第一句", who: "staff" },
+    { id: "call-14", ja: "はい、承ります。", kana: "はい、うけたまわります", romaji: "hai, uketamawarimasu", yue: "好的，由我為您辦理", use: "店員受理預約時", who: "staff" },
+    { id: "call-15", ja: "チャンです。", kana: "チャンです", romaji: "chan desu", yue: "我姓陳（請換成自己的姓氏）", use: "被問到預約姓名時回答（姓氏要換）", who: "me" },
+    { id: "call-16", ja: "お待ちしております。", kana: "おまちしております", romaji: "omachi shite orimasu", yue: "恭候您的光臨", use: "預約完成後店員的結束語", who: "staff" },
   ];
 
   // Emergency numbers card shown at the top of 緊急情況 (user-supplied).

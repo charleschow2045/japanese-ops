@@ -50,7 +50,7 @@ const OLD=["polite","restaurant","shopping","transport","hotel","directions","em
  pg=await mk(null);await pg.goto(require('./lib').BASE+'/index.html');await pg.getByRole('button',{name:'進度'}).click();
  const pt=await pg.locator('main').innerText();
  console.log('  progress:',(pt.match(/.{0,40}215.{0,20}/)||['(no 215)'])[0].replace(/\n/g,' '),'| scene:',pt.includes('機場入境'));
- assert(pt.includes('機場入境')&&pt.includes('303'),'進度頁 lists 機場入境 and totals 303');
+ assert(pt.includes('機場入境')&&pt.includes('315'),'進度頁 lists 機場入境 and totals 315');
  // daily: simulate cursor to airport
  const plan=await pg.evaluate(()=>{const S=window.App.Storage;let s=S.loadState();s={...s,daily:{...s.daily,cursor:7,days:{}}};const r=window.App.Daily.ensureToday(s);return r.daily.days[S.todayLocal()].newIds});
  assert(plan.every(id=>id.startsWith('air-'))&&plan.length>0,'daily 今日新句子 can pick 機場入境 sentences: '+plan.join(','));
