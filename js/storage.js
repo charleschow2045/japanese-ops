@@ -13,7 +13,7 @@ window.App = window.App || {};
     { key: "listening", label: "聽力練習", sub: "聽句子選意思", emoji: "🎧", implemented: true },
     { key: "speaking", label: "口語練習", sub: "看意思讀日文", emoji: "🎤", implemented: true },
     { key: "numbers", label: "數字・價錢", sub: "價錢、時間、號碼", emoji: "🔢", implemented: true },
-    { key: "reading", label: "看得懂", sub: "認讀片假名詞", emoji: "🪧", implemented: true },
+    { key: "reading", label: "看得懂", sub: "片假名詞、餐牌", emoji: "🪧", implemented: true },
     { key: "dialogue", label: "情境對話", sub: "與店員一問一答", emoji: "🛎️", implemented: true },
     { key: "show", label: "指給店員看", sub: "全螢幕大字日文", emoji: "📱", implemented: true },
   ];
@@ -111,8 +111,10 @@ window.App = window.App || {};
   //   prefs: scenes (null = all 情境, else an array of 情境 names), mode (see 看詞選意思 | hear 聽音選詞 | mix), count (5/10/20)
   //   stats: { [word]: { c, w, last } }   (the 120 words of KATAKANA_EXAMPLES)
   //   A wrong answer enters 錯題重溫 as "r:<word>" (reviewed inside the 看得懂 module).
+  //   menu (stage 10 ⑦ 版本二 模擬餐牌): prefs { menus: null (all) | [menu id], count }, stats { "<menu id>:<line 0–4>": { c, w, last } };
+  //   a wrong answer enters 錯題重溫 as "m:<menu id>:<line 0–4>".
   function defaultRead() {
-    return { prefs: { scenes: null, mode: "mix", count: 10 }, stats: {} };
+    return { prefs: { scenes: null, mode: "mix", count: 10 }, stats: {}, menu: { prefs: { menus: null, count: 10 }, stats: {} } };
   }
 
   // daily (stage 7b 每日任務):
@@ -243,6 +245,10 @@ window.App = window.App || {};
     if (!["see", "hear", "mix"].includes(read.prefs.mode)) read.prefs.mode = "mix";
     if (![5, 10, 20].includes(read.prefs.count)) read.prefs.count = 10;
     if (!read.stats || typeof read.stats !== "object" || Array.isArray(read.stats)) read.stats = {};
+    const mn = parsed.read && typeof parsed.read.menu === "object" && parsed.read.menu ? parsed.read.menu : {};
+    read.menu = { prefs: { ...base.read.menu.prefs, ...(mn.prefs && typeof mn.prefs === "object" ? mn.prefs : {}) }, stats: mn.stats && typeof mn.stats === "object" && !Array.isArray(mn.stats) ? mn.stats : {} };
+    read.menu.prefs.menus = Array.isArray(read.menu.prefs.menus) ? read.menu.prefs.menus.filter((x) => typeof x === "string" && /^[a-z]{1,10}$/.test(x)).slice(0, 12) : null;
+    if (![5, 10, 20].includes(read.menu.prefs.count)) read.menu.prefs.count = 10;
     const show = { ...base.show, ...(parsed.show || {}) };
     show.saved = { ...base.show.saved, ...(parsed.show && typeof parsed.show.saved === "object" && parsed.show.saved ? parsed.show.saved : {}) };
     Object.keys(show.saved).forEach((k) => {
@@ -420,6 +426,15 @@ window.App = window.App || {};
     return correct ? next : reviewWrong(next, `r:${word}`);
   }
 
+  // 模擬餐牌 answer (js/reading.js). `line` 0–4; a wrong one (re)enters 錯題重溫 as "m:<menu id>:<line>".
+  function recordMenuAnswer(state, menuId, line, correct) {
+    const key = `${menuId}:${line}`;
+    const prev = state.read.menu.stats[key] || { c: 0, w: 0, last: null };
+    const stats = { ...state.read.menu.stats, [key]: { c: prev.c + (correct ? 1 : 0), w: prev.w + (correct ? 0 : 1), last: new Date().toISOString() } };
+    const next = bumpActivity({ ...state, read: { ...state.read, menu: { ...state.read.menu, stats } } }, correct);
+    return correct ? next : reviewWrong(next, `m:${key}`);
+  }
+
   // A finished 情境對話: `correct` of `total` first-try answers (用戶選擇題 + 理解題).
   function recordDialogue(state, id, correct, total) {
     const prev = state.dialogue.stats[id] || { plays: 0, perfect: 0, best: 0, last: null };
@@ -587,6 +602,11 @@ window.App = window.App || {};
     put(out.read.prefs, "scenes", Array.isArray(rdp.scenes) ? [...new Set(rdp.scenes.filter((x) => typeof x === "string" && x.length > 0 && x.length <= 12))].slice(0, 20) : undefined);
     put(out.read.prefs, "mode", ["see", "hear", "mix"].includes(rdp.mode) ? rdp.mode : undefined);
     put(out.read.prefs, "count", [5, 10, 20].includes(rdp.count) ? rdp.count : undefined);
+    const mnu = isObj(rd.menu) ? rd.menu : {};
+    const mnp = isObj(mnu.prefs) ? mnu.prefs : {};
+    out.read.menu = { stats: cleanMap(mnu.stats, cleanStat, (key) => /^[a-z]{1,10}:[0-4]$/.test(key)), prefs: {} };
+    put(out.read.menu.prefs, "menus", Array.isArray(mnp.menus) ? [...new Set(mnp.menus.filter((x) => typeof x === "string" && /^[a-z]{1,10}$/.test(x)))].slice(0, 12) : undefined);
+    put(out.read.menu.prefs, "count", [5, 10, 20].includes(mnp.count) ? mnp.count : undefined);
 
     const sh = raw.show || {};
     const ss = isObj(sh.saved) ? sh.saved : {};
@@ -616,7 +636,7 @@ window.App = window.App || {};
       items: cleanMap(
         rv.items,
         (v) => (isObj(v) && isInt(v.box, 0, 4) && isDate(v.due) ? { box: v.box, due: v.due } : undefined),
-        (key) => /^[pskr]:.{1,30}$/.test(key) || /^n:(yen|time|ban|nin|fun|num|month|day|date):[0-9:]{1,8}$/.test(key) || /^w:[hs]:p[1-6]:[a-z0-9]{1,20}$/.test(key)
+        (key) => /^[pskr]:.{1,30}$/.test(key) || /^m:[a-z]{1,10}:[0-4]$/.test(key) || /^n:(yen|time|ban|nin|fun|num|month|day|date):[0-9:]{1,8}$/.test(key) || /^w:[hs]:p[1-6]:[a-z0-9]{1,20}$/.test(key)
       ),
       graduated: isInt(rv.graduated, 0, 1e7) ? rv.graduated : 0,
     };
@@ -716,6 +736,7 @@ window.App = window.App || {};
     recordNumberAnswer,
     recordSwapAnswer,
     recordReadAnswer,
+    recordMenuAnswer,
     runOf,
     bumpActivity,
     reviewWrong,

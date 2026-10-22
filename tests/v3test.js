@@ -8,7 +8,7 @@ const U=require('./lib').BASE+'/index.html';
   await pg.goto(U);await pg.locator('.tab',{hasText:'進度'}).click();
   const nums=await pg.locator('.stat-n').evaluateAll(els=>els.map(e=>({t:e.textContent,fits:e.scrollWidth<=e.clientWidth+1,fs:parseFloat(getComputedStyle(e).fontSize)})));
   console.log('  ',w,JSON.stringify(nums.slice(0,4)));
-  assert(nums.length===12,w+': 12 stat tiles (4 overview + 3 phrases + 2 dialogue + 3 review)');
+  assert(nums.length===15,w+': 15 stat tiles (4 overview + 3 phrases + 2 dialogue + 3 看得懂 + 3 review)');
   assert(nums.every(n=>n.fits),w+': every big number fits its tile');
   assert(Math.min(...nums.map(n=>n.fs))>=30,w+': numbers ≥ 30px (was ~23px)');
   const accents=await pg.locator('#main .card.accent').evaluateAll(els=>els.map(e=>e.style.getPropertyValue('--a-solid')));

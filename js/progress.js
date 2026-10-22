@@ -233,6 +233,7 @@ window.App = window.App || {};
       "🪧 看得懂",
       "reading",
       h("div", { class: "stat-grid three" }, stat(`${c.known}/${c.total}`, "認得的片假名詞", "reading"), stat(String(c.learning), "學習中", "listening"), stat(String(c.unseen), "未練習", "show")),
+      h("p", { class: "small mt-3" }, `🍜 餐牌：認得 ${window.App.Reading.menuCounts(state).known} / ${window.App.Reading.menuCounts(state).total} 行`),
       h("p", { class: "xs muted mt-2" }, "「認得」＝答對 2 次以上，而且不在重溫清單。")
     );
   }

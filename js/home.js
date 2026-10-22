@@ -111,7 +111,7 @@ window.App = window.App || {};
               const m = window.App.Storage.MODULES.find((x) => x.key === key);
               // 聽力／口語／看得懂 tiles show today's 錯題重溫 count when there is any.
               const due = key === "listening" ? window.App.Listening.dueCount(state) : key === "speaking" ? window.App.Speaking.dueCount(state) : key === "reading" ? window.App.Reading.dueCount(state) : 0;
-              return moduleTile(due > 0 ? { ...m, sub: `📝 今天需重溫 ${due} ${key === "reading" ? "個詞" : "句"}` } : m, () => onOpenModule(key));
+              return moduleTile(due > 0 ? { ...m, sub: `📝 今天需重溫 ${due} ${key === "reading" ? "項" : "句"}` } : m, () => onOpenModule(key));
             })
           )
         )

@@ -347,10 +347,12 @@ window.App = window.App || {};
           state,
           onPrefsChange: (patch) => setState((s) => ({ ...s, read: { ...s.read, prefs: { ...s.read.prefs, ...patch } } })),
           // A wrong answer (re)enters 重溫 inside recordReadAnswer; only a correct answer DURING 重溫 moves the item on.
-          onAnswer: (word, correct, kind) =>
+          onMenuPrefsChange: (patch) => setState((s) => ({ ...s, read: { ...s.read, menu: { ...s.read.menu, prefs: { ...s.read.menu.prefs, ...patch } } } })),
+          onAnswer: (q, correct, kind) =>
             setState((s) => {
-              const next = Storage.recordReadAnswer(s, word, correct);
-              return correct && kind === "review" ? Storage.reviewCorrect(next, `r:${word}`) : next;
+              const key = q.family === "menu" ? `m:${q.menu.id}:${q.line}` : `r:${q.item.word}`;
+              const next = q.family === "menu" ? Storage.recordMenuAnswer(s, q.menu.id, q.line, correct) : Storage.recordReadAnswer(s, q.item.word, correct);
+              return correct && kind === "review" ? Storage.reviewCorrect(next, key) : next;
             }),
           onBack: backFromModule,
           rerender: render,
