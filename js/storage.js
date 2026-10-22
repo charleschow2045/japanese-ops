@@ -13,7 +13,7 @@ window.App = window.App || {};
     { key: "listening", label: "聽力練習", sub: "聽句子選意思", emoji: "🎧", implemented: true },
     { key: "speaking", label: "口語練習", sub: "看意思讀日文", emoji: "🎤", implemented: true },
     { key: "numbers", label: "數字・價錢", sub: "價錢、時間、號碼", emoji: "🔢", implemented: true },
-    { key: "reading", label: "看得懂", sub: "餐牌、商品、車站", emoji: "🪧", implemented: false },
+    { key: "reading", label: "看得懂", sub: "認讀片假名詞", emoji: "🪧", implemented: true },
     { key: "dialogue", label: "情境對話", sub: "與店員一問一答", emoji: "🛎️", implemented: true },
     { key: "show", label: "指給店員看", sub: "全螢幕大字日文", emoji: "📱", implemented: true },
   ];
@@ -107,6 +107,14 @@ window.App = window.App || {};
     return { prefs: { pats: ["p1", "p2", "p3", "p4", "p5", "p6"], count: 10 }, stats: {} };
   }
 
+  // read (stage 10 ⑦ 看得懂, js/reading.js): katakana-word reading practice.
+  //   prefs: scenes (null = all 情境, else an array of 情境 names), mode (see 看詞選意思 | hear 聽音選詞 | mix), count (5/10/20)
+  //   stats: { [word]: { c, w, last } }   (the 120 words of KATAKANA_EXAMPLES)
+  //   A wrong answer enters 錯題重溫 as "r:<word>" (reviewed inside the 看得懂 module).
+  function defaultRead() {
+    return { prefs: { scenes: null, mode: "mix", count: 10 }, stats: {} };
+  }
+
   // daily (stage 7b 每日任務):
   //   learned:  { [sentence id]: "YYYY-MM-DD" } 每日任務「今日新句子」學過的句子
   //   days:     { [date]: { newIds, speakIds, dialogueId, due0: { l, s }, done: { reviewL, reviewS, new, speak, dialogue, kana } } }
@@ -137,7 +145,7 @@ window.App = window.App || {};
   //   box = correct review answers in a row (0–4); due = local date
   //   "YYYY-MM-DD" when it is next asked. See REVIEW_INTERVALS.
   function defaultState() {
-    return { settings: defaultSettings(), kana: defaultKana(), flags: [], favs: [], listen: defaultListen(), speak: defaultSpeak(), dialogue: defaultDialogue(), numbers: defaultNumbers(), swap: defaultSwap(), show: defaultShow(), help: defaultHelp(), daily: defaultDaily(), path: defaultPath(), review: { items: {}, graduated: 0 }, backup: { lastExportAt: null } };
+    return { settings: defaultSettings(), kana: defaultKana(), flags: [], favs: [], listen: defaultListen(), speak: defaultSpeak(), dialogue: defaultDialogue(), numbers: defaultNumbers(), swap: defaultSwap(), read: defaultRead(), show: defaultShow(), help: defaultHelp(), daily: defaultDaily(), path: defaultPath(), review: { items: {}, graduated: 0 }, backup: { lastExportAt: null } };
   }
 
   // ── local dates (phone's own calendar day — never UTC) ──
@@ -229,6 +237,12 @@ window.App = window.App || {};
     swap.prefs.pats = Array.isArray(swap.prefs.pats) ? swap.prefs.pats.filter((p) => /^p[1-6]$/.test(p)) : base.swap.prefs.pats;
     if (![5, 10, 20].includes(swap.prefs.count)) swap.prefs.count = 10;
     if (!swap.stats || typeof swap.stats !== "object" || Array.isArray(swap.stats)) swap.stats = {};
+    const read = { ...base.read, ...(parsed.read || {}) };
+    read.prefs = { ...base.read.prefs, ...((parsed.read && parsed.read.prefs) || {}) };
+    read.prefs.scenes = Array.isArray(read.prefs.scenes) ? read.prefs.scenes.filter((x) => typeof x === "string" && x.length > 0 && x.length <= 12).slice(0, 20) : null;
+    if (!["see", "hear", "mix"].includes(read.prefs.mode)) read.prefs.mode = "mix";
+    if (![5, 10, 20].includes(read.prefs.count)) read.prefs.count = 10;
+    if (!read.stats || typeof read.stats !== "object" || Array.isArray(read.stats)) read.stats = {};
     const show = { ...base.show, ...(parsed.show || {}) };
     show.saved = { ...base.show.saved, ...(parsed.show && typeof parsed.show.saved === "object" && parsed.show.saved ? parsed.show.saved : {}) };
     Object.keys(show.saved).forEach((k) => {
@@ -289,6 +303,7 @@ window.App = window.App || {};
       dialogue,
       numbers,
       swap,
+      read,
       show,
       help,
       daily,
@@ -397,6 +412,14 @@ window.App = window.App || {};
     return correct ? next : reviewWrong(next, `w:${mode}:${pat}:${wid}`);
   }
 
+  // 看得懂 answer (js/reading.js). A wrong one (re)enters 錯題重溫 as "r:<word>".
+  function recordReadAnswer(state, word, correct) {
+    const prev = state.read.stats[word] || { c: 0, w: 0, last: null };
+    const stats = { ...state.read.stats, [word]: { c: prev.c + (correct ? 1 : 0), w: prev.w + (correct ? 0 : 1), last: new Date().toISOString() } };
+    const next = bumpActivity({ ...state, read: { ...state.read, stats } }, correct);
+    return correct ? next : reviewWrong(next, `r:${word}`);
+  }
+
   // A finished 情境對話: `correct` of `total` first-try answers (用戶選擇題 + 理解題).
   function recordDialogue(state, id, correct, total) {
     const prev = state.dialogue.stats[id] || { plays: 0, perfect: 0, best: 0, last: null };
@@ -488,7 +511,7 @@ window.App = window.App || {};
   // (→ "invalid").  The result still goes through normalizeState.
   function sanitizeState(raw) {
     if (!isObj(raw)) throw new TypeError("state");
-    ["settings", "kana", "listen", "speak", "dialogue", "numbers", "swap", "show", "daily", "review"].forEach((k) => {
+    ["settings", "kana", "listen", "speak", "dialogue", "numbers", "swap", "read", "show", "daily", "review"].forEach((k) => {
       if (raw[k] !== undefined && !isObj(raw[k])) throw new TypeError(k);
     });
     if (raw.flags !== undefined && !Array.isArray(raw.flags)) throw new TypeError("flags");
@@ -558,6 +581,13 @@ window.App = window.App || {};
     put(out.swap.prefs, "pats", Array.isArray(swp.pats) ? [...new Set(swp.pats.filter((p) => typeof p === "string" && /^p[1-6]$/.test(p)))] : null);
     put(out.swap.prefs, "count", [5, 10, 20].includes(swp.count) ? swp.count : undefined);
 
+    const rd = raw.read || {};
+    const rdp = isObj(rd.prefs) ? rd.prefs : {};
+    out.read = { stats: cleanMap(rd.stats, cleanStat, (key) => isShortStr(key) && key.length <= 30), prefs: {} };
+    put(out.read.prefs, "scenes", Array.isArray(rdp.scenes) ? [...new Set(rdp.scenes.filter((x) => typeof x === "string" && x.length > 0 && x.length <= 12))].slice(0, 20) : undefined);
+    put(out.read.prefs, "mode", ["see", "hear", "mix"].includes(rdp.mode) ? rdp.mode : undefined);
+    put(out.read.prefs, "count", [5, 10, 20].includes(rdp.count) ? rdp.count : undefined);
+
     const sh = raw.show || {};
     const ss = isObj(sh.saved) ? sh.saved : {};
     const cleanText = (x) => (typeof x === "string" ? x.replace(/[\u0000-\u0008\u000b-\u001f\u007f]/g, "").slice(0, 300) : "");
@@ -586,7 +616,7 @@ window.App = window.App || {};
       items: cleanMap(
         rv.items,
         (v) => (isObj(v) && isInt(v.box, 0, 4) && isDate(v.due) ? { box: v.box, due: v.due } : undefined),
-        (key) => /^[psk]:.{1,30}$/.test(key) || /^n:(yen|time|ban|nin|fun|num|month|day|date):[0-9:]{1,8}$/.test(key) || /^w:[hs]:p[1-6]:[a-z0-9]{1,20}$/.test(key)
+        (key) => /^[pskr]:.{1,30}$/.test(key) || /^n:(yen|time|ban|nin|fun|num|month|day|date):[0-9:]{1,8}$/.test(key) || /^w:[hs]:p[1-6]:[a-z0-9]{1,20}$/.test(key)
       ),
       graduated: isInt(rv.graduated, 0, 1e7) ? rv.graduated : 0,
     };
@@ -685,6 +715,7 @@ window.App = window.App || {};
     recordDialogue,
     recordNumberAnswer,
     recordSwapAnswer,
+    recordReadAnswer,
     runOf,
     bumpActivity,
     reviewWrong,

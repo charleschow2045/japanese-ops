@@ -29,7 +29,7 @@ const S=require('./lib').OUT;
   };
   const shot=async n=>pg.screenshot({path:`${S}/D-${scheme}-${n}.png`,fullPage:false});
   assert(await pg.locator('.tile').count()===8,scheme+': 8 home tiles');
-  assert(await pg.locator('.tile.planned').count()===1,scheme+': 1 planned tile');
+  assert(await pg.locator('.tile.planned').count()===0,scheme+': no planned tile (看得懂 is live)');
   await shot('home'); await audit('home');
   await pg.locator('.tile',{hasText:'五十音'}).click(); await shot('kanamenu'); await audit('kana menu');
   await pg.locator('.tile,.mod-row',{hasText:'字表'}).first().click(); await shot('chart'); await audit('chart');

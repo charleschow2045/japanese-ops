@@ -63,7 +63,7 @@ window.App = window.App || {};
 
   function reviewCounts(state) {
     const today = Storage.todayLocal();
-    const due = { p: 0, s: 0, k: 0, n: 0, w: 0 };
+    const due = { p: 0, s: 0, k: 0, n: 0, w: 0, r: 0 };
     Object.entries(state.review.items).forEach(([key, it]) => {
       if (it.due <= today && due[key[0]] !== undefined) due[key[0]] += 1;
     });
@@ -227,14 +227,24 @@ window.App = window.App || {};
     );
   }
 
+  function readingSection(state) {
+    const c = window.App.Reading.counts(state);
+    return section(
+      "🪧 看得懂",
+      "reading",
+      h("div", { class: "stat-grid three" }, stat(`${c.known}/${c.total}`, "認得的片假名詞", "reading"), stat(String(c.learning), "學習中", "listening"), stat(String(c.unseen), "未練習", "show")),
+      h("p", { class: "xs muted mt-2" }, "「認得」＝答對 2 次以上，而且不在重溫清單。")
+    );
+  }
+
   function reviewSection(state) {
     const r = reviewCounts(state);
-    const dueTotal = r.due.p + r.due.s + r.due.k + r.due.n + r.due.w;
+    const dueTotal = r.due.p + r.due.s + r.due.k + r.due.n + r.due.w + r.due.r;
     return section(
       "📝 錯題重溫",
       "listening",
       h("div", { class: "stat-grid three" }, stat(String(dueTotal), "今天待重溫", "speaking"), stat(String(r.active), "重溫中", "listening"), stat(String(r.graduated), "已畢業", "dialogue")),
-      h("p", { class: "small mt-3" }, dueTotal > 0 ? `今天待重溫 ${dueTotal}（聽力 ${r.due.p}・口語 ${r.due.s}・五十音 ${r.due.k}・數字 ${r.due.n}・換字 ${r.due.w}）` : "今天沒有需要重溫的內容 🎉"),
+      h("p", { class: "small mt-3" }, dueTotal > 0 ? `今天待重溫 ${dueTotal}（聽力 ${r.due.p}・口語 ${r.due.s}・五十音 ${r.due.k}・數字 ${r.due.n}・換字 ${r.due.w}・看得懂 ${r.due.r}）` : "今天沒有需要重溫的內容 🎉"),
       h("p", { class: "xs muted mt-2" }, "「已畢業」只計算由階段 7b 開始畢業的項目。")
     );
   }
@@ -308,7 +318,7 @@ window.App = window.App || {};
   // ctx: { state, onOpenBackup, onOpenRouteMap }
   function render(ctx) {
     const { state } = ctx;
-    return h("div", { class: "stack-lg" }, h("h2", { class: "h-display" }, "進度"), backupNudge(ctx), overview(state), routeSection(ctx), weekChart(state), kanaSection(state), phraseSection(state), dialogueSection(state), reviewSection(state));
+    return h("div", { class: "stack-lg" }, h("h2", { class: "h-display" }, "進度"), backupNudge(ctx), overview(state), routeSection(ctx), weekChart(state), kanaSection(state), phraseSection(state), dialogueSection(state), readingSection(state), reviewSection(state));
   }
 
   window.App.Progress = { render, summary, routeStats };

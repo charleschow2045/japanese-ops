@@ -8,7 +8,7 @@
 //   dialogue   id of the 情境對話 unlocked that day, or null
 //   extras     optional 「今日延伸」 links, { text, go } — not tasks. go = where the link opens:
 //              numbers | kana:lookalike | kana:contrast | kana:sounds | kana:examples | show |
-//              phrases:must | backup | settings (see openExtra in js/app.js)
+//              phrases:must | reading | backup | settings (see openExtra in js/app.js)
 // Days without `kana` or `review` (18+) keep the normal 五十音熱身 on the characters learnt so far.
 // All Japanese comes from the 句子庫; the 免稅 sentences and the 藥妝店對話 are left out on purpose
 // (the 免稅 rules change on 2026-11-01).
@@ -141,7 +141,7 @@ window.App.Content = window.App.Content || {};
       review: "kata",
       sentences: ["shop-27", "shop-28", "shop-31", "shop-34", "shop-32"],
       dialogue: "conbini",
-      extras: [{ text: "五十音：相似字分辨（片假名）", go: "kana:lookalike" }, { text: "五十音：片假名實例", go: "kana:examples" }],
+      extras: [{ text: "五十音：相似字分辨（片假名）", go: "kana:lookalike" }, { text: "五十音：片假名實例", go: "kana:examples" }, { text: "看得懂：片假名詞", go: "reading" }],
     },
     {
       day: 15,

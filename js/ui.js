@@ -46,7 +46,7 @@ window.App = window.App || {};
     numbers: "numbers",
     show: "show",
     daily: "daily",
-    reading: "phrases", // 規劃中 (not built yet)
+    reading: "phrases", // 看得懂 shares the 句子庫 colour
   };
   const MODULE_ACCENTS = {};
   Object.keys(MODULE_COLOR).forEach((k) => {

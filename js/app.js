@@ -4,7 +4,7 @@
 window.App = window.App || {};
 
 (function () {
-  const { Storage, Home, Settings, KanaModule, Phrases, Listening, Speaking, Dialogue, Speech, Daily, Progress, Show } = window.App;
+  const { Storage, Home, Settings, KanaModule, Phrases, Listening, Speaking, Dialogue, Speech, Daily, Progress, Show, Reading } = window.App;
   const { h, accentVars } = window.App.UI;
 
   const TABS = [
@@ -70,6 +70,7 @@ window.App = window.App || {};
     Speaking.reset();
     Dialogue.reset();
     Show.reset();
+    Reading.reset();
     Settings.reset();
     nav.view = "daily";
     Daily.reset();
@@ -97,6 +98,7 @@ window.App = window.App || {};
         if (sub) Phrases.open(sub);
       } else if (mod === "numbers") Listening.reset();
       else if (mod === "show") Show.reset();
+      else if (mod === "reading") Reading.reset();
     }
     render({ scrollTop: true });
   }
@@ -145,6 +147,7 @@ window.App = window.App || {};
     if (key === "speaking") Speaking.reset();
     if (key === "dialogue") Dialogue.reset();
     if (key === "show") Show.reset();
+    if (key === "reading") Reading.reset();
     render({ scrollTop: true });
   }
 
@@ -333,6 +336,23 @@ window.App = window.App || {};
             }),
           task: nav.task,
           onBack: () => (nav.task ? leaveTask() : goHome()),
+          rerender: render,
+        })
+      );
+    } else if (nav.view === "reading") {
+      content = h(
+        "div",
+        { style: accentVars("reading") },
+        Reading.render({
+          state,
+          onPrefsChange: (patch) => setState((s) => ({ ...s, read: { ...s.read, prefs: { ...s.read.prefs, ...patch } } })),
+          // A wrong answer (re)enters 重溫 inside recordReadAnswer; only a correct answer DURING 重溫 moves the item on.
+          onAnswer: (word, correct, kind) =>
+            setState((s) => {
+              const next = Storage.recordReadAnswer(s, word, correct);
+              return correct && kind === "review" ? Storage.reviewCorrect(next, `r:${word}`) : next;
+            }),
+          onBack: backFromModule,
           rerender: render,
         })
       );

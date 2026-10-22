@@ -1199,3 +1199,7 @@ body::before {
 
 /* ── 日期讀音表：特別讀法標記 (stage 10 ⑤) ── */
 .ex-word .irr { font-size: 0.9rem; margin-right: 2px; vertical-align: 2px; }
+
+/* ── 看得懂 (stage 10 ⑦) ── */
+.read-word { display: block; font-size: 2.2rem; font-weight: 700; line-height: 1.35; overflow-wrap: anywhere; }
+.read-opt { font-size: 1.35rem; font-weight: 700; }

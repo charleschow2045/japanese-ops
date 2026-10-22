@@ -6,8 +6,8 @@ window.App = window.App || {};
 (function () {
   const { h, accentVars, inkButton } = window.App.UI;
 
-  // Two-column tile for one module. Unfinished modules (看得懂) show as a plain, non-button
-  // 「規劃中」 tile.
+  // Two-column tile for one module. A module that is not `implemented` shows as a plain, non-button
+  // 「規劃中」 tile (none at the moment).
   function moduleTile(mod, onOpen) {
     const isKana = mod.key === "kana";
     const icon = h("span", { class: `tile-icon ${isKana ? "jp" : ""}`.trim(), lang: isKana ? "ja" : null, "aria-hidden": "true" }, mod.emoji);
@@ -109,9 +109,9 @@ window.App = window.App || {};
             { class: "tile-grid" },
             g.keys.map((key) => {
               const m = window.App.Storage.MODULES.find((x) => x.key === key);
-              // 聽力／口語 tiles show today's 錯題重溫 count when there is any.
-              const due = key === "listening" ? window.App.Listening.dueCount(state) : key === "speaking" ? window.App.Speaking.dueCount(state) : 0;
-              return moduleTile(due > 0 ? { ...m, sub: `📝 今天需重溫 ${due} 句` } : m, () => onOpenModule(key));
+              // 聽力／口語／看得懂 tiles show today's 錯題重溫 count when there is any.
+              const due = key === "listening" ? window.App.Listening.dueCount(state) : key === "speaking" ? window.App.Speaking.dueCount(state) : key === "reading" ? window.App.Reading.dueCount(state) : 0;
+              return moduleTile(due > 0 ? { ...m, sub: `📝 今天需重溫 ${due} ${key === "reading" ? "個詞" : "句"}` } : m, () => onOpenModule(key));
             })
           )
         )

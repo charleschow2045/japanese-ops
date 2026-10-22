@@ -10,10 +10,10 @@ const assert=(c,m)=>{if(!c){console.log('FAIL',m);process.exitCode=1}else consol
  assert(await pg.locator('.hello-mascot path[fill="#FFC400"]').count()===0,'hello mood at start (no sparkles)');
  assert((await pg.locator('.hello-bubble').innerText()).includes('還差 4 項')||(await pg.locator('.hello-bubble').innerText()).includes('今天也學一點吧'),'greeting line');
  assert(await pg.locator('.stars span').count()===5,'5 stars');
- assert(await pg.locator('.tile.live').count()===7&&await pg.locator('.tile.planned').count()===1,'7 live tiles + 1 planned');
+ assert(await pg.locator('.tile.live').count()===8&&await pg.locator('.tile.planned').count()===0,'8 live tiles (看得懂 is live since stage 10 ⑦), no planned tile');
  const mods=await pg.locator('.tile-title').allInnerTexts();console.log('  tiles:',mods.join(' / '));
  assert(mods.includes('數字・價錢'),'數字・價錢 tile');
- assert(await pg.locator('button.tile.planned').count()===0,'看得懂 is not a button');
+ assert(await pg.locator('button.tile', {hasText:'看得懂'}).count()===1,'看得懂 is a button');
  // numbers hub
  await pg.locator('.tile',{hasText:'數字・價錢'}).click();
  assert((await pg.locator('.mod-header h2').innerText())==='數字・價錢','hub header');
