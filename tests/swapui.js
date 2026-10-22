@@ -18,7 +18,6 @@ const assert = (c, m) => { if (!c) { console.log('FAIL', m); process.exitCode = 
   const st = () => pg.evaluate(() => JSON.parse(localStorage.getItem('japaneseOps:v1')));
   const said = () => pg.evaluate(() => window.__said);
   const card = (t) => pg.locator('#main .card', { hasText: t }).last();
-  const chipIn = (c, name) => c.locator('.chip').filter({ hasText: name }).first();
   const btn = (name) => pg.locator('#main button', { hasText: name }).first();
 
   // 新存檔預設值
@@ -31,12 +30,12 @@ const assert = (c, m) => { if (!c) { console.log('FAIL', m); process.exitCode = 
   assert((await c.count()) === 1 && (await c.locator('.chip').count()) >= 6 + 3, '聽力選單：換字練習卡（6 個句型 chip＋題數）');
   assert((await c.innerText()).includes('〇〇は入っていますか。（13）') && (await c.innerText()).includes('64 個組合'), '句型 chip 顯示詞數；共 64 個組合');
   // 詞庫
-  await chipIn(c, '〇〇はどこですか。').last().click(); // the 詞庫 chip row comes after the 句型 chips
+  await card('換字練習（聽力）').locator('.chip').filter({ hasText: '〇〇はどこですか。' }).last().click(); // all matches (句型 chip, then 詞庫 chip) → the last one is the 詞庫 chip
   assert((await card('換字練習（聽力）').locator('.ex-card').count()) === 12, '查看詞庫：句型 ④ 列出 12 個詞');
   await pg.evaluate(() => (window.__said = []));
   await card('換字練習（聽力）').locator('.ex-card', { hasText: '改札' }).click();
   assert((await said()).slice(-1)[0] === 'かいさつ', '詞庫撳一行：朗讀假名（かいさつ）');
-  await chipIn(card('換字練習（聽力）'), '〇〇はどこですか。').last().click();
+  await card('換字練習（聽力）').locator('.chip').filter({ hasText: '〇〇はどこですか。' }).last().click();
   assert((await card('換字練習（聽力）').locator('.ex-card').count()) === 0, '再撳一次收起詞庫');
 
   // 揀句型：只留 p1、p3；5 題
