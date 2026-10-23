@@ -17,7 +17,7 @@ const assert = (c, m) => { if (!c) { console.log('FAIL', m); process.exitCode = 
     await pg.evaluate((src) => { const s = JSON.parse(localStorage.getItem('japaneseOps:v1')) || App.Storage.loadState(); new Function('s', src)(s); localStorage.setItem('japaneseOps:v1', JSON.stringify(s)); }, fn);
     await pg.reload();
   };
-  const toProgress = async () => { await pg.getByRole('button', { name: '進度' }).click(); await pg.waitForSelector('.ready-total'); };
+  const toProgress = async () => { await pg.locator('.tab', { hasText: '進度' }).click(); await pg.waitForSelector('.ready-total'); };
   const total = () => pg.locator('.ready-total').innerText();
   const rowOf = (label) => pg.locator('.ready-row').filter({ hasText: label }).first();
   const goOf = (label) => rowOf(label).locator('.ready-go');
