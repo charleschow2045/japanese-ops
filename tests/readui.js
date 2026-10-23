@@ -26,7 +26,7 @@ const assert = (c, m) => { if (!c) { console.log('FAIL', m); process.exitCode = 
   // ── 主頁磚 ──
   const tile = pg.locator('.tile', { hasText: '看得懂' });
   assert((await tile.evaluate((e) => e.tagName)) === 'BUTTON' && (await tile.evaluate((e) => e.classList.contains('live'))), '主頁「看得懂」磚：可點（唔再係「規劃中」）');
-  assert((await tile.innerText()).includes('認讀片假名詞'), '磚說明：認讀片假名詞');
+  assert((await tile.innerText()).includes('片假名詞、餐牌'), '磚說明：片假名詞、餐牌');
   await tile.click();
   assert((await pg.locator('.mod-header h2').innerText()) === '看得懂', '打開「看得懂」');
   let t = await pg.locator('#main').innerText();
@@ -47,7 +47,7 @@ const assert = (c, m) => { if (!c) { console.log('FAIL', m); process.exitCode = 
   for (let i = 0; i < 5; i++) {
     const word = (await pg.locator('.read-word').first().innerText()).trim();
     askedWords.push(word);
-    assert((await pg.locator('#main .opt').count()) === 4 && (await pg.locator('#main').innerText()).includes('這項是什麼意思'), `第 ${i + 1} 題：顯示片假名「${word}」、4 個意思選項`);
+    assert((await pg.locator('#main .opt').count()) === 4 && (await pg.locator('#main').innerText()).includes('這個詞是什麼意思'), `第 ${i + 1} 題：顯示片假名「${word}」、4 個意思選項`);
     assert((await said()).length === 0, `第 ${i + 1} 題：答題前唔播音（先靠眼睛認）`);
     const it = await wordOf(word);
     if (i % 2 === 0) { // answer correctly
