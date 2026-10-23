@@ -1,7 +1,7 @@
 // 進度頁 (stage 7b): the 📊 tab.  Read-only statistics computed from the
 // saved state — nothing here writes anything.
 //
-//   概覽 → 最近 7 天 → 五十音 → 句子庫（各情境）→ 情境對話 → 錯題重溫
+//   概覽 → 旅行準備度 → 最近 7 天 → 五十音 → 句子庫（各情境）→ 情境對話 → 錯題重溫
 //
 // Definitions (see CLAUDE.md):
 //   五十音「掌握」 = 答對 ≥ 2 次，而且目前不在錯題清單
@@ -317,10 +317,193 @@ window.App = window.App || {};
   }
 
   // ctx: { state, onOpenBackup, onOpenRouteMap }
-  function render(ctx) {
-    const { state } = ctx;
-    return h("div", { class: "stack-lg" }, h("h2", { class: "h-display" }, "進度"), backupNudge(ctx), overview(state), routeSection(ctx), weekChart(state), kanaSection(state), phraseSection(state), dialogueSection(state), readingSection(state), reviewSection(state));
+  // ── 旅行準備度 (stage 10 ⑧) ──────────────────────────────────────────
+  // A read-only checklist (no single score): 16 items in 4 groups, each with a target, a state
+  // (done ✓ / doing ◐ / todo ○), a progress bar, and — when not done — a hint and a 「前往」 button
+  // (`go` is opened by app.js openExtra; 返回 comes back to this page).
+  // The targets are this app's own reference, not a test of ability (the card says so).
+  const READY_SCENE = { restaurant: "餐廳", transport: "交通", emergency: "緊急情況" };
+  const READY_DIALOGUES = ["ramen", "station", "taxi", "hotel", "directions", "emergency", "airport"]; // 重點對話
+  const READY_RATIO = { key: 0.4, other: 0.25, hira: 0.8, kata: 0.6 };
+  const NUM_MIN = 20; // questions answered
+  const NUM_ACC = 0.8; // answer rate
+  const BACKUP_DAYS = 7;
+
+  const HINT = {
+    must: "先練「必學 30 句」：句子庫 → 📌 必學 30 句，再用聽力和口語各練幾次。",
+    restaurant: "多練餐廳句子，或玩「拉麵店」「快餐店」對話。",
+    transport: "多練交通句子，或玩「車站」「的士」對話。",
+    emergency: "多練緊急情況句子，並記住日本緊急電話：報警 110、火警及救護車 119。",
+    other: "每天完成每日任務，新句子會逐個情境輪流出現。",
+    hira: "用五十音的「看字選音」「聽音選字」練習，或跟著 30 日路線。",
+    kata: "用五十音的「看字選音」「聽音選字」練習，或跟著 30 日路線。",
+    words: "到「看得懂」練習片假名詞。",
+    menu: "到「看得懂」做「看餐牌練習」。",
+    yen: "到「數字・價錢」做數字聽力（價錢）。",
+    time: "到「數字・價錢」做數字聽力（時間）。",
+    date: "到「數字・價錢」做數字聽力（日期）。",
+    hotel: "在「指給店員看」填寫酒店名稱、地址和電話。",
+    travel: "到設定輸入旅行日期，會顯示倒數。",
+  };
+
+  // numbers stats of a few kinds together → { n, acc }
+  function numberStat(state, kinds) {
+    let c = 0;
+    let w = 0;
+    kinds.forEach((k) => {
+      const s = state.numbers.stats[k];
+      if (s) {
+        c += s.c || 0;
+        w += s.w || 0;
+      }
+    });
+    return { n: c + w, acc: c + w ? c / (c + w) : 0 };
   }
 
-  window.App.Progress = { render, summary, routeStats };
+  function readiness(state) {
+    const { PHRASE_SCENES, DIALOGUES } = window.App.Content;
+    const sc = sentenceCounts(state);
+    const kana = kanaCounts(state);
+    const must = Daily.mustCounts(state);
+    const reading = window.App.Reading.counts(state);
+    const menus = window.App.Reading.menuCounts(state);
+    const items = [];
+    const add = (group, id, label, value, target, detail, hint, go, extra = {}) => {
+      const done = extra.done !== undefined ? extra.done : value >= target;
+      const pct = extra.pct !== undefined ? extra.pct : target ? Math.min(1, value / target) : 0;
+      items.push({ group, id, label, value, target, pct, done, status: done ? "done" : pct > 0 ? "doing" : "todo", detail, hint: done ? null : hint, go, ...extra });
+    };
+    const ratioTarget = (total, r) => Math.ceil(total * r);
+
+    // 🗣️ 說得出、聽得懂
+    add("say", "must", "📌 必學 30 句熟練", must.mastered, 24, `熟練 ${must.mastered} / ${must.total}（目標 24）`, HINT.must, "phrases:must");
+    Object.keys(READY_SCENE).forEach((key) => {
+      const r = sc.rows.find((x) => x.scene.key === key);
+      const t = ratioTarget(r.mastered + r.learning + r.new, READY_RATIO.key);
+      add("say", key, `${r.scene.emoji} ${READY_SCENE[key]}句子熟練`, r.mastered, t, `熟練 ${r.mastered} / ${r.mastered + r.learning + r.new}（目標 ${t}）`, HINT[key], "phrases");
+    });
+    const others = sc.rows.filter((r) => !READY_SCENE[r.scene.key]);
+    const oMastered = others.reduce((n, r) => n + r.mastered, 0);
+    const oTotal = others.reduce((n, r) => n + r.mastered + r.learning + r.new, 0);
+    const oTarget = ratioTarget(oTotal, READY_RATIO.other);
+    add("say", "other", `💬 其他 ${others.length} 個情境句子熟練`, oMastered, oTarget, `熟練 ${oMastered} / ${oTotal}（目標 ${oTarget}）`, HINT.other, "daily");
+    const played = READY_DIALOGUES.filter((id) => (state.dialogue.stats[id] || { plays: 0 }).plays > 0);
+    const unplayed = READY_DIALOGUES.filter((id) => !played.includes(id)).map((id) => DIALOGUES.find((d) => d.id === id).title);
+    add("say", "dialogues", "🛎️ 重點對話玩過", played.length, READY_DIALOGUES.length, `玩過 ${played.length} / ${READY_DIALOGUES.length}（拉麵店、車站、的士、酒店、問路、緊急、機場）`, `還沒玩的重點對話：${unplayed.join("、")}。`, "dialogue");
+
+    // 🔤 認得出
+    const hT = ratioTarget(kana.hira.total, READY_RATIO.hira);
+    const kT = ratioTarget(kana.kata.total, READY_RATIO.kata);
+    add("read", "hira", "あ 平假名掌握", kana.hira.done, hT, `掌握 ${kana.hira.done} / ${kana.hira.total}（目標 ${hT}）`, HINT.hira, "kana");
+    add("read", "kata", "ア 片假名掌握", kana.kata.done, kT, `掌握 ${kana.kata.done} / ${kana.kata.total}（目標 ${kT}）`, HINT.kata, "kana");
+    add("read", "words", "🪧 認得的片假名詞", reading.known, 60, `認得 ${reading.known} / ${reading.total}（目標 60）`, HINT.words, "reading");
+    add("read", "menu", "🍜 認得的餐牌行", menus.known, 15, `認得 ${menus.known} / ${menus.total}（目標 15）`, HINT.menu, "reading");
+
+    // 🔢 數字
+    [
+      ["yen", "💴 價錢", ["yen"]],
+      ["time", "🕐 時間", ["time", "fun"]],
+      ["date", "📅 日期", ["month", "day", "date"]],
+    ].forEach(([id, label, kinds]) => {
+      const s = numberStat(state, kinds);
+      const done = s.n >= NUM_MIN && s.acc >= NUM_ACC;
+      const pct = Math.min(1, s.n / NUM_MIN) * (s.n >= NUM_MIN ? Math.min(1, s.acc / NUM_ACC) : 1);
+      add("num", id, `${label}（數字聽力）`, s.n, NUM_MIN, s.n ? `已答 ${s.n} 題・答對率 ${Math.round(s.acc * 100)}%（目標：答 ${NUM_MIN} 題以上、答對率 ${Math.round(NUM_ACC * 100)}% 以上）` : `還沒練習（目標：答 ${NUM_MIN} 題以上、答對率 ${Math.round(NUM_ACC * 100)}% 以上）`, HINT[id], "numbers", { done, pct, acc: s.acc });
+    });
+
+    // 🎒 旅行前準備
+    const saved = state.show.saved;
+    const filled = [saved.hotelName, saved.hotelAddress, saved.hotelTel].filter((x) => typeof x === "string" && x.trim()).length;
+    add("prep", "hotel", "🏨 酒店資料已填", filled, 3, `已填 ${filled} / 3 欄（名稱、地址、電話）`, HINT.hotel, "show");
+    const last = state.backup && state.backup.lastExportAt;
+    const ago = last ? Storage.daysBetween(Storage.localDateOf(last), Storage.todayLocal()) : null;
+    const backedUp = ago !== null && ago <= BACKUP_DAYS;
+    add("prep", "backup", `💾 ${BACKUP_DAYS} 天內備份過`, backedUp ? 1 : 0, 1, ago === null ? "還沒有備份過" : ago === 0 ? "今天已備份" : `上次備份：${ago} 天前`, ago === null ? "到設定匯出進度備份（還沒有備份過）。" : `到設定匯出進度備份（超過 ${BACKUP_DAYS} 天沒有備份）。`, "backup", { done: backedUp, pct: backedUp ? 1 : 0 });
+    const left = Daily.daysUntil(state.settings.travelDate);
+    add("prep", "travel", "✈️ 旅行日期已設定", left === null ? 0 : 1, 1, left === null ? "還沒有設定" : left < 0 ? `旅行日期 ${state.settings.travelDate}（已過，可到設定更新）` : left === 0 ? `旅行日期 ${state.settings.travelDate}（今天！）` : `旅行日期 ${state.settings.travelDate}（還有 ${left} 天）`, HINT.travel, "settings", { done: left !== null, pct: left === null ? 0 : 1 });
+
+    const GROUPS = [
+      { key: "say", title: "🗣️ 說得出、聽得懂" },
+      { key: "read", title: "🔤 認得出" },
+      { key: "num", title: "🔢 數字" },
+      { key: "prep", title: "🎒 旅行前準備" },
+    ];
+    const groups = GROUPS.map((g) => ({ ...g, items: items.filter((x) => x.group === g.key) }));
+    const reached = items.filter((x) => x.done).length;
+    return { items, groups, reached, total: items.length, next: items.find((x) => !x.done) || null };
+  }
+
+  const readyUi = { closed: new Set() }; // groups collapsed during this session (not saved)
+  const STATUS_ICO = { done: "✓", doing: "◐", todo: "○" };
+
+  function readySection(ctx) {
+    const r = readiness(ctx.state);
+    const go = (it) => ctx.onOpenGo && ctx.onOpenGo(it.go);
+    const goBtn = (it, cls) => ctx.onOpenGo && h("button", { class: `btn-soft ready-go ${cls || ""}`.trim(), onclick: () => go(it), "aria-label": `前往：${it.label}` }, "前往 →");
+    const row = (it) =>
+      h(
+        "div",
+        { class: `ready-row st-${it.status}` },
+        h("span", { class: "ready-ico", "aria-label": { done: "已達標", doing: "進行中", todo: "未開始" }[it.status] }, STATUS_ICO[it.status]),
+        h(
+          "div",
+          { class: "ready-main" },
+          h("p", { class: "ready-label" }, it.label),
+          h("p", { class: "xs muted" }, it.detail),
+          h("div", { class: "bar accent mt-1" }, h("div", { style: { width: `${Math.round(it.pct * 100)}%` } })),
+          it.hint && h("p", { class: "xs mt-1" }, it.hint),
+          it.hint && goBtn(it, "mt-2")
+        )
+      );
+    return section(
+      "🧳 旅行準備度",
+      "daily",
+      h("p", { class: "ready-total" }, `已達標 ${r.reached} / ${r.total} 項`),
+      r.next &&
+        h(
+          "div",
+          { class: "note gold mt-2" },
+          h("p", null, `建議先做：${r.next.label}`),
+          h("p", { class: "xs mt-1" }, r.next.hint),
+          goBtn(r.next, "w-full mt-2")
+        ),
+      !r.next && h("p", { class: "note gold mt-2" }, "🎉 清單上的項目全部達標了！祝旅途愉快！"),
+      h(
+        "div",
+        { class: "stack mt-3" },
+        r.groups.map((g) => {
+          const open = !readyUi.closed.has(g.key);
+          const ok = g.items.filter((x) => x.done).length;
+          return h(
+            "div",
+            { class: "ready-group" },
+            h(
+              "button",
+              {
+                class: "ready-head",
+                "aria-expanded": open ? "true" : "false",
+                onclick: () => {
+                  if (open) readyUi.closed.add(g.key);
+                  else readyUi.closed.delete(g.key);
+                  ctx.rerender && ctx.rerender();
+                },
+              },
+              h("span", { class: "grow" }, g.title),
+              h("span", { class: "xs muted" }, `${ok} / ${g.items.length}`),
+              h("span", { "aria-hidden": "true" }, open ? "▴" : "▾")
+            ),
+            open && h("div", { class: "stack-sm mt-2" }, g.items.map(row))
+          );
+        })
+      ),
+      h("p", { class: "xs muted mt-3" }, "「旅行準備度」是本 App 自訂的參考清單，不是能力測驗；目標只供參考，可以自己斟酌。")
+    );
+  }
+
+  function render(ctx) {
+    const { state } = ctx;
+    return h("div", { class: "stack-lg" }, h("h2", { class: "h-display" }, "進度"), backupNudge(ctx), overview(state), readySection(ctx), routeSection(ctx), weekChart(state), kanaSection(state), phraseSection(state), dialogueSection(state), readingSection(state), reviewSection(state));
+  }
+
+  window.App.Progress = { render, summary, routeStats, readiness };
 })();

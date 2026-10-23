@@ -72,6 +72,13 @@ window.App = window.App || {};
     Show.reset();
     Reading.reset();
     Settings.reset();
+    if (ret && ret.view === "progress") {
+      // 旅行準備度 「前往」: back to the 進度 tab
+      nav.tab = "progress";
+      nav.view = "home";
+      render({ scrollTop: true });
+      return;
+    }
     nav.view = "daily";
     Daily.reset();
     if (ret && ret.view === "routeMap") Daily.openMap(ret.open);
@@ -96,8 +103,10 @@ window.App = window.App || {};
       } else if (mod === "phrases") {
         Phrases.reset();
         if (sub) Phrases.open(sub);
-      } else if (mod === "numbers") Listening.reset();
+      } else if (mod === "numbers" || mod === "listening") Listening.reset();
       else if (mod === "show") Show.reset();
+      else if (mod === "dialogue") Dialogue.reset();
+      else if (mod === "daily") Daily.reset();
       else if (mod === "reading") Reading.reset();
     }
     render({ scrollTop: true });
@@ -240,7 +249,7 @@ window.App = window.App || {};
     }
 
     if (nav.tab === "progress") {
-      content = h("div", { style: accentVars("daily") }, Progress.render({ state, onOpenBackup: openBackup, onOpenRouteMap: openRouteMap }));
+      content = h("div", { style: accentVars("daily") }, Progress.render({ state, onOpenBackup: openBackup, onOpenRouteMap: openRouteMap, onOpenGo: (go) => openExtra(go, { view: "progress" }), rerender: render }));
     } else if (nav.tab === "settings") {
       content = Settings.render({
         settings: state.settings,
@@ -335,7 +344,7 @@ window.App = window.App || {};
               return nav.task && nav.task.key === "dialogue" ? Daily.markDone(next, nav.task.date, "dialogue") : next;
             }),
           task: nav.task,
-          onBack: () => (nav.task ? leaveTask() : goHome()),
+          onBack: () => (nav.task ? leaveTask() : backFromModule()),
           rerender: render,
         })
       );
@@ -416,7 +425,7 @@ window.App = window.App || {};
           onOpenExtra: openExtra,
           onBack: () => {
             Daily.reset();
-            goHome();
+            backFromModule();
           },
           rerender: render,
         })

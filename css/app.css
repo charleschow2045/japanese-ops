@@ -1186,6 +1186,22 @@ body::before {
 .route-stats { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 8px; font-weight: 700; }
 .route-stats li { line-height: 1.5; }
 
+/* ── 旅行準備度 (stage 10 ⑧) ── */
+.ready-total { margin: 0; font-family: var(--font-stamp); font-weight: 800; font-size: 1.35rem; color: var(--a-dark); }
+.ready-group { border-radius: 16px; background: var(--paper-card); border: 1.5px solid var(--a-border); padding: 4px 10px 10px; }
+.ready-head { width: 100%; min-height: 44px; display: flex; align-items: center; gap: 8px; text-align: left; font-weight: 800; color: var(--ink); }
+.ready-row { display: flex; align-items: flex-start; gap: 10px; padding: 10px; border-radius: 12px; background: var(--a-tint); }
+.ready-ico { flex: none; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; background: var(--paper-card); color: var(--muted); border: 2px solid var(--a-border); }
+.ready-row.st-done .ready-ico { background: var(--good-tint); border-color: var(--good-solid); color: var(--good); }
+.ready-row.st-doing .ready-ico { color: var(--a-dark); border-color: var(--a-solid); }
+.ready-main { flex: 1; min-width: 0; }
+.ready-main p { margin: 0; overflow-wrap: anywhere; }
+.ready-main .mt-1 { margin-top: 4px; }
+.ready-label { font-weight: 800; line-height: 1.4; }
+.ready-row .bar.accent { background: var(--paper-card); }
+.ready-go { min-height: 44px; }
+.ready-row .ready-go { background: var(--paper-card); }
+
 /* ── 口訣 (stage 10) ── */
 .mnemo { border-radius: 16px; padding: 10px 12px; background: var(--gold-tint); border: 1.5px solid var(--gold-tint-border); color: var(--ink); }
 .mnemo p { margin: 0; }
