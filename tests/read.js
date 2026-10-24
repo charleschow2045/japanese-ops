@@ -82,8 +82,8 @@ const wt = st('see'); wt.read.prefs.count = 5;
 wt.read.stats = { タオル: { c: 0, w: 5 } };
 Object.values(W).forEach((x) => { if (x.word !== 'タオル') wt.read.stats[x.word] = { c: 5, w: 0 }; });
 let hit = 0;
-for (let i = 0; i < 300; i++) if (R.buildPractice(wt).some((x) => x.item.word === 'タオル')) hit++;
-assert(hit > 300 * 0.08, `加權：答錯多嘅「タオル」出現率 ${(hit / 3).toFixed(0)}%（隨機約 4%）`);
+for (let i = 0; i < 3000; i++) if (R.buildPractice(wt).some((x) => x.item.word === 'タオル')) hit++;
+assert(hit > 3000 * 0.08, `加權：答錯多嘅「タオル」出現率 ${(hit / 30).toFixed(0)}%（隨機約 4%）`);
 
 // ── 認得 ──
 const c0 = R.counts(fresh());
@@ -193,8 +193,8 @@ assert(mr.length === 0, '一輪餐牌練習：題數正確、只出揀咗嘅餐�
 assert(R.buildMenuPractice(ms([], 10)).length === 0, '冇揀餐牌：冇題目');
 let wHit = 0;
 const wStats = {}; MN.forEach((m) => m.lines.forEach((_, i) => { wStats[`${m.id}:${i}`] = { c: 5, w: 0 }; })); wStats['ramen:2'] = { c: 0, w: 5 };
-for (let i = 0; i < 300; i++) if (R.buildMenuPractice(ms(['ramen'], 5, wStats)).some((x) => x.line === 2)) wHit++;
-assert(wHit > 300 * 0.5, `加權：答錯多嘅「餃子」出現率 ${(wHit / 3).toFixed(0)}%`);
+for (let i = 0; i < 3000; i++) if (R.buildMenuPractice(ms(['ramen'], 5, wStats)).some((x) => x.line === 2)) wHit++;
+assert(wHit > 3000 * 0.5, `加權：答錯多嘅「餃子」出現率 ${(wHit / 30).toFixed(0)}%`);
 
 // 認得（30 行）
 const mc0 = R.menuCounts(fresh());

@@ -86,8 +86,50 @@ window.App = window.App || {};
   //              for the taxi cards)
   //   allergens: ticked 過敏卡 item ids; avoid: ticked 不吃卡 item ids (js/content/showcards.js)
   //   prefs:     small lines under a card in the viewer: yue (中文), en (English), reading (讀音)
+  //   custom:    我的卡片 (stage 10 ⑨): the user's own cards [{ id: "c-<n>", ja, kana, note }], at most
+  //              CUSTOM_MAX; ja ≤ 200 chars (required), kana ≤ 200 (optional, read aloud when present), note ≤ 100 (中文備註)
+  const CUSTOM_MAX = 20;
+  const CUSTOM_LIMITS = { ja: 200, kana: 200, note: 100 };
+  const cleanCardText = (x, max) => (typeof x === "string" ? x.replace(/[\u0000-\u0008\u000b-\u001f\u007f]/g, "").slice(0, max) : "");
+  // → a clean list of custom cards: bad entries (not an object, bad id, empty ja) dropped, duplicate ids dropped, capped
+  function cleanCustomCards(list) {
+    if (!Array.isArray(list)) return [];
+    const seen = new Set();
+    const out = [];
+    for (const c of list) {
+      if (out.length >= CUSTOM_MAX) break;
+      if (!c || typeof c !== "object" || Array.isArray(c)) continue;
+      if (typeof c.id !== "string" || !/^c-\d{1,9}$/.test(c.id) || seen.has(c.id)) continue;
+      const ja = cleanCardText(c.ja, CUSTOM_LIMITS.ja);
+      if (!ja.trim()) continue;
+      seen.add(c.id);
+      out.push({ id: c.id, ja, kana: cleanCardText(c.kana, CUSTOM_LIMITS.kana), note: cleanCardText(c.note, CUSTOM_LIMITS.note) });
+    }
+    return out;
+  }
   function defaultShow() {
-    return { saved: { hotelName: "", hotelAddress: "", hotelTel: "" }, allergens: [], avoid: [], prefs: { yue: true, en: false, reading: false } };
+    return { saved: { hotelName: "", hotelAddress: "", hotelTel: "" }, allergens: [], avoid: [], prefs: { yue: true, en: false, reading: false }, custom: [] };
+  }
+  // add (card has no id) or update (card.id of an existing card); → { state, ok, id, reason? }; reason: empty | full | missing
+  function saveCustomCard(state, card) {
+    const list = cleanCustomCards(state.show.custom);
+    const ja = cleanCardText(card.ja, CUSTOM_LIMITS.ja);
+    if (!ja.trim()) return { state, ok: false, reason: "empty" };
+    const clean = { ja, kana: cleanCardText(card.kana, CUSTOM_LIMITS.kana), note: cleanCardText(card.note, CUSTOM_LIMITS.note) };
+    let next;
+    let id = card.id;
+    if (id) {
+      if (!list.some((c) => c.id === id)) return { state, ok: false, reason: "missing" };
+      next = list.map((c) => (c.id === id ? { id, ...clean } : c));
+    } else {
+      if (list.length >= CUSTOM_MAX) return { state, ok: false, reason: "full" };
+      id = "c-" + (list.reduce((m, c) => Math.max(m, Number(c.id.slice(2))), 0) + 1);
+      next = [...list, { id, ...clean }];
+    }
+    return { state: { ...state, show: { ...state.show, custom: next } }, ok: true, id };
+  }
+  function deleteCustomCard(state, id) {
+    return { ...state, show: { ...state.show, custom: cleanCustomCards(state.show.custom).filter((c) => c.id !== id) } };
   }
 
   // numbers (stage 8 步驟 2-B 數字聽力): randomly generated questions, so no per-question
@@ -257,6 +299,7 @@ window.App = window.App || {};
     show.prefs = { ...base.show.prefs, ...((parsed.show && typeof parsed.show.prefs === "object" && parsed.show.prefs) || {}) };
     if (!Array.isArray(show.allergens)) show.allergens = [];
     if (!Array.isArray(show.avoid)) show.avoid = [];
+    show.custom = cleanCustomCards(show.custom);
     const help = {};
     if (parsed.help && typeof parsed.help === "object" && !Array.isArray(parsed.help)) {
       ["table", "kata", "contrast", "lookalike"].forEach((k) => parsed.help[k] === "seen" && (help[k] = "seen"));
@@ -617,6 +660,7 @@ window.App = window.App || {};
       allergens: strList(sh.allergens, 30, 20) || [],
       avoid: strList(sh.avoid, 30, 20) || [],
       prefs: {},
+      custom: cleanCustomCards(sh.custom),
     };
     ["yue", "en", "reading"].forEach((k) => put(out.show.prefs, k, bool(sp[k])));
 
@@ -730,6 +774,11 @@ window.App = window.App || {};
   window.App.Storage = {
     toggleFlag,
     toggleFav,
+    saveCustomCard,
+    deleteCustomCard,
+    cleanCustomCards,
+    CUSTOM_MAX,
+    CUSTOM_LIMITS,
     recordListenAnswer,
     recordSpeakAnswer,
     recordDialogue,

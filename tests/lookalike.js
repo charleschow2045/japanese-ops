@@ -78,7 +78,8 @@ const assert = (c, m) => { if (!c) { console.log('FAIL', m); process.exitCode = 
   const answers = Object.values(s.kana.stats).reduce((n, x) => n + x.c + x.w, 0);
   const activity = Object.values(s.daily.activity).reduce((n, x) => n + x.a, 0);
   assert(answers === 5 && activity === 5, '5 次答題記進五十音統計和今日活動 ' + answers + '/' + activity);
-  assert(s.kana.mistakes.every((c) => s.review.items['k:' + c]) && Object.keys(s.review.items).filter((k) => k.startsWith('k:')).length === s.kana.mistakes.length, '答錯的字進入錯題重溫（k:）');
+  // 同一輪裏一個字可能先答錯、後答對：紅點（mistakes）會消失，但 k: 重溫項目仍保留（正常設計），所以只檢查「每個答錯過的字都有 k: 重溫項目」
+  assert(s.kana.mistakes.every((c) => s.review.items['k:' + c]) && Object.entries(s.kana.stats).filter(([, x]) => x.w > 0).every(([c]) => s.review.items['k:' + c]), '答錯過的字都進入錯題重溫（k:）');
 
   // ── 看字選音（平假名）──
   await pg.getByRole('button', { name: /返回對照卡/ }).click();

@@ -6,11 +6,13 @@
 window.App = window.App || {};
 
 (function () {
-  const { h, jp, modHeader, chip } = window.App.UI;
+  const { h, jp, modHeader, chip, inkButton } = window.App.UI;
   const { speak, isTTSSupported, speechNotice } = window.App.Speech;
+  const { Storage } = window.App;
 
   // ui.open = { group, id } while the full-screen viewer is showing.
-  const ui = { open: null };
+  // ui.edit = { id } (id null = new) while the 我的卡片 form is showing; ui.draft = what is typed so far.
+  const ui = { open: null, edit: null, draft: null, err: "", confirmDel: false };
   let wakeLock = null;
 
   // Keep the screen on while a card is held up (where the browser supports it).
@@ -37,10 +39,19 @@ window.App = window.App || {};
   }
   function reset() {
     ui.open = null;
+    ui.edit = null;
+    ui.draft = null;
+    ui.err = "";
+    ui.confirmDel = false;
     releaseLock();
   }
 
   const groups = () => window.App.Content.SHOW_GROUPS;
+  // 我的卡片 (stage 10 ⑨): the user's own cards form one more group, shown first. Its cards are
+  // { id, type: "custom", ja, kana, note } built from state.show.custom.
+  const CUSTOM_KEY = "custom";
+  const customGroup = (show) => ({ key: CUSTOM_KEY, label: "我的卡片", emoji: "✏️", cards: (show.custom || []).map((c) => ({ id: c.id, type: "custom", ja: c.ja, kana: c.kana, note: c.note })) });
+  const viewGroups = (show) => [customGroup(show), ...groups()];
   const allergens = () => window.App.Content.SHOW_ALLERGENS;
   const avoids = () => window.App.Content.SHOW_AVOID;
 
@@ -105,6 +116,8 @@ window.App = window.App || {};
       if (!v) return null;
       return { ja: card.ja, kana: card.kana, romaji: card.romaji, yue: card.yue, en: card.en, say: card.ja, lead: card.ja, body: v };
     }
+    // 我的卡片: no romaji / English; 🔊 reads the kana when the user typed it, else the text itself
+    if (card.type === "custom") return { ja: card.ja, kana: card.kana, romaji: "", yue: card.note, en: "", say: card.kana || card.ja, custom: true };
     return { ja: card.ja, kana: card.kana, romaji: card.romaji, yue: card.yue, en: card.en, say: card.say || card.ja };
   }
 
@@ -140,7 +153,7 @@ window.App = window.App || {};
 
   function viewer(ctx) {
     const { state, settings } = ctx;
-    const group = groups().find((g) => g.key === ui.open.group);
+    const group = viewGroups(state.show).find((g) => g.key === ui.open.group);
     const shown = group ? group.cards.map((c) => ({ c, r: resolve(c, state.show) })).filter((x) => x.r) : [];
     const idx = shown.findIndex((x) => x.c.id === ui.open.id);
     if (idx < 0) {
@@ -202,16 +215,16 @@ window.App = window.App || {};
       h(
         "div",
         { class: "show-foot" },
-        prefs.yue && h("p", { class: "show-yue" }, r.yue),
-        prefs.en && h("p", { class: "show-en", lang: "en" }, r.en),
-        prefs.reading && h("p", { class: "show-reading", lang: "ja" }, r.kana, settings.showRomaji && h("span", { class: "show-rom" }, r.romaji)),
+        prefs.yue && !!r.yue && h("p", { class: "show-yue" }, r.yue),
+        prefs.en && !r.custom && h("p", { class: "show-en", lang: "en" }, r.en),
+        prefs.reading && !!r.kana && h("p", { class: "show-reading", lang: "ja" }, r.kana, settings.showRomaji && !!r.romaji && h("span", { class: "show-rom" }, r.romaji)),
         h(
           "div",
           { class: "row-sm show-tools" },
           isTTSSupported() && h("button", { class: "btn-ink accent show-say", onclick: () => speak(r.say, settings) }, "🔊 唸給對方聽"),
           chip("中文", prefs.yue, () => setPref({ yue: !prefs.yue })),
-          chip("English", prefs.en, () => setPref({ en: !prefs.en })),
-          chip("讀音", prefs.reading, () => setPref({ reading: !prefs.reading }))
+          !r.custom && chip("English", prefs.en, () => setPref({ en: !prefs.en })),
+          (!r.custom || !!r.kana) && chip("讀音", prefs.reading, () => setPref({ reading: !prefs.reading }))
         )
       )
     );
@@ -324,6 +337,122 @@ window.App = window.App || {};
     );
   }
 
+  // ── 我的卡片 (stage 10 ⑨) ───────────────────────────────────────────
+
+  function startEdit(ctx, card) {
+    ui.edit = { id: card ? card.id : null };
+    ui.draft = { ja: card ? card.ja : "", kana: card ? card.kana : "", note: card ? card.note : "" };
+    ui.err = "";
+    ui.confirmDel = false;
+    ctx.rerender({ scrollTop: true });
+  }
+
+  function endEdit(ctx) {
+    ui.edit = null;
+    ui.draft = null;
+    ui.err = "";
+    ui.confirmDel = false;
+    ctx.rerender({ scrollTop: true });
+  }
+
+  function customRow(ctx, card) {
+    const sub = card.note || card.kana;
+    return h(
+      "div",
+      { class: "show-custom-row" },
+      h(
+        "button",
+        { class: "ex-card show-row", onclick: () => openCard(ctx, CUSTOM_KEY, card.id) },
+        h("span", { class: "grow" }, jp(card.ja, "show-row-ja"), sub && h("span", { class: "small" }, sub)),
+        h("span", { class: "chev" }, "›")
+      ),
+      h("button", { class: "btn-soft show-edit", "aria-label": `編輯：${card.ja.slice(0, 20)}`, onclick: () => startEdit(ctx, card) }, "編輯")
+    );
+  }
+
+  function customSection(ctx) {
+    const group = customGroup(ctx.state.show);
+    const full = group.cards.length >= Storage.CUSTOM_MAX;
+    return h(
+      "section",
+      { class: "mb-4", id: `show-g-${CUSTOM_KEY}` },
+      h("p", { class: "h-heading mb-2" }, `${group.emoji} ${group.label}`),
+      group.cards.length
+        ? h("div", { class: "stack-sm" }, group.cards.map((c) => customRow(ctx, c)))
+        : h("p", { class: "small muted" }, "還沒有卡片。可以加入自己需要的句子，例如酒店的特別要求、藥物或病況、想去的地方。"),
+      full
+        ? h("p", { class: "xs muted mt-2" }, `已達上限 ${Storage.CUSTOM_MAX} 張，請先刪除一張。`)
+        : h("button", { class: "btn-ink accent w-full mt-3", onclick: () => startEdit(ctx, null) }, "＋ 新增卡片"),
+      h("p", { class: "xs muted mt-2" }, `最多 ${Storage.CUSTOM_MAX} 張。內容只存在這部手機（備份檔也會包含）。`)
+    );
+  }
+
+  // The form for a new / existing 我的卡片. What is typed lives in ui.draft (no redraw while typing).
+  function editPage(ctx) {
+    const L = Storage.CUSTOM_LIMITS;
+    const d = ui.draft;
+    const id = ui.edit.id;
+    const save = () => {
+      const make = (s) => Storage.saveCustomCard(s, { id, ja: d.ja, kana: d.kana, note: d.note });
+      const res = make(ctx.getState());
+      if (!res.ok) {
+        ui.err = res.reason === "empty" ? "請輸入日文內容。" : res.reason === "full" ? `最多 ${Storage.CUSTOM_MAX} 張，請先刪除一張。` : "找不到這張卡片，可能已被刪除。";
+        ctx.rerender();
+        return;
+      }
+      ui.edit = null;
+      ui.draft = null;
+      ui.err = "";
+      ctx.onUpdate((s) => make(s).state);
+      ctx.rerender({ scrollTop: true });
+    };
+    const remove = () => {
+      ui.edit = null;
+      ui.draft = null;
+      ui.confirmDel = false;
+      ctx.onUpdate((s) => Storage.deleteCustomCard(s, id));
+      ctx.rerender({ scrollTop: true });
+    };
+    const field = (label, hint, input) => h("label", { class: "show-field" }, h("span", { class: "small" }, label), input, h("span", { class: "xs muted" }, hint));
+    return h(
+      "div",
+      null,
+      modHeader(id ? "編輯卡片" : "新增卡片", () => endEdit(ctx)),
+      h("p", { class: "xs muted mb-3" }, "這是你自己輸入的內容，App 不會檢查日文是否正確。建議從翻譯 App 複製，或請會日文的人看過。資料只存在這部手機（備份檔也會包含）。"),
+      h(
+        "div",
+        { class: "card accent" },
+        field(
+          `日文（必填，最多 ${L.ja} 字）`,
+          "全螢幕顯示的大字。",
+          h("textarea", { class: "show-input", lang: "ja", rows: 4, maxlength: L.ja, placeholder: "請輸入或貼上日文", oninput: (e) => (d.ja = e.target.value) }, d.ja)
+        ),
+        field(
+          `假名讀音（選填，最多 ${L.kana} 字）`,
+          "填了的話，「唸給對方聽」會讀這裡的假名；沒填就直接讀上面的日文，漢字可能讀錯。",
+          h("textarea", { class: "show-input", lang: "ja", rows: 2, maxlength: L.kana, placeholder: "選填：平假名讀音", oninput: (e) => (d.kana = e.target.value) }, d.kana)
+        ),
+        field(
+          `中文備註（選填，最多 ${L.note} 字）`,
+          "顯示在畫面底部的「中文」小字。",
+          h("input", { class: "show-input", type: "text", maxlength: L.note, placeholder: "選填：中文意思", value: d.note, oninput: (e) => (d.note = e.target.value) })
+        ),
+        ui.err && h("p", { class: "note mb-3", role: "alert" }, ui.err),
+        inkButton("儲存", save, { accent: true, class: "w-full" }),
+        h("button", { class: "btn-soft w-full mt-2", onclick: () => endEdit(ctx) }, "取消")
+      ),
+      id &&
+        (ui.confirmDel
+          ? h(
+              "div",
+              { class: "note mt-4" },
+              h("p", null, "確定要刪除這張卡片嗎？刪除後無法復原。"),
+              h("div", { class: "row-sm mt-2" }, h("button", { class: "btn-soft", onclick: () => ((ui.confirmDel = false), ctx.rerender()) }, "不刪除"), h("button", { class: "btn-ink", onclick: remove }, "確定刪除"))
+            )
+          : h("button", { class: "btn-soft w-full mt-4", onclick: () => ((ui.confirmDel = true), ctx.rerender()) }, "🗑️ 刪除這張卡片"))
+    );
+  }
+
   function listPage(ctx) {
     const notice = speechNotice();
     return h(
@@ -335,13 +464,14 @@ window.App = window.App || {};
       h(
         "div",
         { class: "wrap mb-4" },
-        groups().map((g) =>
+        viewGroups(ctx.state.show).map((g) =>
           chip(`${g.emoji} ${g.label}`, false, () => {
             const el = document.getElementById(`show-g-${g.key}`);
             if (el) el.scrollIntoView({ block: "start", behavior: "smooth" });
           })
         )
       ),
+      customSection(ctx),
       hotelCard(ctx),
       groups().map((g) =>
         h(
@@ -357,6 +487,7 @@ window.App = window.App || {};
   // ctx: { state, getState(), settings, onUpdate(fn) (saves + redraws), onSilentUpdate(fn) (saves, returns the new state), onBack, rerender }
   // → { main, overlay } (the viewer sits in #overlay so it covers the tab bar)
   function render(ctx) {
+    if (ui.edit) return { main: editPage(ctx), overlay: null };
     const overlay = ui.open ? viewer(ctx) : null;
     return { main: listPage(ctx), overlay };
   }

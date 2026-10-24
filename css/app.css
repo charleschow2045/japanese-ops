@@ -992,6 +992,12 @@ body::before {
 .show-row-ja { display: block; font-size: 1.125rem; font-weight: 700; line-height: 1.35; }
 .show-preview { display: block; font-size: 1.0625rem; font-weight: 700; line-height: 1.4; }
 .show-field { display: block; margin-bottom: 12px; }
+.show-field > .xs { display: block; margin-top: 4px; }
+/* 我的卡片 (stage 10 ⑨): a row = the card button + a 編輯 button */
+.show-custom-row { display: flex; align-items: stretch; gap: 8px; }
+.show-custom-row > .show-row { flex: 1; min-width: 0; }
+.show-custom-row .show-row-ja { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+.show-edit { flex: none; min-height: 64px; padding: 0 14px; }
 .show-input {
   display: block;
   width: 100%;
