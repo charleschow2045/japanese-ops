@@ -993,6 +993,14 @@ body::before {
 .show-preview { display: block; font-size: 1.0625rem; font-weight: 700; line-height: 1.4; }
 .show-field { display: block; margin-bottom: 12px; }
 .show-field > .xs { display: block; margin-top: 4px; }
+/* 錄音測試 (js/rectest.js, stage 10 ⑩ 版本一) */
+.rec-env { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.rec-env li { display: flex; align-items: flex-start; gap: 8px; font-weight: 700; }
+.rec-mark { flex: none; width: 1.5em; text-align: center; color: var(--muted); }
+.rec-types { display: block; white-space: pre-line; overflow-wrap: anywhere; }
+.rec-audio { display: block; width: 100%; margin-top: 8px; }
+.rec-file { position: relative; overflow: hidden; }
+.rec-file input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; font-size: 16px; }
 /* 我的卡片 (stage 10 ⑨): a row = the card button + a 編輯 button */
 .show-custom-row { display: flex; align-items: stretch; gap: 8px; }
 .show-custom-row > .show-row { flex: 1; min-width: 0; }

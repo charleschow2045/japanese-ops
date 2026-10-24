@@ -18,7 +18,7 @@ window.App = window.App || {};
   ];
 
   let confirmReset = false; // screen-local: two-step reset
-  let view = "main"; // "main" | "backup" (進度備份 sub-screen)
+  let view = "main"; // "main" | "backup" (進度備份 sub-screen) | "rectest" (錄音測試 sub-screen)
 
   function cleanVoiceName(name) {
     return name.replace(/^(Microsoft|Google)\s*/, "").replace(/\s*\(.*\)\s*$/, "").replace(/\s*-\s*Japanese.*$/i, "");
@@ -30,6 +30,17 @@ window.App = window.App || {};
 
   // ctx: { settings, state, flags, onChange(patch), onReset(), onUpdate(fn), onRestore(state), onUndo(), rerender }
   function render(ctx) {
+    if (view === "rectest") {
+      return window.App.RecTest.render({
+        settings: ctx.settings,
+        rerender: ctx.rerender,
+        onBack: () => {
+          view = "main";
+          window.App.RecTest.reset();
+          ctx.rerender({ scrollTop: true });
+        },
+      });
+    }
     if (view === "backup") {
       return window.App.Backup.render({
         state: ctx.state,
@@ -111,6 +122,8 @@ window.App = window.App || {};
       installSection(),
 
       backupSection(ctx),
+
+      recTestSection(ctx),
 
       section(
         "進度",
@@ -281,9 +294,19 @@ window.App = window.App || {};
     );
   }
 
+  // 錄音測試 entry (stage 10 ⑩ 版本一): a feasibility test, nothing is saved.
+  function recTestSection(ctx) {
+    return section(
+      "🎙️ 錄音測試（試驗）",
+      h("p", { class: "small muted mb-3" }, "測試這部手機能不能錄音，為之後的「錄音對比」做準備。不會儲存或上傳任何錄音。"),
+      h("button", { class: "btn-soft w-full", onclick: () => open("rectest", ctx) }, "開始測試")
+    );
+  }
+
   function open(which, ctx) {
     view = which;
     window.App.Backup.reset();
+    window.App.RecTest.reset();
     if (ctx) ctx.rerender({ scrollTop: true });
   }
 
@@ -292,6 +315,7 @@ window.App = window.App || {};
     confirmReset = false;
     view = "main";
     window.App.Backup.reset();
+    window.App.RecTest.reset(); // also lets go of the microphone
   }
 
   window.App.Settings = { render, reset, open };
