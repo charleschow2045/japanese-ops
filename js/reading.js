@@ -9,6 +9,11 @@
 // questions, not listening ones). Stats: state.read.stats[word] = { c, w, last } (js/storage.js).
 // 認得 = answered right 2+ times and not on the 重溫 list (same rule as 熟練/掌握 elsewhere).
 //
+// 階段 10 ⑪ 漢字標示・假朋友詞 (js/content/signs.js: SIGNS 44 in 9 groups, FALSE_FRIENDS 9): the same two question
+// types and the same stats / 重溫 ("r:<word>") as the words above. A kanji item is spoken from its kana. 看詞選意思 for a
+// 假朋友 always offers the meaning a Chinese reader wrongly guesses as one of the 4 options. The card's choices
+// (groups, mode, count) are kept only while the app is open — no new saved state.
+//
 // 版本二 模擬餐牌 (menus: js/content/menus.js, 6 menus × 5 lines): a menu board is shown (name + price, no reading)
 //   find  哪一行是「X」？   tap the line
 //   max   最貴的是哪一行？  tap the line (only asked when the dearest line is unique)
@@ -33,7 +38,15 @@ window.App = window.App || {};
   ];
 
   const words = () => window.App.Content.KATAKANA_EXAMPLES;
-  const wordOf = (w) => words().find((x) => x.word === w) || null;
+  // 漢字標示・假朋友詞 (stage 10 ⑪, js/content/signs.js) use the same questions, stats and 重溫 as the
+  // katakana words: state.read.stats[word], review key "r:<word>". A word is unique across the three lists.
+  const signs = () => window.App.Content.SIGNS || [];
+  const friends = () => window.App.Content.FALSE_FRIENDS || [];
+  const signGroups = () => window.App.Content.SIGN_GROUPS || [];
+  const FRIEND_KEY = "假朋友詞";
+  const kindOf = (it) => (it.trapOpt ? "friend" : it.kana ? "sign" : "word");
+  const sayOf = (it) => it.kana || it.word; // kanji are read from their kana
+  const wordOf = (w) => words().find((x) => x.word === w) || signs().find((x) => x.word === w) || friends().find((x) => x.word === w) || null;
   const sceneList = () => [...new Set(words().map((x) => x.scene))];
   const menus = () => window.App.Content.MENUS;
   const menuOf = (id) => menus().find((m) => m.id === id) || null;
@@ -55,7 +68,8 @@ window.App = window.App || {};
   const TYPE_WEIGHT = { find: 5, price: 3, max: 1.5, min: 1.5 };
 
   // view: "menu" | "quiz"; quiz: { kind: "practice" | "review", questions, index, picked, results }
-  const ui = { view: "menu", quiz: null, scrollFeedback: false };
+  // sign = the 漢字標示・假朋友詞 card's choices (kept only while the app is open): groups null = all
+  const ui = { view: "menu", quiz: null, scrollFeedback: false, sign: { groups: null, mode: "mix", count: 10 } };
   function reset() {
     ui.view = "menu";
     ui.quiz = null;
@@ -73,16 +87,19 @@ window.App = window.App || {};
   // ── counts ───────────────────────────────────────────────────────────
 
   const known = (state, w) => (state.read.stats[w] || { c: 0 }).c >= 2 && !state.review.items[`r:${w}`];
-  function counts(state) {
-    const total = words().length;
+  function countOf(state, list) {
+    const total = list.length;
     let k = 0;
     let seen = 0;
-    words().forEach((x) => {
+    list.forEach((x) => {
       if (known(state, x.word)) k += 1;
       else if (state.read.stats[x.word]) seen += 1;
     });
     return { total, known: k, learning: seen, unseen: total - k - seen };
   }
+  const counts = (state) => countOf(state, words());
+  const signCounts = (state) => countOf(state, signs()); // 漢字標示 (44)
+  const friendCounts = (state) => countOf(state, friends()); // 假朋友詞 (9)
 
   // 模擬餐牌: 認得 per line (30 lines), same rule as words.
   function menuCounts(state) {
@@ -138,13 +155,27 @@ window.App = window.App || {};
     return out;
   }
 
+  // The list an item belongs to (distractors come from the same list).
+  const listOf = (item) => (kindOf(item) === "friend" ? friends() : kindOf(item) === "sign" ? signs() : words());
+
   // 3 wrong 中文意思: never the same meaning; same 情境 first.
+  // 漢字標示: also never a meaning that contains / is contained in the answer (出口 vs 緊急出口, 含稅 vs 未含稅).
+  // 假朋友詞: the options are the real meaning, the meaning a Chinese reader wrongly guesses (always present),
+  // and 2 real meanings of other 假朋友詞.
   function meaningOptions(item) {
+    const kind = kindOf(item);
+    if (kind === "friend") {
+      const trap = { word: `trap:${item.word}`, meaning: item.trapOpt, isTrap: true };
+      const others = shuffle(friends().filter((f) => f.word !== item.word && f.meaning !== item.meaning && f.meaning !== item.trapOpt)).slice(0, 2);
+      return shuffle([item, trap, ...others]);
+    }
+    const list = listOf(item);
+    const clash = (m) => kind === "sign" && (m.includes(item.meaning) || item.meaning.includes(m));
     const used = new Set([item.meaning]);
     const out = [];
-    [shuffle(words().filter((x) => x.scene === item.scene)), shuffle(words())].forEach((cands) =>
+    [shuffle(list.filter((x) => x.scene === item.scene)), shuffle(list)].forEach((cands) =>
       cands.forEach((c) => {
-        if (out.length >= 3 || used.has(c.meaning)) return;
+        if (out.length >= 3 || used.has(c.meaning) || clash(c.meaning)) return;
         used.add(c.meaning);
         out.push(c);
       })
@@ -157,7 +188,7 @@ window.App = window.App || {};
   function writtenOptions(item) {
     const chars = new Set(item.word.split(""));
     const score = (c) => c.word.split("").filter((ch) => chars.has(ch)).length * 2 - Math.abs(c.word.length - item.word.length) + (c.scene === item.scene ? 1 : 0) + Math.random() * 0.8;
-    const ranked = words().filter((c) => c.word !== item.word && c.romaji !== item.romaji).map((c) => ({ c, s: score(c) })).sort((a, b) => b.s - a.s);
+    const ranked = listOf(item).filter((c) => c.word !== item.word && c.romaji !== item.romaji).map((c) => ({ c, s: score(c) })).sort((a, b) => b.s - a.s);
     const usedRomaji = new Set([item.romaji]);
     const out = [];
     ranked.forEach(({ c }) => {
@@ -242,6 +273,19 @@ window.App = window.App || {};
     return picked.map((x, i) => question(x, kinds[i]));
   }
 
+  // 漢字標示・假朋友詞: the groups ticked on the card (null = all, incl. 假朋友詞), mixed see/hear like the words.
+  function signPool() {
+    const sel = ui.sign.groups;
+    return [...signs().filter((x) => sel === null || sel.includes(x.scene)), ...(sel === null || sel.includes(FRIEND_KEY) ? friends() : [])];
+  }
+  function buildSignPractice(state) {
+    const { mode, count } = ui.sign;
+    const picked = pickWords(state, signPool(), count);
+    if (mode !== "mix") return picked.map((x) => question(x, mode));
+    const kinds = shuffle(picked.map((_, i) => (i % 2 ? "hear" : "see")));
+    return picked.map((x, i) => question(x, kinds[i]));
+  }
+
   function buildReview(state) {
     return shuffle(dueItems(state).slice(0, REVIEW_MAX)).map(([key]) => {
       if (key.startsWith("m:")) {
@@ -254,7 +298,7 @@ window.App = window.App || {};
 
   // Built inside the tap that starts it, so the first sound (聽音選詞) plays within the user gesture.
   function start(ctx, kind) {
-    const questions = kind === "review" ? buildReview(ctx.state) : kind === "menu" ? buildMenuPractice(ctx.state) : buildPractice(ctx.state);
+    const questions = kind === "review" ? buildReview(ctx.state) : kind === "menu" ? buildMenuPractice(ctx.state) : kind === "sign" ? buildSignPractice(ctx.state) : buildPractice(ctx.state);
     if (!questions.length) return;
     ui.quiz = { kind: kind === "review" ? "review" : "practice", source: kind, questions, index: 0, picked: null, results: [] };
     ui.view = "quiz";
@@ -265,7 +309,7 @@ window.App = window.App || {};
   // 聽音選詞 speaks the question; 看詞選意思 only speaks when asked (reading first).
   function playQ(q, settings, rate, auto) {
     if (auto && (q.family === "menu" || q.type === "see")) return;
-    speak(q.family === "menu" ? q.menu.lines[q.line].kana : q.item.word, rate ? { ...settings, rate } : settings);
+    speak(q.family === "menu" ? q.menu.lines[q.line].kana : sayOf(q.item), rate ? { ...settings, rate } : settings);
   }
 
   const isRight = (q, opt) => (q.family === "menu" ? (q.type === "price" ? opt === q.menu.lines[q.line].price : opt === q.line) : opt.word === q.item.word);
@@ -284,6 +328,29 @@ window.App = window.App || {};
       ];
     }
     const it = q.item;
+    const kind = kindOf(it);
+    if (kind === "sign")
+      return [
+        h("p", { class: "caption mt-1" }, `🚏 ${it.scene}`),
+        jp(it.word, "read-word mt-1"),
+        h("p", { lang: "ja", class: "jp phrase-kana" }, it.kana),
+        settings.showRomaji && h("p", { class: "phrase-rom" }, it.romaji),
+        h("p", { class: "phrase-yue" }, it.meaning),
+        it.detail && h("p", { class: "phrase-use" }, it.detail),
+        it.warn && h("p", { class: "note gold mt-2" }, `⚠️ ${it.warn}`),
+        h("p", { class: "phrase-use" }, `📍 常見於：${it.where}`),
+      ];
+    if (kind === "friend")
+      return [
+        h("p", { class: "caption mt-1" }, `⚠️ ${it.scene}`),
+        jp(it.word, "read-word mt-1"),
+        h("p", { lang: "ja", class: "jp phrase-kana" }, it.kana),
+        settings.showRomaji && h("p", { class: "phrase-rom" }, it.romaji),
+        h("p", { class: "phrase-yue" }, `日文的意思：${it.meaning}`),
+        h("p", { class: "phrase-use" }, it.detail),
+        h("p", { class: "note gold mt-2" }, `中文讀者容易誤會成：${it.trap}`),
+        h("p", { class: "phrase-use" }, `📍 常見於：${it.where}`),
+      ];
     return [
       h("p", { class: "caption mt-1" }, `🪧 ${it.scene}`),
       jp(it.word, "read-word mt-1"),
@@ -340,7 +407,7 @@ window.App = window.App || {};
     const settings = ctx.state.settings;
     const quiz = ui.quiz;
     const total = quiz.questions.length;
-    const title = quiz.kind === "review" ? "看得懂重溫" : quiz.source === "menu" ? "餐牌練習" : "片假名詞練習";
+    const title = quiz.kind === "review" ? "看得懂重溫" : quiz.source === "menu" ? "餐牌練習" : quiz.source === "sign" ? "標示・假朋友練習" : "片假名詞練習";
     const back = () => {
       ui.view = "menu";
       ui.quiz = null;
@@ -412,7 +479,11 @@ window.App = window.App || {};
 
     let prompt;
     if (isMenu) prompt = [h("p", { class: "h-heading" }, MENU_ASK[q.type](q.menu.lines[q.line])), q.type !== "price" && !answered && h("p", { class: "xs muted mt-1" }, "點按餐牌上的一行")];
-    else if (q.type === "see") prompt = [h("p", { class: "muted mb-3", style: { fontWeight: 700 } }, "這個詞是什麼意思？"), jp(q.item.word, "read-word")];
+    else if (q.type === "see")
+      prompt = [
+        h("p", { class: "muted mb-3", style: { fontWeight: 700 } }, kindOf(q.item) === "sign" ? "這個標示是什麼意思？" : kindOf(q.item) === "friend" ? "這個詞在日文是什麼意思？（意思可能和中文不同）" : "這個詞是什麼意思？"),
+        jp(q.item.word, "read-word"),
+      ];
     else
       prompt = [
         h("p", { class: "muted mb-3", style: { fontWeight: 700 } }, "聽聽看，哪一個是剛才聽到的詞？"),
@@ -483,7 +554,7 @@ window.App = window.App || {};
                     )
                   : h(
                       "button",
-                      { class: "ex-card", onclick: () => speak(q.item.word, settings) },
+                      { class: "ex-card", onclick: () => speak(sayOf(q.item), settings) },
                       h("span", { class: "grow" }, jp(q.item.word, "ex-word"), h("span", { class: "small" }, q.item.meaning)),
                       h("span", null, "🔊")
                     )
@@ -493,7 +564,7 @@ window.App = window.App || {};
         h(
           "div",
           { class: "stack mt-4" },
-          !review && inkButton("再來一輪", () => start(ctx, quiz.source === "menu" ? "menu" : "practice"), { class: "w-full" }),
+          !review && inkButton("再來一輪", () => start(ctx, quiz.source === "menu" ? "menu" : quiz.source === "sign" ? "sign" : "practice"), { class: "w-full" }),
           inkButton("返回看得懂", back, { accent: true, class: "w-full" })
         )
       )
@@ -517,6 +588,19 @@ window.App = window.App || {};
       const next = mActive.includes(id) ? mActive.filter((x) => x !== id) : mAll.filter((x) => mActive.includes(x) || x === id);
       ctx.onMenuPrefsChange({ menus: next.length === mAll.length ? null : next });
     };
+    // 漢字標示・假朋友詞 card (stage 10 ⑪)
+    const sp = ui.sign;
+    const sKeys = [...signGroups(), FRIEND_KEY];
+    const sActive = sp.groups === null ? sKeys : sp.groups.filter((k) => sKeys.includes(k));
+    const toggleSign = (k) => {
+      const next = sActive.includes(k) ? sActive.filter((x) => x !== k) : sKeys.filter((x) => sActive.includes(x) || x === k);
+      ui.sign.groups = next.length === sKeys.length ? null : next;
+      ctx.rerender();
+    };
+    const sPoolN = signPool().length;
+    const sEnough = sPoolN > 0 && (sp.mode === "see" || tts);
+    const sc = signCounts(state);
+    const fc = friendCounts(state);
     const needsTts = prefs.mode !== "see";
     const toggleScene = (s) => {
       const next = active.includes(s) ? active.filter((x) => x !== s) : all.filter((x) => active.includes(x) || x === s);
@@ -534,7 +618,7 @@ window.App = window.App || {};
       null,
       modHeader("看得懂", ctx.onBack),
       notice && h("div", { class: "mb-4" }, notice),
-      h("p", { class: "small muted mb-4" }, "在日本的餐牌、商品、指示牌上，很多詞是片假名寫的。練習認讀這些常見的片假名詞。"),
+      h("p", { class: "small muted mb-4" }, "在日本的餐牌、商品、指示牌上，很多詞是片假名寫的，指示牌也常用漢字。練習認讀這些常見的詞。"),
 
       // progress
       h(
@@ -543,7 +627,8 @@ window.App = window.App || {};
         h("p", { class: "h-heading accent-text" }, "🪧 認得的片假名詞"),
         h("p", { class: "big-count" }, `${c.known} / ${c.total}`),
         h("p", { class: "xs muted" }, `學習中 ${c.learning}・未練習 ${c.unseen}（答對 2 次以上、而且不在重溫清單，才算「認得」）`),
-        h("p", { class: "small mt-2" }, `🍜 餐牌：認得 ${mc.known} / ${mc.total} 行`)
+        h("p", { class: "small mt-2" }, `🍜 餐牌：認得 ${mc.known} / ${mc.total} 行`),
+        h("p", { class: "small mt-1" }, `🚏 漢字標示：認得 ${sc.known} / ${sc.total}・⚠️ 假朋友詞：認得 ${fc.known} / ${fc.total}`)
       ),
 
       // 重溫
@@ -578,6 +663,48 @@ window.App = window.App || {};
         inkButton("🔤 開始練習", () => start(ctx, "practice"), { accent: true, disabled: !enough, class: "w-full mt-3" })
       ),
 
+      // 漢字標示・假朋友詞 (stage 10 ⑪)
+      h(
+        "div",
+        { class: "card accent mb-4" },
+        h("p", { class: "h-heading accent-text" }, "🚏 漢字標示・假朋友詞"),
+        h("p", { class: "xs muted mb-3" }, "看懂旅行中常見的漢字標示（出口、改札口、準備中……），以及意思和中文不同的「假朋友」詞（手紙、大丈夫、勉強……）。每題 4 個選項。"),
+        h("p", { class: "small mb-1" }, "題型"),
+        h(
+          "div",
+          { class: "wrap mb-3" },
+          [
+            { key: "see", label: "👀 看詞選意思" },
+            { key: "hear", label: "👂 聽音選詞" },
+            { key: "mix", label: "🔀 混合" },
+          ].map((m) =>
+            chip(m.label, sp.mode === m.key, () => {
+              ui.sign.mode = m.key;
+              ctx.rerender();
+            })
+          )
+        ),
+        h("p", { class: "small mb-1" }, "範圍"),
+        h("div", { class: "wrap mb-3" }, sKeys.map((k) => chip(k === FRIEND_KEY ? `⚠️ ${k}` : k, sActive.includes(k), () => toggleSign(k)))),
+        h("p", { class: "small mb-1" }, "題數"),
+        h(
+          "div",
+          { class: "chips-fill" },
+          COUNTS.map((n) =>
+            chip(`${n} 題`, sp.count === n, () => {
+              ui.sign.count = n;
+              ctx.rerender();
+            })
+          )
+        ),
+        h(
+          "p",
+          { class: "xs mt-3", style: { color: sEnough ? "var(--muted)" : "var(--stamp)" } },
+          sPoolN === 0 ? "請至少選擇一個範圍" : sp.mode !== "see" && !tts ? "此瀏覽器沒有發音功能，請選「看詞選意思」" : `可出題：${sPoolN} 個（這張卡的選擇只在 App 開啟期間記住）`
+        ),
+        inkButton("🚏 開始標示練習", () => start(ctx, "sign"), { accent: true, disabled: !sEnough, class: "w-full mt-3" })
+      ),
+
       // 模擬餐牌 (版本二)
       h(
         "div",
@@ -602,5 +729,5 @@ window.App = window.App || {};
     return menu(ctx);
   }
 
-  window.App.Reading = { render, reset, dueCount, counts, menuCounts, buildPractice, buildMenuPractice, buildReview, question, menuQuestion, extremes, eligibleTypes, priceOptions, scenes: sceneList };
+  window.App.Reading = { render, reset, dueCount, counts, menuCounts, signCounts, friendCounts, buildPractice, buildMenuPractice, buildSignPractice, buildReview, question, menuQuestion, extremes, eligibleTypes, priceOptions, signPool, scenes: sceneList };
 })();

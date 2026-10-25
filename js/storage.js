@@ -13,7 +13,7 @@ window.App = window.App || {};
     { key: "listening", label: "聽力練習", sub: "聽句子選意思", emoji: "🎧", implemented: true },
     { key: "speaking", label: "口語練習", sub: "看意思讀日文", emoji: "🎤", implemented: true },
     { key: "numbers", label: "數字・價錢", sub: "價錢、時間、號碼", emoji: "🔢", implemented: true },
-    { key: "reading", label: "看得懂", sub: "片假名詞、餐牌", emoji: "🪧", implemented: true },
+    { key: "reading", label: "看得懂", sub: "片假名詞、餐牌、標示", emoji: "🪧", implemented: true },
     { key: "dialogue", label: "情境對話", sub: "與店員一問一答", emoji: "🛎️", implemented: true },
     { key: "show", label: "指給店員看", sub: "全螢幕大字日文", emoji: "📱", implemented: true },
   ];
