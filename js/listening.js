@@ -7,6 +7,8 @@
 // (wrong → today; correct in review → 1/3/7/14 days → 畢業).
 // 換字練習 (stage 10 ⑥): the same screens ask virtual sentences from js/swap.js (pattern + swapped word);
 // their 錯題重溫 keys are "w:h:<pattern>:<word>".
+// 近音詞分辨 (stage 10 ⑫, js/minimal.js): practised inside the 五十音 module; its wrong answers ("q:<pair id>")
+// are reviewed here as type "pair" questions (hear one word, pick it from the two near-identical words).
 //
 // 🚩-flagged sentences are never asked (their audio is known to be wrong);
 // a flagged sentence that is due simply waits until the flag is removed.
@@ -121,6 +123,7 @@ window.App = window.App || {};
         if (key.startsWith("p:")) return !!phraseById(key.slice(2)) && !state.flags.includes(key.slice(2));
         if (key.startsWith("n:")) return !!window.App.NumberQuiz.fromKey(key);
         if (key.startsWith("w:h:")) return !!window.App.Swap.itemOfKey(key, "h");
+        if (key.startsWith("q:")) return !!window.App.Minimal.pairOf(key.slice(2));
         if (key.startsWith("k:")) return !!kanaInfo(key.slice(2));
         return false;
       })
@@ -137,13 +140,16 @@ window.App = window.App || {};
           ? window.App.NumberQuiz.fromKey(key)
           : key.startsWith("w:h:")
             ? swapQuestion(window.App.Swap.itemOfKey(key, "h"))
-            : kanaQuestion(key.slice(2))
+            : key.startsWith("q:")
+              ? window.App.Minimal.question(key.slice(2), Math.random() < 0.5 ? 0 : 1)
+              : kanaQuestion(key.slice(2))
     );
   }
 
   const playQ = (q, settings, rate) => {
     const s = rate ? { ...settings, rate } : settings;
     if (q.type === "phrase") speak(sayText(q.target.p), s);
+    else if (q.type === "pair") window.App.Minimal.playQ(q, settings, rate);
     else if (q.type === "number") speak(q.kana, s);
     else speak(q.target.char, s);
   };
@@ -190,10 +196,11 @@ window.App = window.App || {};
     playQ(questions[0], ctx.state.settings);
   }
 
-  const isRight = (q, opt) => (q.type === "phrase" ? opt.p.id === q.target.p.id : q.type === "number" ? opt.vs === q.vs : opt.char === q.target.char);
+  const isRight = (q, opt) => (q.type === "phrase" ? opt.p.id === q.target.p.id : q.type === "number" ? opt.vs === q.vs : q.type === "pair" ? window.App.Minimal.isRight(q, opt) : opt.char === q.target.char);
 
   function feedbackBody(q, settings) {
     const { romajiText, yueLine } = kanaHelpers();
+    if (q.type === "pair") return window.App.Minimal.feedbackBody(q, settings);
     if (q.type === "kana") {
       const t = q.target;
       return [
@@ -265,8 +272,8 @@ window.App = window.App || {};
         else if (answered) state = "dim";
         return h(
           "button",
-          { class: `opt ${q.type === "phrase" ? "opt-text" : ""} ${state}`.trim(), disabled: answered, onclick: () => pick(i) },
-          q.type === "phrase" ? opt.p.yue : q.type === "number" ? jp(opt.display, "num-opt") : jp(opt.char)
+          { class: `opt ${q.type === "phrase" || q.type === "pair" ? "opt-text" : ""} ${q.type === "pair" ? "pair-opt" : ""} ${state}`.replace(/\s+/g, " ").trim(), disabled: answered, onclick: () => pick(i) },
+          ...(q.type === "pair" ? window.App.Minimal.optionContent(opt) : [q.type === "phrase" ? opt.p.yue : q.type === "number" ? jp(opt.display, "num-opt") : jp(opt.char)])
         );
       })
     );
@@ -306,7 +313,7 @@ window.App = window.App || {};
       h(
         "div",
         { class: "card accent center mb-4" },
-        h("p", { class: "muted mb-3", style: { fontWeight: 700 } }, q.type === "phrase" ? "聽聽看這句是什麼意思？" : q.type === "number" ? "聽聽看是多少？" : "聽聽看是哪一個字？（五十音）"),
+        h("p", { class: "muted mb-3", style: { fontWeight: 700 } }, q.type === "phrase" ? "聽聽看這句是什麼意思？" : q.type === "number" ? "聽聽看是多少？" : q.type === "pair" ? "聽聽看是哪一個詞？（近音詞）" : "聽聽看是哪一個字？（五十音）"),
         h("button", { class: "hear-btn", onclick: () => playQ(q, settings), "aria-label": "再聽一次" }, "🔊"),
         h(
           "div",
@@ -362,7 +369,9 @@ window.App = window.App || {};
                     ? [h("span", { class: "grow" }, h("span", { lang: "ja", class: "jp ex-word", style: { fontSize: "1.1rem" } }, q.target.p.ja), h("span", { class: "small" }, q.target.p.yue)), h("span", null, "🔊")]
                     : q.type === "number"
                       ? [h("span", { class: "grow" }, jp(q.display, "ex-word"), jp(q.kana, "ex-kana")), h("span", null, "🔊")]
-                      : [h("span", { class: "grow" }, jp(q.target.char, "ex-word")), h("span", null, "🔊")]
+                      : q.type === "pair"
+                        ? [h("span", { class: "grow" }, jp(q.pair.words[q.side].word, "ex-word"), h("span", { class: "small" }, q.pair.words[q.side].meaning)), h("span", null, "🔊")]
+                        : [h("span", { class: "grow" }, jp(q.target.char, "ex-word")), h("span", null, "🔊")]
                 )
               )
             )
@@ -417,7 +426,8 @@ window.App = window.App || {};
     const dueP = due.filter(([k]) => k.startsWith("p:")).length;
     const dueN = due.filter(([k]) => k.startsWith("n:")).length;
     const dueW = due.filter(([k]) => k.startsWith("w:h:")).length;
-    const dueK = due.length - dueP - dueN - dueW;
+    const dueQ = due.filter(([k]) => k.startsWith("q:")).length;
+    const dueK = due.length - dueP - dueN - dueW - dueQ;
     const waitingFlagged = Object.entries(state.review.items).filter(
       ([k, it]) => k.startsWith("p:") && it.due <= Storage.todayLocal() && state.flags.includes(k.slice(2))
     ).length;
@@ -443,7 +453,7 @@ window.App = window.App || {};
         due.length > 0
           ? h("p", { class: "review-count" }, `今天需重溫 ${due.length} 句`)
           : h("p", { class: "small muted mt-1" }, "今天沒有需要重溫的內容 🎉"),
-        due.length > 0 && h("p", { class: "xs muted" }, `句子 ${dueP}・五十音 ${dueK}・數字 ${dueN}・換字 ${dueW}${due.length > REVIEW_MAX ? `（每次最多 ${REVIEW_MAX} 題）` : ""}`),
+        due.length > 0 && h("p", { class: "xs muted" }, `句子 ${dueP}・五十音 ${dueK}・數字 ${dueN}・換字 ${dueW}・近音詞 ${dueQ}${due.length > REVIEW_MAX ? `（每次最多 ${REVIEW_MAX} 題）` : ""}`),
         waitingFlagged > 0 && h("p", { class: "xs muted mt-1" }, `另有 ${waitingFlagged} 句已標記 🚩 讀錯，修正前不會出題`),
         later && h("p", { class: "xs muted mt-1" }, `下一批重溫：${later}`),
         h("p", { class: "xs muted mt-1" }, "答錯 → 今天再出現；重溫答對 → 隔 1、3、7、14 天再出現，第 5 次答對即畢業。"),

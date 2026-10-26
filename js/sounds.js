@@ -72,7 +72,8 @@ window.App = window.App || {};
     );
   }
 
-  function render(ctx, back) {
+  // onPractice (optional): the 近音詞分辨 practice built from these pairs (stage 10 ⑫)
+  function render(ctx, back, onPractice) {
     const { settings } = ctx;
     const notice = speechNotice();
     return h(
@@ -81,6 +82,7 @@ window.App = window.App || {};
       modHeader("促音・長音", back),
       notice && h("div", { class: "mb-4" }, notice),
       h("p", { class: "small muted mb-4" }, "日文的停頓與長短音會改變詞義。每組可按「連續聽」比較，或逐個詞按一下聆聽。"),
+      onPractice && h("button", { class: "btn-soft w-full mb-4", onclick: onPractice }, "🎧 練習分辨近音詞 →"),
       window.App.Content.SOUND_TOPICS.map((t) =>
         h(
           "div",

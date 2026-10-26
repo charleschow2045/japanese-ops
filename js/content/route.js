@@ -78,7 +78,7 @@ window.App.Content = window.App.Content || {};
       review: null,
       sentences: ["rest-05", "rest-10", "rest-12", "rest-11", "rest-33"],
       dialogue: null,
-      extras: [{ text: "五十音：促音・長音", go: "kana:sounds" }, { text: "數字・價錢：讀音表「物品數量」", go: "numbers" }],
+      extras: [{ text: "五十音：促音・長音", go: "kana:sounds" }, { text: "五十音：近音詞分辨（長音、促音）", go: "kana:minimal" }, { text: "數字・價錢：讀音表「物品數量」", go: "numbers" }],
     },
     {
       day: 8,

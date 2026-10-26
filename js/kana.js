@@ -32,6 +32,7 @@ window.App = window.App || {};
     if (view === "chart") ui.chartScript = "hira";
     if (view === "contrast") window.App.Contrast.reset();
     if (view === "lookalike") window.App.Lookalike.reset();
+    if (view === "minimal") window.App.Minimal.reset();
   }
 
   // Leave a sub-screen: to the 五十音 menu, or to the origin when opened with open().
@@ -628,6 +629,7 @@ window.App = window.App || {};
       if (view === "chart") ui.chartScript = prefs.script === "kata" ? "kata" : "hira";
       if (view === "contrast") window.App.Contrast.reset();
       if (view === "lookalike") window.App.Lookalike.reset();
+      if (view === "minimal") window.App.Minimal.reset();
       ctx.rerender({ scrollTop: true });
     };
 
@@ -646,7 +648,8 @@ window.App = window.App || {};
         menuCard("🪧", "片假名實例", "餐牌、商店、酒店常見的字", () => go("examples")),
         menuCard("👂", "清濁對比", "か／が 並排聆聽，練習分辨清音與濁音", () => go("contrast")),
         menuCard("🔍", "相似字分辨", "シ／ツ、ぬ／め 等字形相近的字，並排比較再練習", () => go("lookalike")),
-        menuCard("⏸️", "促音・長音", "きて／きって、おばさん／おばあさん", () => go("sounds"))
+        menuCard("⏸️", "促音・長音", "きて／きって、おばさん／おばあさん", () => go("sounds")),
+        menuCard("🎧", "近音詞分辨", "聽一個詞，從兩個近音詞中選出聽到的", () => go("minimal"))
       ),
       h(
         "div",
@@ -686,7 +689,12 @@ window.App = window.App || {};
     else if ((ui.view === "see" || ui.view === "hear") && ui.quiz) main = kanaQuiz(ctx);
     else if (ui.view === "examples") main = katakanaExamples(ctx);
     else if (ui.view === "sounds")
-      main = window.App.Sounds.render(ctx, () => toMenu(ctx));
+      main = window.App.Sounds.render(ctx, () => toMenu(ctx), () => {
+        window.App.Minimal.reset();
+        ui.view = "minimal";
+        ctx.rerender({ scrollTop: true });
+      });
+    else if (ui.view === "minimal") main = window.App.Minimal.render(ctx, () => toMenu(ctx));
     else if (ui.view === "contrast")
       main = window.App.Contrast.render(ctx, () => toMenu(ctx));
     else if (ui.view === "lookalike")

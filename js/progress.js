@@ -63,7 +63,7 @@ window.App = window.App || {};
 
   function reviewCounts(state) {
     const today = Storage.todayLocal();
-    const due = { p: 0, s: 0, k: 0, n: 0, w: 0, r: 0 };
+    const due = { p: 0, s: 0, k: 0, n: 0, w: 0, r: 0, q: 0 };
     Object.entries(state.review.items).forEach(([key, it]) => {
       if (it.due <= today && due[key[0]] !== undefined) due[key[0]] += 1;
     });
@@ -149,6 +149,8 @@ window.App = window.App || {};
       row("平假名掌握（含濁音、拗音）", k.hira),
       row("片假名掌握（含濁音、拗音、外來語音）", k.kata),
       h("p", { class: "xs muted" }, "「掌握」= 答對 2 次或以上，而且目前不在錯題清單。"),
+      h("p", { class: "small mt-3" }, `👂 近音詞：掌握 ${window.App.Minimal.counts(state).mastered} / ${window.App.Minimal.counts(state).total} 對`),
+      h("p", { class: "xs muted" }, "近音詞只有兩個選項，所以要答對 3 次以上，而且不在重溫清單，才算「掌握」。"),
       k.weak.length > 0 &&
         h(
           "div",
@@ -241,12 +243,12 @@ window.App = window.App || {};
 
   function reviewSection(state) {
     const r = reviewCounts(state);
-    const dueTotal = r.due.p + r.due.s + r.due.k + r.due.n + r.due.w + r.due.r;
+    const dueTotal = r.due.p + r.due.s + r.due.k + r.due.n + r.due.w + r.due.r + r.due.q;
     return section(
       "📝 錯題重溫",
       "listening",
       h("div", { class: "stat-grid three" }, stat(String(dueTotal), "今天待重溫", "speaking"), stat(String(r.active), "重溫中", "listening"), stat(String(r.graduated), "已畢業", "dialogue")),
-      h("p", { class: "small mt-3" }, dueTotal > 0 ? `今天待重溫 ${dueTotal}（聽力 ${r.due.p}・口語 ${r.due.s}・五十音 ${r.due.k}・數字 ${r.due.n}・換字 ${r.due.w}・看得懂 ${r.due.r}）` : "今天沒有需要重溫的內容 🎉"),
+      h("p", { class: "small mt-3" }, dueTotal > 0 ? `今天待重溫 ${dueTotal}（聽力 ${r.due.p}・口語 ${r.due.s}・五十音 ${r.due.k}・數字 ${r.due.n}・換字 ${r.due.w}・近音詞 ${r.due.q}・看得懂 ${r.due.r}）` : "今天沒有需要重溫的內容 🎉"),
       h("p", { class: "xs muted mt-2" }, "「已畢業」只計算由階段 7b 開始畢業的項目。")
     );
   }

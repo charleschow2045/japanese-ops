@@ -272,6 +272,10 @@ window.App = window.App || {};
         kana: state.kana,
         onPrefsChange: (patch) => setState((s) => ({ ...s, kana: { ...s.kana, prefs: { ...s.kana.prefs, ...patch } } })),
         onAnswer: (char, correct) => setState((s) => Storage.recordKanaAnswer(s, char, correct)),
+        // 近音詞分辨 (stage 10 ⑫): reads state.pairs / state.review; a wrong answer enters 重溫 inside recordPairAnswer
+        pairs: state.pairs,
+        review: state.review,
+        onPairAnswer: (pairId, correct) => setState((s) => Storage.recordPairAnswer(s, pairId, correct)),
         onBack: backFromModule,
         rerender: render,
       });
@@ -311,6 +315,10 @@ window.App = window.App || {};
               if (q.type === "number") {
                 const next = Storage.recordNumberAnswer(s, q.kind, q.key, correct);
                 return correct && mode === "review" ? Storage.reviewCorrect(next, q.key) : next;
+              }
+              if (q.type === "pair") {
+                const next = Storage.recordPairAnswer(s, q.pair.id, correct);
+                return correct && mode === "review" ? Storage.reviewCorrect(next, `q:${q.pair.id}`) : next;
               }
               if (q.type === "phrase" && q.target.p.swap) {
                 const sw = q.target.p.swap;

@@ -141,6 +141,15 @@ window.App = window.App || {};
     return { prefs: { cats: ["yen", "time", "things", "num", "date"], level: 1, count: 10 }, stats: {} };
   }
 
+  // pairs (stage 10 ⑫ 近音詞分辨, js/minimal.js): minimal pairs (長音／促音／清濁), 19 of them with ids
+  //   "l1"…"l8" / "s1"…"s6" / "v1"…"v5" (js/content/minimal.js). Practice settings are NOT saved.
+  //   stats: { [pair id]: { c, w, last } }  (either word of the pair counts for the pair)
+  //   A wrong answer enters 錯題重溫 as "q:<pair id>" (reviewed inside 聽力 錯題重溫).
+  const PAIR_ID = /^[lsv]\d{1,2}$/;
+  function defaultPairs() {
+    return { stats: {} };
+  }
+
   // swap (stage 10 ⑥ 換字練習): fixed sentence patterns with one swappable word (js/content/swap.js).
   //   prefs: pats (pattern ids "p1"…"p6" to practise), count (5/10/20)
   //   stats: { [pattern id]: { c, w, last } }  (聽力 and 口語 together)
@@ -186,10 +195,11 @@ window.App = window.App || {};
   //   "p:<sentence id>" (聽力), "s:<sentence id>" (口語, stage 6),
   //   "k:<kana char>", "n:<kind>:<value>" (數字聽力, e.g. "n:yen:1800") or
   //   "w:h:<pattern>:<word>" / "w:s:<pattern>:<word>" (換字練習 聽力/口語) → { box, due }
+  //   "q:<pair id>" (近音詞分辨, 聽力重溫) → { box, due }
   //   box = correct review answers in a row (0–4); due = local date
   //   "YYYY-MM-DD" when it is next asked. See REVIEW_INTERVALS.
   function defaultState() {
-    return { settings: defaultSettings(), kana: defaultKana(), flags: [], favs: [], listen: defaultListen(), speak: defaultSpeak(), dialogue: defaultDialogue(), numbers: defaultNumbers(), swap: defaultSwap(), read: defaultRead(), show: defaultShow(), help: defaultHelp(), daily: defaultDaily(), path: defaultPath(), review: { items: {}, graduated: 0 }, backup: { lastExportAt: null } };
+    return { settings: defaultSettings(), kana: defaultKana(), flags: [], favs: [], listen: defaultListen(), speak: defaultSpeak(), dialogue: defaultDialogue(), numbers: defaultNumbers(), swap: defaultSwap(), pairs: defaultPairs(), read: defaultRead(), show: defaultShow(), help: defaultHelp(), daily: defaultDaily(), path: defaultPath(), review: { items: {}, graduated: 0 }, backup: { lastExportAt: null } };
   }
 
   // ── local dates (phone's own calendar day — never UTC) ──
@@ -281,6 +291,13 @@ window.App = window.App || {};
     swap.prefs.pats = Array.isArray(swap.prefs.pats) ? swap.prefs.pats.filter((p) => /^p[1-6]$/.test(p)) : base.swap.prefs.pats;
     if (![5, 10, 20].includes(swap.prefs.count)) swap.prefs.count = 10;
     if (!swap.stats || typeof swap.stats !== "object" || Array.isArray(swap.stats)) swap.stats = {};
+    const pairs = { stats: {} };
+    const pst = parsed.pairs && typeof parsed.pairs === "object" && parsed.pairs.stats;
+    if (pst && typeof pst === "object" && !Array.isArray(pst))
+      Object.keys(pst).forEach((k) => {
+        const v = pst[k];
+        if (PAIR_ID.test(k) && v && typeof v === "object" && Number.isFinite(v.c) && Number.isFinite(v.w) && v.c >= 0 && v.w >= 0) pairs.stats[k] = { c: Math.floor(v.c), w: Math.floor(v.w), last: typeof v.last === "string" ? v.last : null };
+      });
     const read = { ...base.read, ...(parsed.read || {}) };
     read.prefs = { ...base.read.prefs, ...((parsed.read && parsed.read.prefs) || {}) };
     read.prefs.scenes = Array.isArray(read.prefs.scenes) ? read.prefs.scenes.filter((x) => typeof x === "string" && x.length > 0 && x.length <= 12).slice(0, 20) : null;
@@ -352,6 +369,7 @@ window.App = window.App || {};
       dialogue,
       numbers,
       swap,
+      pairs,
       read,
       show,
       help,
@@ -459,6 +477,15 @@ window.App = window.App || {};
     const stats = { ...state.swap.stats, [pat]: { c: prev.c + (correct ? 1 : 0), w: prev.w + (correct ? 0 : 1), last: new Date().toISOString() } };
     const next = bumpActivity({ ...state, swap: { ...state.swap, stats } }, correct);
     return correct ? next : reviewWrong(next, `w:${mode}:${pat}:${wid}`);
+  }
+
+  // 近音詞分辨 answer (js/minimal.js). A wrong one (re)enters 錯題重溫 as "q:<pair id>".
+  function recordPairAnswer(state, pairId, correct) {
+    if (!PAIR_ID.test(pairId)) return state;
+    const prev = state.pairs.stats[pairId] || { c: 0, w: 0, last: null };
+    const stats = { ...state.pairs.stats, [pairId]: { c: prev.c + (correct ? 1 : 0), w: prev.w + (correct ? 0 : 1), last: new Date().toISOString() } };
+    const next = bumpActivity({ ...state, pairs: { ...state.pairs, stats } }, correct);
+    return correct ? next : reviewWrong(next, `q:${pairId}`);
   }
 
   // 看得懂 answer (js/reading.js). A wrong one (re)enters 錯題重溫 as "r:<word>".
@@ -569,7 +596,7 @@ window.App = window.App || {};
   // (→ "invalid").  The result still goes through normalizeState.
   function sanitizeState(raw) {
     if (!isObj(raw)) throw new TypeError("state");
-    ["settings", "kana", "listen", "speak", "dialogue", "numbers", "swap", "read", "show", "daily", "review"].forEach((k) => {
+    ["settings", "kana", "listen", "speak", "dialogue", "numbers", "swap", "pairs", "read", "show", "daily", "review"].forEach((k) => {
       if (raw[k] !== undefined && !isObj(raw[k])) throw new TypeError(k);
     });
     if (raw.flags !== undefined && !Array.isArray(raw.flags)) throw new TypeError("flags");
@@ -639,6 +666,9 @@ window.App = window.App || {};
     put(out.swap.prefs, "pats", Array.isArray(swp.pats) ? [...new Set(swp.pats.filter((p) => typeof p === "string" && /^p[1-6]$/.test(p)))] : null);
     put(out.swap.prefs, "count", [5, 10, 20].includes(swp.count) ? swp.count : undefined);
 
+    const pr = raw.pairs || {};
+    out.pairs = { stats: cleanMap(pr.stats, cleanStat, (key) => PAIR_ID.test(key)) };
+
     const rd = raw.read || {};
     const rdp = isObj(rd.prefs) ? rd.prefs : {};
     out.read = { stats: cleanMap(rd.stats, cleanStat, (key) => isShortStr(key) && key.length <= 30), prefs: {} };
@@ -680,7 +710,7 @@ window.App = window.App || {};
       items: cleanMap(
         rv.items,
         (v) => (isObj(v) && isInt(v.box, 0, 4) && isDate(v.due) ? { box: v.box, due: v.due } : undefined),
-        (key) => /^[pskr]:.{1,30}$/.test(key) || /^m:[a-z]{1,10}:[0-4]$/.test(key) || /^n:(yen|time|ban|nin|fun|num|month|day|date):[0-9:]{1,8}$/.test(key) || /^w:[hs]:p[1-6]:[a-z0-9]{1,20}$/.test(key)
+        (key) => /^[pskr]:.{1,30}$/.test(key) || /^m:[a-z]{1,10}:[0-4]$/.test(key) || /^n:(yen|time|ban|nin|fun|num|month|day|date):[0-9:]{1,8}$/.test(key) || /^w:[hs]:p[1-6]:[a-z0-9]{1,20}$/.test(key) || /^q:[lsv]\d{1,2}$/.test(key)
       ),
       graduated: isInt(rv.graduated, 0, 1e7) ? rv.graduated : 0,
     };
@@ -784,6 +814,7 @@ window.App = window.App || {};
     recordDialogue,
     recordNumberAnswer,
     recordSwapAnswer,
+    recordPairAnswer,
     recordReadAnswer,
     recordMenuAnswer,
     runOf,
