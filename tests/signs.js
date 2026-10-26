@@ -47,7 +47,8 @@ assert(by(SG, '案内所').word.includes('内') && !by(SG, '案内所').word.inc
 assert(by(SG, '優先席').scene === '車站・交通' && by(SG, '優先席').meaning === '優先座位' && by(SG, '優先席').romaji === 'yuusenseki', '優先席：車站・交通、優先座位');
 assert(by(SG, '使用中').scene === '洗手間' && by(SG, '使用中').kana === 'しようちゅう' && by(SG, '使用中').detail.includes('洗手間'), '使用中：洗手間、有人使用');
 assert(by(SG, '両替所').scene === '價錢・付款' && by(SG, '両替所').meaning === '兌換處' && by(SG, '両替所').romaji === 'ryougaejo', '両替所：價錢・付款、兌換處');
-assert(by(SG, '改札口').detail.includes('改札') && by(SG, '押').warn.includes('引') && by(SG, '引').warn.includes('押'), '改札口簡稱「改札」；押／引互相提醒');
+assert(by(SG, '改札口').detail.includes('改札') && by(SG, '押').warn === '「押」＝推、「引」＝拉。中文很少用「押」解作推，要特別記住。' && by(SG, '引').warn === by(SG, '押').warn, '改札口簡稱「改札」；押／引提醒：中文很少用「押」解作推');
+assert(by(SG, '優先席').detail === '關愛座，讓給有需要的人' && !JSON.stringify(SG).includes('博愛座'), '優先席：「關愛座」（香港用語），冇「博愛座」');
 assert(!FF.some((x) => x.word === '走る') && !!by(FF, '床'), '假朋友：冇「走る」，有「床」');
 const yuka = by(FF, '床');
 assert(yuka.kana === 'ゆか' && yuka.romaji === 'yuka' && yuka.meaning === '地板' && yuka.trapOpt === '睡床' && yuka.where.includes('酒店、旅館') && yuka.where.includes('床に置かないでください'), '床：ゆか／yuka／地板／睡床／酒店、旅館＋「床に置かないでください」');
