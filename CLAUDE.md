@@ -862,7 +862,7 @@
   - **路線**：第 7 天（半濁音＋促音長音）今日延伸加「五十音：近音詞分辨（長音、促音）」（`go: "kana:minimal"`）；返回回到每日任務／路線地圖
   - **新檔案**：`js/content/minimal.js`、`js/minimal.js`（`index.html`、`sw.js` FILES 已加）。改動：`storage.js`、`listening.js`、`kana.js`、`sounds.js`、`progress.js`、`app.js`、`daily.js`（一個標籤）、`content/route.js`、`css/app.css`（`.pair-opt`／`.pair-word`／`.pair-mean`／`.pair-fb`／`.pair-tag`）。測試：新增 `tests/minimal.js`（純 Node）、`tests/minimalui.js`（Playwright）
   - 已測試（電腦瀏覽器，375／320px，淺色／深色）：五十音選單新卡、對照卡 19 對、練習 5 題（朗讀假名、選項正好係該對兩個詞、答錯答案卡、結果 4 / 5、統計同 `q:` 重溫）、聽力 錯題重溫出近音詞題並答對升 box 1、進度頁行、促音・長音頁練習掣、路線第 7 天連結往返、備份往返／舊備份／竄改備份（壞 id、壞 `q:` key 被丟棄）、舊存檔；對比度 ≥ 4.5、掣 ≥ 44px、冇橫向捲動、冇 console 錯誤；`tests/minimal.js` 全部通過（電腦，43 項）。**`tests/minimalui.js` 同全套 `tests/run.sh` 喺本機（Windows，冇 Playwright）跑唔到，要用戶喺有測試環境嘅地方跑**
-  - **已知小問題（未改）**：`Progress.reviewCounts` 嘅 `due` 只計 `p s k n w r q`，**`m:`（餐牌）重溫唔計入進度頁「今天待重溫」**（⑦ 版本二起已存在）；要改嘅話加 `m` 同 `r` 合併為「看得懂」
+  - **已知小問題（2026-10-31 已修，版本 `2026-10-31a`：`Progress.reviewCounts` 將 `m:` 計入「看得懂」；`tests/readiness.js` 加檢查）**：`Progress.reviewCounts` 嘅 `due` 只計 `p s k n w r q`，**`m:`（餐牌）重溫唔計入進度頁「今天待重溫」**（⑦ 版本二起已存在）；要改嘅話加 `m` 同 `r` 合併為「看得懂」
   - **未能喺電腦測試、要用戶手機確認**：**真機朗讀單獨一個詞嘅長短／停頓／清濁分辨得唔得**（尤其促音 きて／きって、さき／さっき、もと／もっと；清濁 かぎ／かき、ふじ／ぶじ、さる／ざる；長音 いえ／いいえ、とり／とおり；如果有幾對聽唔出分別，要刪或改）；🐢 慢慢聽有冇幫助；選項（詞＋意思）排版；二選一嘅難度；重溫流程；路線第 7 天連結
 
 ## 待確認內容

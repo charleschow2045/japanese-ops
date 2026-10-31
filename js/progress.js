@@ -65,7 +65,9 @@ window.App = window.App || {};
     const today = Storage.todayLocal();
     const due = { p: 0, s: 0, k: 0, n: 0, w: 0, r: 0, q: 0 };
     Object.entries(state.review.items).forEach(([key, it]) => {
-      if (it.due <= today && due[key[0]] !== undefined) due[key[0]] += 1;
+      // 看得懂 has two kinds of keys: "r:" (words, signs) and "m:" (menu lines) — both count as 看得懂
+      const k = key[0] === "m" ? "r" : key[0];
+      if (it.due <= today && due[k] !== undefined) due[k] += 1;
     });
     return { due, active: Object.keys(state.review.items).length, graduated: state.review.graduated || 0 };
   }
@@ -508,5 +510,5 @@ window.App = window.App || {};
     return h("div", { class: "stack-lg" }, h("h2", { class: "h-display" }, "進度"), backupNudge(ctx), overview(state), readySection(ctx), routeSection(ctx), weekChart(state), kanaSection(state), phraseSection(state), dialogueSection(state), readingSection(state), reviewSection(state));
   }
 
-  window.App.Progress = { render, summary, routeStats, readiness };
+  window.App.Progress = { render, summary, routeStats, readiness, reviewCounts };
 })();

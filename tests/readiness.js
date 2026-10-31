@@ -126,5 +126,18 @@ const allDone = prep((s) => {
 assert(allDone.reached === 7 && allDone.items.filter((x) => x.done).map((x) => x.id).join() === 'dialogues,yen,time,date,hotel,backup,travel', '除句子同假名外全部達標：7 項');
 assert(allDone.next && allDone.next.id === 'must', '建議先做仍然係必學 30 句');
 
+// ── 進度頁「今天待重溫」：餐牌（m:）都計入「看得懂」──
+const rc = fresh();
+rc.review.items = {
+  'p:polite-01': { box: 0, due: TODAY }, 's:polite-02': { box: 0, due: TODAY }, 'k:あ': { box: 0, due: TODAY }, 'n:yen:1800': { box: 0, due: TODAY }, 'w:h:p1:tamago': { box: 0, due: TODAY }, 'q:l1': { box: 0, due: TODAY },
+  'r:ホテル': { box: 0, due: TODAY }, 'r:出口': { box: 0, due: TODAY }, 'm:ramen:2': { box: 0, due: TODAY }, 'm:sushi:1': { box: 0, due: TODAY },
+  'm:ramen:3': { box: 1, due: '2999-01-01' }, 'r:タオル': { box: 1, due: '2999-01-01' },
+};
+const due = P.reviewCounts(rc).due;
+assert(due.r === 4, '看得懂重溫：詞（r:）2＋餐牌（m:）2 ＝ 4，未到期嘅唔計 → ' + due.r);
+assert(due.p === 1 && due.s === 1 && due.k === 1 && due.n === 1 && due.w === 1 && due.q === 1, '其他類型照舊：句子／口語／五十音／數字／換字／近音詞各 1');
+assert(P.reviewCounts(rc).active === 12, '重溫中＝12（連未到期）');
+assert(P.reviewCounts(fresh()).due.r === 0, '全新存檔：0');
+
 console.log(bad ? `\n${bad} 項失敗` : '\n全部通過');
 process.exit(bad ? 1 : 0);
